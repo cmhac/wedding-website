@@ -18,7 +18,7 @@ guest communications, and the email designs. One repo for all of it.
 
 ## Getting started
 
-Requires Node 22 (see `.nvmrc`) and Docker (for local Supabase).
+Requires Node 24 or newer (`.nvmrc` pins 26) and Docker (for local Supabase).
 
 ```bash
 npm install
