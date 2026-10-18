@@ -6,3 +6,7 @@ package-lock.json
 supabase/.temp
 supabase/.branches
 src/types/database.ts
+
+# Spec Kit generated files (hash-tracked by .specify/integrations/*.manifest.json)
+.specify
+.claude/skills/speckit-*
