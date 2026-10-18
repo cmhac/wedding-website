@@ -150,7 +150,7 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 ### Edge Cases
 
 - A household member lacks their own email; the household has one shared contact email.
-- Two households share one email address (for example, a couple of relatives who share one inbox): sign-in and sends must not expose one household to the other.
+- Two households want to use one email address (for example, relatives who share one inbox): each household needs its own contact email, so the couple are told when saving and use a different address for one of them. Sign-in and sends never expose one household to another.
 - A guest is added to a household after invitations went out: they appear as invited and can be sent a catch-up message without re-sending to others.
 - An event invitation is removed after a guest already responded: the response is kept for history but excluded from counts, and the guest no longer sees the event.
 - A guest is deleted: their responses and send history are removed or anonymized consistently, and counts update.
