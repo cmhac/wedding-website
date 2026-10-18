@@ -58,7 +58,7 @@ The couple enter the menu for each meal event: courses, the dishes offered in ea
 1. **Given** a ceremony dinner with a menu of three entrées, **When** an attending guest picks one, **Then** the choice is saved against that guest and event, and the per-dish total increases by one.
 2. **Given** a guest who declines the dinner, **When** they view the RSVP, **Then** they are not asked to choose a dish for it.
 3. **Given** a guest records a peanut allergy, **When** the couple view the restrictions list, **Then** it appears with the guest's name, household, and a severity (allergy versus preference), and dishes tagged as containing nuts are flagged for that guest.
-4. **Given** a child is invited to the dinner, **When** they respond, **Then** they may be offered a children's menu if the couple has defined one for that event.
+4. **Given** a guest is invited to a dinner, **When** they respond, **Then** they see only that event's menu.
 5. **Given** the menu is unpublished or its choices are closed, **When** a guest views their RSVP, **Then** they can answer attendance but not choose a dish until choices open.
 6. **Given** the couple remove a dish that guests have already chosen, **When** they confirm, **Then** the affected guests are listed so they can be asked to choose again, and their previous choice is kept in history.
 
@@ -117,18 +117,18 @@ The couple see headcounts per event (invited, attending, declined, no response),
 
 ### User Story 7 - Wedding planner access (Priority: P2)
 
-The couple give their wedding planner their own sign-in with narrower access than the couple's. The planner can see the schedule of events, headcounts, attending guests, meal choices and dietary restrictions, and export what vendors need. The planner cannot see the couple's private notes, cannot see or change who is an administrator, and cannot see guests' postal addresses unless the couple allow it. The couple can add or remove the planner's access at any time.
+The couple give their wedding planner their own sign-in. The planner has the same access as the couple: they can manage the guest list, events, menus, RSVPs, and emails, and see the dashboard and exports. The planner's actions are recorded under their own name so the couple can tell who changed what. The couple can add or remove the planner's access at any time.
 
-**Why this priority**: The planner needs accurate counts and dietary lists to work with caterers and the venue, but should not carry the couple's full authority over the guest list or communications.
+**Why this priority**: The planner works directly with caterers and the venue and needs to look things up and make changes without asking the couple each time.
 
-**Independent Test**: With a seeded planner account, the planner can open the dashboard and exports but is refused when trying to view couple-only notes, change the guest list, or send email, and the couple can revoke access and see it take effect immediately.
+**Independent Test**: With a seeded planner account, the planner can perform every action the couple can, each change is attributed to the planner, and the couple can revoke access and see it take effect immediately.
 
 **Acceptance Scenarios**:
 
 1. **Given** a signed-in planner, **When** they open the dashboard, **Then** they see counts and meal and dietary totals for every event.
-2. **Given** a signed-in planner, **When** they try to view couple-only notes or manage who has access, **Then** access is denied.
+2. **Given** a signed-in planner, **When** they edit a guest's RSVP or send a reminder, **Then** it succeeds and the change is recorded as made by the planner.
 3. **Given** the couple remove the planner's access, **When** the planner next makes any request, **Then** it is refused.
-4. **Given** a planner, **When** they view the guest list, **Then** they see names, household, events, responses, meals and dietary needs, but not private notes.
+4. **Given** a signed-in planner, **When** they try to remove a couple member's access, **Then** it is refused.
 
 ---
 
@@ -150,13 +150,12 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 ### Edge Cases
 
 - A household member lacks their own email; the household has one shared contact email.
-- Two households share one email address (for example, a parent and an adult child): sign-in and sends must not expose one household to the other.
+- Two households share one email address (for example, a couple of relatives who share one inbox): sign-in and sends must not expose one household to the other.
 - A guest is added to a household after invitations went out: they appear as invited and can be sent a catch-up message without re-sending to others.
 - An event invitation is removed after a guest already responded: the response is kept for history but excluded from counts, and the guest no longer sees the event.
 - A guest is deleted: their responses and send history are removed or anonymized consistently, and counts update.
 - A plus-one allowance is reduced after the plus-one was named.
 - Duplicate guests on import (same name and household or same email).
-- A child or infant counts toward meals or headcount differently from an adult.
 - The RSVP deadline differs per event or the couple extends it for one household.
 - A scheduled send is edited or cancelled before it goes out.
 - Changing an email address mid-campaign: unsent messages go to the new address; sent history keeps the old.
@@ -166,8 +165,8 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 - A guest has several dietary restrictions, or restrictions that conflict with every dish on the menu.
 - A menu changes after guests have chosen: dishes removed, renamed, or added.
 - The rehearsal and the welcome party have different menus, or no meal at all (drinks only).
-- The planner is also a guest, or the planner's email matches a guest household.
-- A guest's allergy was recorded but the guest is later changed to declining; the planner's and caterer's lists should drop them.
+- The planner is also a guest, or the planner's email matches a guest household: sign-in as planner never shows guest-only views by mistake, and vice versa.
+- A guest's allergy was recorded but the guest is later changed to declining; the dietary and caterer lists should drop them.
 
 ## Requirements _(mandatory)_
 
@@ -176,7 +175,7 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 **Guests and households**
 
 - **FR-001**: The system MUST store households (parties), each with a display name for greetings and addressing, optional postal address, and zero or one shared contact email.
-- **FR-002**: The system MUST store guests, each belonging to exactly one household, with first and last name, optional personal email, an adult/child/infant flag, and notes visible only to the couple.
+- **FR-002**: The system MUST store guests, each belonging to exactly one household, with first and last name, optional personal email, and notes visible only to the couple.
 - **FR-003**: The system MUST support a plus-one allowance per household, where a plus-one begins as an unnamed placeholder the household can fill in and is then a regular guest.
 - **FR-004**: The couple MUST be able to create, edit, and remove households and guests, and to bulk-import them with per-row error reporting.
 - **FR-005**: The system MUST prevent duplicate households and guests where it can detect them (same name within a household, same email across guests) and surface possible duplicates rather than silently merging.
@@ -200,7 +199,7 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 **Menus, meal choices, and dietary needs**
 
 - **FR-032**: The couple MUST be able to enter a menu per event: an ordered set of courses, and for each course the dishes offered, each with a name, an optional description, and dietary tags (for example, vegetarian, vegan, gluten-free, dairy-free, contains nuts, contains shellfish, halal, kosher).
-- **FR-033**: A menu MUST be able to include audience-specific options, such as a children's menu available only to guests flagged as children, and an event MAY have no menu at all.
+- **FR-033**: An event MAY have no menu at all, in which case guests are not asked to choose dishes for it.
 - **FR-034**: The system MUST record a guest's dish choice per course per event. A guest MUST only be able to choose from the menu of an event they are invited to and attending, and from options available to them.
 - **FR-035**: The couple MUST be able to open and close choices for a menu independently of attendance, and hold a menu in draft until published.
 - **FR-036**: The system MUST record dietary restrictions per guest, as a selection of standard categories (for example, vegetarian, vegan, gluten-free, nut allergy, shellfish allergy, dairy-free, halal, kosher) plus free-text details, each marked as a medical allergy or a preference. A guest's restrictions apply to every event unless the guest says otherwise.
@@ -211,11 +210,11 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 **Access and identity**
 
 - **FR-013**: Guests MUST be able to access their household's RSVP without creating a password, via a link or sign-in code sent to an email address on file for their household.
-- **FR-014**: The system MUST distinguish three kinds of people: couple (administrators), wedding planner, and guests. Only the couple and the planner can see other households' data, within the limits below.
+- **FR-014**: The system MUST distinguish three kinds of people: couple (administrators), wedding planner, and guests. Only the couple and the planner can see other households' data.
 - **FR-015**: Both Chris and Hannah MUST have equal administrator rights, and the system MUST NOT allow a guest or planner to become an administrator through any guest-facing or planner flow.
-- **FR-040**: The wedding planner role MUST have read access to events, menus, guests, households' names and contact details, invitations, responses, meal choices, dietary restrictions, counts, and exports. It MUST NOT see the couple's private notes or manage who has access. [NEEDS CLARIFICATION: may the planner also edit the guest list and RSVPs on the couple's behalf, send emails, and see guests' postal addresses, or is the planner strictly read-only?]
-- **FR-041**: Only the couple MUST be able to grant, change, or revoke the planner's access, and revocation MUST take effect on the planner's next request.
-- **FR-042**: The system MUST record who made each change (couple member, planner, guest) so that planner activity is distinguishable from the couple's.
+- **FR-040**: The wedding planner role MUST have the same access as the couple to every feature: guests, households, events, menus, invitations, responses, meals, dietary data, dashboards, exports, and sending email, with no restricted areas.
+- **FR-041**: The couple MUST be able to grant and revoke the planner's access, revocation MUST take effect on the planner's next request, and the planner MUST NOT be able to remove or lock out a couple member.
+- **FR-042**: The system MUST record who made each change (Chris, Hannah, planner, or guest) so that planner activity is distinguishable from the couple's.
 
 **Invitations, reminders, and email**
 
@@ -229,34 +228,34 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 
 **Dashboard and exports**
 
-- **FR-023**: The couple and the planner MUST be able to see, per event, counts of invited, attending, declining, and no response, plus meal and dietary totals; the couple MUST also see households needing follow-up.
+- **FR-023**: The couple and the planner MUST be able to see, per event, counts of invited, attending, declining, and no response, plus meal and dietary totals and households needing follow-up.
 - **FR-024**: The couple and the planner MUST be able to export the guest list, responses, meal choices, and dietary data in a spreadsheet-friendly format, one row per guest per event, with a separate caterer-oriented export of per-dish totals and dietary restrictions by event.
 
 **Website and privacy**
 
 - **FR-025**: Public pages MUST work without any guest data and without signing in; page text MUST NOT be stored in or edited through this data model.
 - **FR-026**: Guest data (names, emails, addresses, dietary needs, responses) is personal data: it MUST NOT appear in logs, and seed data and test fixtures MUST be fake.
-- **FR-027**: Deleting a guest or household MUST remove or irreversibly anonymize their personal data and keep aggregate counts consistent. [NEEDS CLARIFICATION: after the wedding, should guest data be retained (for thank-you notes and photo sharing), deleted after a fixed period, or deleted on request only?]
-- **FR-028**: The system MUST let a household RSVP using its shared contact email even when individual members have no personal email. [NEEDS CLARIFICATION: when a household has several adults, may any one adult respond for everyone, or must each adult sign in and answer only for themselves?]
+- **FR-027**: The system MUST retain all guest data, responses, and send history until an administrator deletes it; nothing is deleted automatically or on a schedule. Deleting a guest or household MUST remove or irreversibly anonymize their personal data and keep aggregate counts consistent.
+- **FR-028**: Each household MUST have exactly one designated responder, one adult whose email is the household's contact email, who answers attendance, meals, and dietary needs for every guest in the household. Other household members have no sign-in of their own, and their personal email, if recorded, is for the couple's reference only.
 
 ### Key Entities
 
-- **Household (Party)**: The unit that is invited and written to. Has a display name, postal address, shared contact email, plus-one allowance, RSVP deadline override, and notes. Contains one or more guests.
-- **Guest**: A person in exactly one household. Name, optional email, adult/child/infant flag, placeholder-or-named status (for plus-ones), opt-out status, couple-only notes. Dietary restrictions and meal selections attach to the guest.
+- **Household (Party)**: The unit that is invited and written to, with one responder. Has a display name, postal address, shared contact email, plus-one allowance, RSVP deadline override, and notes. Contains one or more guests.
+- **Guest**: A person in exactly one household. Name, optional email, placeholder-or-named status (for plus-ones), opt-out status, couple-only notes. Dietary restrictions and meal selections attach to the guest.
 - **Event**: A wedding-weekend occasion. Name, start time, venue name, optional RSVP deadline, display order, required or optional, and an optional group (for example, "wedding weekend") that ties sub-events together.
 - **Invitation**: Links one guest to one event they are invited to, including optional events such as the welcome party and rehearsal. Presence means invited.
 - **RSVP Response**: A guest's answer for one event (attending, declining, no response), with who answered and when. Linked to the Invitation.
 - **RSVP History Entry**: A record of each change to a response, for auditing and for resolving "I never said that".
 - **Menu**: The set of courses and dishes for one event, with a draft, published, or closed state.
 - **Course**: An ordered step of a menu (for example, starter, entrée, dessert) and whether guests must choose a dish.
-- **Dish**: One selectable option within a course, with name, description, dietary tags, and who it is available to (all guests, or children only).
+- **Dish**: One selectable option within a course, with name, description, and dietary tags.
 - **Meal Selection**: One guest's chosen dish for one course at one event, with who chose it and when. Kept in history when changed or when a dish is removed.
 - **Dietary Restriction**: A guest's standard category or free-text restriction, marked allergy or preference.
 - **Message Type**: A kind of communication (save-the-date, invitation, reminder, update, thank-you) and whether it is essential or can be opted out of.
 - **Send (Campaign)**: One decision by the couple to send a message type to a set of recipients at a time, with status (draft, scheduled, sending, done, cancelled).
 - **Message**: One email to one household as part of a send, with address used, timestamp, and delivery status. Delivery notifications update it.
 - **Administrator**: A couple member with full access, distinct from guests.
-- **Planner Access**: The wedding planner's sign-in and permissions, granted and revoked by the couple, narrower than an administrator's.
+- **Planner Access**: The wedding planner's sign-in, with the same access as an administrator, granted and revoked by the couple.
 
 ## Success Criteria _(mandatory)_
 
@@ -273,17 +272,19 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 - **SC-009**: In acceptance testing, 100% of dishes chosen by attending guests appear in per-dish totals exactly once, and 0 choices by declining guests do.
 - **SC-010**: Every recorded allergy for an attending guest appears on the dietary list, and every chosen dish whose tags conflict with an allergy is flagged.
 - **SC-011**: A guest invited only to optional events and a guest invited to required events plus optional ones each see exactly their own events, and a "has not responded" reminder never includes someone who has answered every required event.
-- **SC-012**: A planner can complete all tasks in User Story 7 without the couple's help and in 100% of tested cases cannot read couple-only notes or change access.
+- **SC-012**: A planner can perform every couple action without the couple's help, 100% of planner changes are attributed to the planner, and the planner cannot remove a couple member's access.
 
 ## Assumptions
 
-- Chris and Hannah are the only administrators. The wedding planner is a separate, narrower role. There is no role for family helpers in v1, and there is one planner account.
+- Chris and Hannah are the only administrators. The wedding planner has the same access as the couple but is a distinct, attributable account the couple can revoke. There is no role for family helpers in v1, and there is one planner account.
 - The welcome party and rehearsal are modeled as ordinary events marked optional and grouped under the wedding weekend, not a separate kind of record, so they share the same invitations, RSVP, meal, and reminder machinery.
 - Menus are entered by the couple in the system (unlike page text, which is hard-coded) because guests choose from them and totals depend on them. The public menu text on pages is hard-coded separately and must be kept in sync by hand.
+- No children are invited, so the data model has no child or infant distinction and no children's menu.
+- Data is kept indefinitely; the couple delete it manually when they choose.
 - Dietary restrictions are asked once per guest and apply to all events, with a free-text note for event-specific cases.
 - A standard set of dietary categories and tags is provided; the couple can add more.
 - The household is the unit of invitation and communication; per-person addressing exists only for personal email and opt-out.
-- Per-event invitations are tracked per guest, not per household, to support cases such as a child not invited to the reception.
+- Per-event invitations are tracked per guest, not per household, to support cases such as a guest invited to the ceremony but not the reception.
 - Plus-ones are modeled as an allowance of unnamed seats on a household, not a separate concept; extra seats beyond the allowance require the couple's approval.
 - Page text, photos, schedule prose, travel info, and registry links are hard-coded in the site. Event name, time, and venue are in the data model only because invitations, RSVPs, and emails need them, so they must be kept consistent with the pages by hand.
 - Guests are recognized by email, so the household email needs to exist before a guest can sign in. Households without email are managed by the couple.
