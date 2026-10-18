@@ -43,6 +43,24 @@ open decisions.
 - **Before pushing:** `npm run format:check && npm run lint && npm run type-check && npm test`.
   The pre-push hook runs lint, type-check and tests.
 
+## Spec-driven development
+
+[Spec Kit](https://github.com/github/spec-kit) (`specify-cli` 1.2.1, Claude
+integration) is set up. Skills live in `.claude/skills/speckit-*` and shared
+files in `.specify/`; both are generated, so don't hand-edit or reformat them
+(Prettier ignores them, and `.specify/integrations/*.manifest.json` tracks file
+hashes). Workflow, per feature:
+
+1. `/speckit-constitution`: project principles, in `.specify/memory/constitution.md`
+2. `/speckit-specify`: what and why (optional `/speckit-clarify` before planning)
+3. `/speckit-plan`: technical plan
+4. `/speckit-tasks`: task list (optional `/speckit-analyze`)
+5. `/speckit-implement`: build it, following the TDD convention above
+
+Upgrade with `uv tool install specify-cli==<version>` then
+`specify init --here --force --integration claude` on a clean branch, and review
+the diff.
+
 ## Commands
 
 ```bash
