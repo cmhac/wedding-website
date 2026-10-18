@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain (2 remain: FR-027, FR-028)
+- [ ] No [NEEDS CLARIFICATION] markers remain (3 remain: FR-027, FR-028, FR-040)
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Open questions for the couple: post-wedding data retention (FR-027) and whether one adult can answer for the whole household (FR-028).
+- Open questions for the couple: post-wedding data retention (FR-027), whether one adult can answer for the whole household (FR-028), and how much the planner can change (FR-040).
 - Resolve with `/speckit-clarify` before `/speckit-plan`.
