@@ -1,16 +1,18 @@
 # Research: Guest, Invitation, and Communication Data Model
 
-Resolves every open decision in `docs/architecture.md` that this feature depends on. Each is also written up as a record in `docs/decisions/` with status "proposed" until the couple confirm. External claims were checked against the sources linked; where only secondary sources were found, that is stated.
+Resolves every open decision in `docs/architecture.md` that this feature depends on. Decisions are recorded here, in the spec, not in separate decision records. Each decision marked "Status: proposed" becomes accepted when the couple confirm. External claims were checked against the sources linked; where only secondary sources were found, that is stated.
 
 ## R1. Hosting
 
+- **Status**: proposed (2026-10-18); becomes accepted when the couple confirm.
 - **Decision**: Run the Next.js app on a host that executes Next.js server code (Vercel is the default recommendation). Do not set `output: "export"`.
 - **Rationale**: Guest sign-in uses server-side auth cookies, route handlers receive webhooks, and sends run server-side. A static export (as on GitHub Pages) cannot do any of that.
 - **Alternatives**: GitHub Pages static export (rejected: no server code); self-hosted Node (rejected: more upkeep for a one-off site).
-- **Open item**: the couple pick the host. The choice does not change the schema. It only needs the host to support Node 26 (see `0001-toolchain-versions.md`) and to hold the env vars in [quickstart.md](./quickstart.md).
+- **Open item**: the couple pick the host. The choice does not change the schema. It only needs the host to support Node 26 (see `.nvmrc` and `engines` in `package.json`) and to hold the env vars in [quickstart.md](./quickstart.md).
 
 ## R2. Guest identity model
 
+- **Status**: proposed (2026-10-18); becomes accepted when the couple confirm.
 - **Decision**: Pre-create one Supabase Auth user per household (the responder, using the household contact email) from server code with the service-role key, and link it as `households.auth_user_id`. Guests sign in with `signInWithOtp` and `shouldCreateUser: false`. Turn off open sign-up in `config.toml`.
 - **Rationale**: Matches the spec (one responder per household, FR-028). Open sign-up plus email matching would let anyone create an account and would put matching logic in the browser path. Supabase documents `shouldCreateUser: false` as the way to stop magic-link sign-in from creating accounts.
 - **Caveat found in research**: with `shouldCreateUser: false`, an unregistered address returns an error, which can reveal whether an address is on the guest list. `POST /api/guest/sign-in` (and the staff sign-in) MUST return the same neutral message ("If that address is on the guest list, a link is on its way") regardless of outcome. Source for the error behaviour is a third-party write-up, so the plan includes a test against the real local stack.
@@ -20,6 +22,7 @@ Resolves every open decision in `docs/architecture.md` that this feature depends
 
 ## R3. Auth emails through Resend
 
+- **Status**: proposed (2026-10-18); becomes accepted when the couple confirm.
 - **Decision**: Use Supabase's "Send Email" auth hook over HTTPS, pointing at a Next.js route handler that verifies the hook signature and sends the magic-link email through Resend with a React Email template.
 - **Rationale**: Magic-link emails then share the sending domain and template registry with campaign emails (content supplied separately), and bypass Supabase's built-in email rate limit (the local config notes that raising `email_sent` requires custom SMTP). Supabase's own guide shows this hook with Resend and React Email in an Edge Function; the hook accepts any HTTPS endpoint, so a Next.js route works the same way.
 - **Alternatives**: custom SMTP in `[auth.email.smtp]` (valid and simpler, but the magic-link email would not go through the template registry); default Supabase sender (rejected: rate limited and unbranded).
@@ -27,6 +30,7 @@ Resolves every open decision in `docs/architecture.md` that this feature depends
 
 ## R4. Where email sends run
 
+- **Status**: proposed (2026-10-18); becomes accepted when the couple confirm.
 - **Decision**: Next.js route handlers, not Supabase Edge Functions. "Send now" is a staff-only route. Scheduled sends are picked up by `pg_cron` calling a secret-protected route through `pg_net`, every 5 minutes.
 - **Rationale**: Template modules supplied by others, the Resend client, and Jest tests all live in the Node runtime. Edge Functions run on Deno and would need the templates duplicated or bundled. Supabase documents `pg_cron` + `pg_net` as the way to call functions on a schedule, with the secret in Vault.
 - **Risks noted**: `pg_cron`/`pg_net` jobs can fail silently, so the dispatch route is idempotent and `settings.last_dispatch_at` records the last run so the admin interface can report it; a missed run only delays a scheduled send by one interval.
@@ -48,12 +52,14 @@ Resolves every open decision in `docs/architecture.md` that this feature depends
 
 ## R7. Household and party model
 
+- **Status**: proposed (2026-10-18); becomes accepted when the couple confirm.
 - **Decision**: Household is the unit invited and emailed, with exactly one responder (the contact email). Guests belong to one household. Invitations are per guest per event. Plus-ones are placeholder guest rows (count = `plus_one_allowance`) the responder renames.
 - **Rationale**: Matches the spec's assumptions and avoids a separate plus-one concept. A rehearsal-only guest, or one household with different event lists per person, needs no special cases.
 - **Alternatives**: per-person sign-in (rejected by the couple: one adult per household); per-household invitations only (rejected: cannot express per-guest event lists).
 
 ## R8. Admin authorization
 
+- **Status**: proposed (2026-10-18); becomes accepted when the couple confirm.
 - **Decision**: A `staff` table (`user_id`, `role` in `couple` or `planner`). RLS uses a `SECURITY DEFINER` helper `is_staff()`. Couple and planner have the same data access; only `couple` rows can edit `staff`, which also prevents the planner from removing a couple member. Staff Auth users are created by script, not through sign-up.
 - **Rationale**: The couple said the planner has full access. A role column still gives attribution (FR-042) and a protected revoke path (FR-041) with a single policy.
 - **Alternatives**: custom JWT claims (rejected: stale until token refresh, which conflicts with "revocation takes effect on the next request"); a single shared admin account (rejected: no attribution).
@@ -71,5 +77,6 @@ Resolves every open decision in `docs/architecture.md` that this feature depends
 
 ## R11. Sending domain
 
+- **Status**: proposed (2026-10-18); becomes accepted when the couple confirm.
 - **Decision**: Verify one sending domain in Resend (DNS records) before any production send. Until then, development sends only to the Resend sandbox or are skipped. Recorded as a manual step in [quickstart.md](./quickstart.md).
 - **Rationale**: Required by Resend for production sends; nothing in the schema depends on it.
