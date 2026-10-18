@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Scope**: Backend only. This feature builds the database, access rules, server logic, email pipeline, and two documented interfaces (a guest API and an admin API). It builds **no screens and no visual components of any kind**: not the public site, not guest-facing screens, and not admin screens. Those are built separately (the couple's designer owns visual design), against the interfaces specified here. Where this spec says the couple "see", "open", or "enter" something, it means the capability is available through the admin interface, not that a screen is built here.
+**Scope**: Backend only. This feature builds the database, access rules, server logic, email pipeline, and two documented interfaces (a guest API and an admin API). It builds **no screens, no visual components, and no email content**: not the public site, not guest-facing screens, not admin screens, and not the subject lines, copy, or designs of any email. Those are built separately (the couple's designer owns visual design), against the interfaces specified here. Where this spec says the couple "see", "open", or "enter" something, it means the capability is available through the admin interface, not that a screen is built here.
 
 **Input**: User description: "Data model for the wedding website: a hard-coded-content website frontend (no CMS) plus guest, household/invite, event, RSVP, and invite/reminder (email) management."
 
@@ -86,7 +86,7 @@ The welcome party and the rehearsal (and dinner) are sub-events of the wedding w
 
 ### User Story 5 - Send invitations and reminders and track delivery (Priority: P2)
 
-The couple compose invitation, reminder, and update emails from a fixed set of templates, choose recipients (everyone, a single household, or a filtered group such as "has not responded" or "invited to the rehearsal dinner"), and send now or schedule. The system records exactly what was sent to whom and when, and whether it was delivered, bounced, or failed, so a reminder never goes to people who already responded unless the couple chooses otherwise, and nobody gets the same message twice by accident.
+The couple create sends of invitation, reminder, and update emails (the email content itself is supplied separately), choose recipients (everyone, a single household, or a filtered group such as "has not responded" or "invited to the rehearsal dinner"), and send now or schedule. The system records exactly what was sent to whom and when, and whether it was delivered, bounced, or failed, so a reminder never goes to people who already responded unless the couple chooses otherwise, and nobody gets the same message twice by accident.
 
 **Why this priority**: Communication drives response rates, but it only works once the guest list and RSVPs exist.
 
@@ -161,6 +161,7 @@ Every screen is out of scope: the public website (home, details, schedule, trave
 - Duplicate guests on import (same name and household or same email).
 - The RSVP deadline differs per event or the couple extends it for one household.
 - A scheduled send is edited or cancelled before it goes out.
+- A send is created or comes due for a message type that has no registered template: it is refused or left scheduled with a recorded error, and nothing is sent.
 - Changing an email address mid-campaign: unsent messages go to the new address; sent history keeps the old.
 - A delivery notification arrives out of order or twice.
 - A guest changes from attending to declining after choosing a dish: the dish choice is kept in history but excluded from totals.
@@ -221,7 +222,7 @@ Every screen is out of scope: the public website (home, details, schedule, trave
 
 **Invitations, reminders, and email**
 
-- **FR-016**: The system MUST store a fixed set of message types (for example, save-the-date, invitation, RSVP reminder, update, thank-you), each tied to a template defined in the codebase.
+- **FR-016**: The system MUST store a fixed set of message types (for example, save-the-date, invitation, RSVP reminder, update, thank-you), each tied to a template key. The template content (subject, body, design) is out of scope and supplied separately; the system MUST refuse to send a message type that has no registered template.
 - **FR-017**: The couple MUST be able to create a send (campaign) specifying message type, recipient selection, and send time (immediate or scheduled), and to cancel or edit it before it goes out.
 - **FR-018**: Recipient selection MUST support at least: all households, one household, households that have not responded, households invited to a given event (required or optional), households that have not answered a given optional event, households that have not yet chosen meals, and households with a delivery problem. Selections MUST exclude households without a deliverable email and list them separately.
 - **FR-019**: The system MUST record each message sent as its own record: household, address used at the time, message type, send, timestamp, and delivery status (queued, sent, delivered, bounced, complained, failed).
@@ -236,7 +237,7 @@ Every screen is out of scope: the public website (home, details, schedule, trave
 
 **Website and privacy**
 
-- **FR-025**: This feature MUST NOT build, style, or lay out any screen or visual component: not the public site, not any guest-facing screen, and not any admin screen. Email templates are the only rendered output and MUST be plain, with copy and structure only: no colors, fonts, images, logos, or layout work. The couple's designer owns visual design. Page text MUST NOT be stored in or edited through this data model.
+- **FR-025**: This feature MUST NOT build, style, or lay out any screen or visual component: not the public site, not any guest-facing screen, and not any admin screen. It MUST NOT write email content either: no subject lines, body copy, or email designs. It defines the template interface and sends whatever a registered template renders. The couple's designer owns visual design, and the email content is supplied separately. Page text MUST NOT be stored in or edited through this data model.
 - **FR-043**: The system MUST provide a documented, versioned-in-the-repository guest-facing interface covering sign-in, reading and saving a household's RSVP (attendance, meals, dietary needs, message), naming a plus-one, and reminder opt-out. It MUST return enough event information (required or optional, group, order, deadline, closed state) for any frontend to present the events without extra queries, and MUST be exercisable without any of this repository's screens.
 - **FR-044**: The system MUST provide a documented admin-facing interface covering every capability in this spec that the couple and planner use (guest and household management, import, invitations, RSVPs on behalf, events, menus, campaigns and sends, reports, exports, and staff access), made up of direct data access under access rules plus a small set of endpoints for operations that need server secrets. It MUST be exercisable without any screen, and its documentation MUST match the implementation.
 - **FR-026**: Guest data (names, emails, addresses, dietary needs, responses) is personal data: it MUST NOT appear in logs, and seed data and test fixtures MUST be fake.
@@ -298,4 +299,4 @@ Every screen is out of scope: the public website (home, details, schedule, trave
 - Email delivery uses a third-party provider that reports delivered, bounced, and complained events; the technical choices (identity model, hosting, where sends run, household model) are for the plan and the open decisions in `docs/architecture.md`, not this spec.
 - Roughly 100 to 200 guests across a few events; performance at larger scale is out of scope.
 - Seating charts, gift/registry tracking, SMS, and a guest-facing photo gallery are out of scope for this feature.
-- Visual design, every screen (public, guest-facing, and admin), and every other visual component are out of scope. The designer owns visual design.
+- Visual design, every screen (public, guest-facing, and admin), every other visual component, and all email content (subjects, copy, designs) are out of scope. The designer, or whoever writes the emails, owns them. Until a template is supplied for a message type, production sends of that type are blocked.

@@ -51,4 +51,4 @@ Request and response shapes for the route handlers are the zod schemas exported 
 
 - No endpoint trusts a staff claim from the client; staff status comes from the session and the `staff` table on every request, so revocation takes effect on the next request (FR-041).
 - Changes made through these endpoints and through direct data access are attributed to the signed-in staff member in `audit_log` (FR-042).
-- Nothing here renders HTML for people to read, except the plain email templates. Presentation is entirely the admin frontend's concern.
+- Nothing here renders HTML or any other content for people to read. Presentation is entirely the admin frontend's concern, and email content is supplied separately through the template registry.

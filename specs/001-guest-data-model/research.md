@@ -21,14 +21,14 @@ Resolves every open decision in `docs/architecture.md` that this feature depends
 ## R3. Auth emails through Resend
 
 - **Decision**: Use Supabase's "Send Email" auth hook over HTTPS, pointing at a Next.js route handler that verifies the hook signature and sends the magic-link email through Resend with a React Email template.
-- **Rationale**: Magic-link emails then share the invitation designs and the sending domain, and bypass Supabase's built-in email rate limit (the local config notes that raising `email_sent` requires custom SMTP). Supabase's own guide shows this hook with Resend and React Email in an Edge Function; the hook accepts any HTTPS endpoint, so a Next.js route works the same way.
-- **Alternatives**: custom SMTP in `[auth.email.smtp]` (valid and simpler, but the magic-link email would not use React Email templates in this repo); default Supabase sender (rejected: rate limited and unbranded).
+- **Rationale**: Magic-link emails then share the sending domain and template registry with campaign emails (content supplied separately), and bypass Supabase's built-in email rate limit (the local config notes that raising `email_sent` requires custom SMTP). Supabase's own guide shows this hook with Resend and React Email in an Edge Function; the hook accepts any HTTPS endpoint, so a Next.js route works the same way.
+- **Alternatives**: custom SMTP in `[auth.email.smtp]` (valid and simpler, but the magic-link email would not go through the template registry); default Supabase sender (rejected: rate limited and unbranded).
 - **Source**: [Supabase guide: custom auth emails with React Email and Resend](https://supabase.com/docs/guides/functions/examples/auth-send-email-hook-react-email-resend).
 
 ## R4. Where email sends run
 
 - **Decision**: Next.js route handlers, not Supabase Edge Functions. "Send now" is a staff-only route. Scheduled sends are picked up by `pg_cron` calling a secret-protected route through `pg_net`, every 5 minutes.
-- **Rationale**: Templates in `emails/`, the Resend client, and Jest tests all live in the Node runtime. Edge Functions run on Deno and would need the templates duplicated or bundled. Supabase documents `pg_cron` + `pg_net` as the way to call functions on a schedule, with the secret in Vault.
+- **Rationale**: Template modules supplied by others, the Resend client, and Jest tests all live in the Node runtime. Edge Functions run on Deno and would need the templates duplicated or bundled. Supabase documents `pg_cron` + `pg_net` as the way to call functions on a schedule, with the secret in Vault.
 - **Risks noted**: `pg_cron`/`pg_net` jobs can fail silently, so the dispatch route is idempotent and `settings.last_dispatch_at` records the last run so the admin interface can report it; a missed run only delays a scheduled send by one interval.
 - **Alternatives**: Edge Functions (rejected above); host cron (not chosen, since cron limits depend on the host plan, which was not verified).
 - **Source**: [Scheduling Edge Functions](https://supabase.com/docs/guides/functions/schedule-functions) (describes `pg_cron` with `pg_net`; the same call works for any HTTPS URL).

@@ -1,6 +1,6 @@
 # Quickstart: Validate the data model end to end
 
-A validation guide, not an implementation guide. No screens are built here, so guest scenarios run through the guest API (`scripts/guest-api-smoke.ts`), and admin scenarios run through the admin API (the route tests, `curl`, or the scripts in `scripts/`) rather than a browser. It assumes the tasks in `tasks.md` are done. Contracts: [database-rpc.md](./contracts/database-rpc.md), [http-endpoints.md](./contracts/http-endpoints.md), [audience-filter.md](./contracts/audience-filter.md). Design: [data-model.md](./data-model.md).
+A validation guide, not an implementation guide. No screens or email content are built here, so guest scenarios run through the guest API (`scripts/guest-api-smoke.ts`), and admin scenarios run through the admin API (the route tests, `curl`, or the scripts in `scripts/`) rather than a browser. It assumes the tasks in `tasks.md` are done. Contracts: [database-rpc.md](./contracts/database-rpc.md), [http-endpoints.md](./contracts/http-endpoints.md), [audience-filter.md](./contracts/audience-filter.md). Design: [data-model.md](./data-model.md).
 
 ## Prerequisites
 
@@ -22,10 +22,11 @@ A validation guide, not an implementation guide. No screens are built here, so g
 npm run db:start && npm run db:reset   # applies migrations and seed.sql (fake data only)
 npm run db:types                       # regenerates src/types/database.ts
 npm run dev
-npm run email:dev                      # preview templates
 ```
 
 ## Validation scenarios
+
+Email content is out of scope, so there are no real templates to send. Scenarios that send campaign emails (7 to 10) run as automated route tests with fixture templates; run them by hand only after real templates are registered in `emails/index.ts`. Locally, the auth hook stays off and sign-in emails use Supabase's built-in email through local mail capture.
 
 Each maps to a spec user story and to an automated test; run them by hand once against the local stack.
 

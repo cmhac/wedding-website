@@ -160,9 +160,9 @@ Rules enforced by trigger (FR-034):
 
 ### Messaging
 
-**message_types**: `key text PK` (`save_the_date`, `invitation`, `rsvp_reminder`, `optional_events_reminder`, `update`), `label`, `is_essential boolean` (FR-021), `template_key text` (matches a file in `emails/`).
+**message_types**: `key text PK` (`save_the_date`, `invitation`, `rsvp_reminder`, `optional_events_reminder`, `update`), `label`, `is_essential boolean` (FR-021), `template_key text` (a key into the template registry; the content is supplied separately) (matches a file in `emails/`).
 
-**campaigns**: `id`, `message_type_key → message_types`, `name`, `audience jsonb not null` (validated by [audience-filter.md](./contracts/audience-filter.md)), `status enum campaign_status` (`draft`, `scheduled`, `sending`, `done`, `cancelled`), `scheduled_for timestamptz null`, `created_by`, `started_at`, `completed_at`. A check constraint `campaigns_audience_valid` calls `is_valid_audience(audience)` (allowed scopes and filter keys, per the audience-filter contract), so writes made directly by an admin frontend cannot store an invalid audience.
+**campaigns**: `id`, `message_type_key → message_types`, `name`, `audience jsonb not null` (validated by [audience-filter.md](./contracts/audience-filter.md)), `status enum campaign_status` (`draft`, `scheduled`, `sending`, `done`, `cancelled`), `scheduled_for timestamptz null`, `created_by`, `started_at`, `completed_at`, `last_error_code text null` (for example `template_missing`). A check constraint `campaigns_audience_valid` calls `is_valid_audience(audience)` (allowed scopes and filter keys, per the audience-filter contract), so writes made directly by an admin frontend cannot store an invalid audience.
 
 State transitions: `draft → scheduled → sending → done`; `draft | scheduled → cancelled`. Editing is allowed only in `draft` and `scheduled`; `sending` and later are immutable (FR-017).
 

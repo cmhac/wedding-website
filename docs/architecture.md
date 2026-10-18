@@ -13,13 +13,13 @@ proposes answers to all seven open decisions below.
 
 ## Components
 
-| Concern             | Tool                                                    | Lives in                        |
-| ------------------- | ------------------------------------------------------- | ------------------------------- |
-| Frontend            | Next.js, React, Tailwind (screens are built separately) | `src/app`, `src/components`     |
-| Database, auth, API | Supabase                                                | `supabase/`, `src/lib/supabase` |
-| Backend logic       | Next.js server code and/or Supabase Edge Functions      | `src/app`, `supabase/functions` |
-| Email design        | React Email                                             | `emails/`                       |
-| Email delivery      | Resend                                                  | `src/lib/email`                 |
+| Concern                  | Tool                                                    | Lives in                        |
+| ------------------------ | ------------------------------------------------------- | ------------------------------- |
+| Frontend                 | Next.js, React, Tailwind (screens are built separately) | `src/app`, `src/components`     |
+| Database, auth, API      | Supabase                                                | `supabase/`, `src/lib/supabase` |
+| Backend logic            | Next.js server code and/or Supabase Edge Functions      | `src/app`, `supabase/functions` |
+| Email content and design | Supplied separately (React Email suggested)             | `emails/`                       |
+| Email delivery           | Resend                                                  | `src/lib/email`                 |
 
 ## Open decisions
 
