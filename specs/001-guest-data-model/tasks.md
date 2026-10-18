@@ -8,6 +8,8 @@
 
 **Organization**: Tasks are grouped by user story so each can be implemented and tested on its own.
 
+**Scope boundary**: This feature is **backend and admin only**. A designer owns all visual design and all public and guest-facing screens (home, details, schedule, travel, registry, FAQ, and the RSVP screens). Nothing here builds, styles, or lays out those screens. The guest-facing deliverable is a documented, tested guest API (`contracts/guest-api.md`, published as `docs/guest-api.md`) that the designer's frontend calls. Admin screens are in scope but are functional only: plain, unstyled-beyond-defaults forms and tables, with no design-system, theming, or visual polish work. Email templates are likewise functional and plain, so the designer can restyle them later.
+
 **Manual prerequisites**: Account and dashboard setup that cannot be done from code (Resend domain and webhook, Supabase auth hook, Vault secrets, hosting) is tracked in https://github.com/cmhac/wedding-website/issues/3. Nothing in the automated tasks needs it except the real sends in User Story 5 and the production auth hook in User Story 2.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -60,8 +62,10 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 - [ ] T019 [P] Write tests then create the Supabase helpers in `src/lib/supabase/`: `client.ts` (browser), `server.ts` (cookies), `admin.ts` (service role, imports `server-only`, never importable by client code), and the session-refresh helper used by the Next.js request proxy; tests in `src/lib/supabase/__tests__/` cover that `admin.ts` is the only file reading `SUPABASE_SERVICE_ROLE_KEY`
 - [ ] T020 Create the request proxy that refreshes sessions in `src/proxy.ts` (Next.js 16 renamed `middleware.ts` to `proxy.ts`; confirm against the installed Next.js version and use whichever the installed version expects) with a test in `src/__tests__/proxy.test.ts`
 - [ ] T021 [P] Write tests then create `src/lib/auth/session.ts` with `getSessionKind()` returning `staff`, `guest`, or `null`; when a user is both staff and a household responder it returns `staff` (spec edge case: the planner may also be a guest); tests in `src/lib/auth/__tests__/session.test.ts`
-- [ ] T022 Write tests then create the staff guard `src/app/admin/layout.tsx` (redirects non-staff to the sign-in page, never renders admin children for guests) in `src/app/admin/__tests__/layout.test.tsx`
-- [ ] T023 [P] Write tests then create `scripts/create-staff-user.ts` (arguments: email, display name, role `couple` or `planner`; creates the Auth user with the admin client and inserts the `staff` row; refuses unknown roles; prints only the user id) with tests in `scripts/__tests__/create-staff-user.test.ts` using a mocked admin client and fake emails; document usage in `README.md`
+- [ ] T022 Write tests then create the staff guard `src/app/admin/layout.tsx` (redirects non-staff to `/admin/sign-in`, never renders admin children for guests) in `src/app/admin/__tests__/layout.test.tsx`; functional markup only, no visual design
+- [ ] T023 Write tests then create the staff sign-in `src/app/admin/sign-in/page.tsx` and `src/app/admin/sign-in/actions.ts` (a plain form calling `signInWithOtp` with `shouldCreateUser: false`; the same neutral message for a known address, an unknown address, and a Supabase error; staff Auth users exist only because `scripts/create-staff-user.ts` created them) with tests in `src/app/admin/sign-in/__tests__/actions.test.ts`; functional markup only
+- [ ] T024 Write tests then create the auth callback `src/app/auth/callback/route.ts` (exchanges the code for a session, then redirects: staff to `/admin`, guests to `/rsvp`, honoring a `next` parameter only if it is a relative path on a fixed allowlist, never an arbitrary URL) in `src/app/auth/__tests__/callback.test.ts`; `/rsvp` is a path the designer's frontend serves, so this task builds no page there
+- [ ] T025 [P] Write tests then create `scripts/create-staff-user.ts` (arguments: email, display name, role `couple` or `planner`; creates the Auth user with the admin client and inserts the `staff` row; refuses unknown roles; prints only the user id) with tests in `scripts/__tests__/create-staff-user.test.ts` using a mocked admin client and fake emails; document usage in `README.md`
 
 **Checkpoint**: `npm run format:check && npm run lint && npm run type-check && npm test && npx supabase test db` all pass. User stories can now start.
 
@@ -75,23 +79,23 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 ### Tests for User Story 1
 
-- [ ] T024 [P] [US1] Write the pgTAP test `supabase/tests/database/110-import-and-duplicates.test.sql` for `import_households(rows jsonb)` (returns `{created, errors}`; a household with any invalid row is not created and its errors carry row number and reason; valid households in the same call are still created; non-staff callers get `forbidden`) and `find_duplicate_households()` (flags same normalized display name or address, never merges; staff only)
-- [ ] T025 [P] [US1] Write the pgTAP test `supabase/tests/database/120-invite.test.sql` for `invite(guest_ids uuid[], event_id uuid)`: adds invitations without touching existing ones, no message is created, staff only, guests get `forbidden`
-- [ ] T026 [P] [US1] Write `src/lib/guests/__tests__/import.test.ts`: CSV parsing with required columns, email format, `plus_one_allowance` an integer ≥ 0, unknown event slugs rejected, row numbers in errors, blank and duplicate rows reported (spec edge case), households with no email accepted and marked as paper-only
-- [ ] T027 [P] [US1] Write `src/lib/guests/__tests__/household-access.test.ts`: creating or changing a household `contact_email` creates or updates the linked Auth user through the admin client and sets `auth_user_id`; a contact email already used by another household returns a clear error that names no other household's data (research R2); clearing the email unlinks the user and marks the household paper-only
-- [ ] T028 [P] [US1] Write `src/app/api/guests/import/__tests__/route.test.ts`: non-staff gets 403, a valid CSV returns `{created: {households, guests, invitations}, errors: []}`, a CSV with one bad row returns that row's error and still creates the valid households
-- [ ] T029 [P] [US1] Write component tests in `src/components/admin/__tests__/household-form.test.tsx` and `src/components/admin/__tests__/guest-list.test.tsx`: add and edit a household with guests, per-guest per-event invitation checkboxes, paper-only badge when there is no email, totals per event, duplicate warnings
+- [ ] T026 [P] [US1] Write the pgTAP test `supabase/tests/database/110-import-and-duplicates.test.sql` for `import_households(rows jsonb)` (returns `{created, errors}`; a household with any invalid row is not created and its errors carry row number and reason; valid households in the same call are still created; non-staff callers get `forbidden`) and `find_duplicate_households()` (flags same normalized display name or address, never merges; staff only)
+- [ ] T027 [P] [US1] Write the pgTAP test `supabase/tests/database/120-invite.test.sql` for `invite(guest_ids uuid[], event_id uuid)`: adds invitations without touching existing ones, no message is created, staff only, guests get `forbidden`
+- [ ] T028 [P] [US1] Write `src/lib/guests/__tests__/import.test.ts`: CSV parsing with required columns, email format, `plus_one_allowance` an integer ≥ 0, unknown event slugs rejected, row numbers in errors, blank and duplicate rows reported (spec edge case), households with no email accepted and marked as paper-only
+- [ ] T029 [P] [US1] Write `src/lib/guests/__tests__/household-access.test.ts`: creating or changing a household `contact_email` creates or updates the linked Auth user through the admin client and sets `auth_user_id`; a contact email already used by another household returns a clear error that names no other household's data (research R2); clearing the email unlinks the user and marks the household paper-only
+- [ ] T030 [P] [US1] Write `src/app/api/guests/import/__tests__/route.test.ts`: non-staff gets 403, a valid CSV returns `{created: {households, guests, invitations}, errors: []}`, a CSV with one bad row returns that row's error and still creates the valid households
+- [ ] T031 [P] [US1] Write component tests in `src/components/admin/__tests__/household-form.test.tsx` and `src/components/admin/__tests__/guest-list.test.tsx`: add and edit a household with guests, per-guest per-event invitation checkboxes, paper-only badge when there is no email, totals per event, duplicate warnings
 
 ### Implementation for User Story 1
 
-- [ ] T030 [US1] Create migration `supabase/migrations/<timestamp>_import_invite_duplicates.sql` with the staff-only functions `import_households`, `invite`, and `find_duplicate_households` as specified in `specs/001-guest-data-model/contracts/database-rpc.md`; run `npx supabase test db` until the pgTAP tests above pass
-- [ ] T031 [P] [US1] Implement `src/lib/guests/import.ts` (csv-parse plus zod) so the import tests pass
-- [ ] T032 [US1] Implement `src/lib/guests/household-access.ts` (create or update the household's Auth user with the admin client, set `auth_user_id`, handle uniqueness) so the household-access tests pass
-- [ ] T033 [US1] Implement `src/app/api/guests/import/route.ts` per `contracts/http-endpoints.md`
-- [ ] T034 [P] [US1] Implement `scripts/import-guests.ts` (reads a CSV path argument, calls the same import library, prints counts and row errors, never prints guest names or emails) with a test in `scripts/__tests__/import-guests.test.ts`
-- [ ] T035 [US1] Implement the admin screens `src/app/admin/households/page.tsx` (list, totals per event, search, duplicate warnings), `src/app/admin/households/new/page.tsx`, and `src/app/admin/households/[id]/page.tsx` (edit household, guests, plus-one allowance, per-guest invitations) with server actions in `src/app/admin/households/actions.ts` and components `src/components/admin/household-form.tsx` and `src/components/admin/guest-list.tsx`
-- [ ] T036 [US1] Add the import screen `src/app/admin/import/page.tsx` (upload CSV, show per-row errors) and a link from the households list
-- [ ] T037 [US1] Add a sample import file with fake data at `scripts/sample-guests.csv` and run scenarios 1 and 2 from `specs/001-guest-data-model/quickstart.md` by hand
+- [ ] T032 [US1] Create migration `supabase/migrations/<timestamp>_import_invite_duplicates.sql` with the staff-only functions `import_households`, `invite`, and `find_duplicate_households` as specified in `specs/001-guest-data-model/contracts/database-rpc.md`; run `npx supabase test db` until the pgTAP tests above pass
+- [ ] T033 [P] [US1] Implement `src/lib/guests/import.ts` (csv-parse plus zod) so the import tests pass
+- [ ] T034 [US1] Implement `src/lib/guests/household-access.ts` (create or update the household's Auth user with the admin client, set `auth_user_id`, handle uniqueness) so the household-access tests pass
+- [ ] T035 [US1] Implement `src/app/api/guests/import/route.ts` per `contracts/http-endpoints.md`
+- [ ] T036 [P] [US1] Implement `scripts/import-guests.ts` (reads a CSV path argument, calls the same import library, prints counts and row errors, never prints guest names or emails) with a test in `scripts/__tests__/import-guests.test.ts`
+- [ ] T037 [US1] Implement the admin screens `src/app/admin/households/page.tsx` (list, totals per event, search, duplicate warnings), `src/app/admin/households/new/page.tsx`, and `src/app/admin/households/[id]/page.tsx` (edit household, guests, plus-one allowance, per-guest invitations) with server actions in `src/app/admin/households/actions.ts` and components `src/components/admin/household-form.tsx` and `src/components/admin/guest-list.tsx`
+- [ ] T038 [US1] Add the import screen `src/app/admin/import/page.tsx` (upload CSV, show per-row errors) and a link from the households list
+- [ ] T039 [US1] Add a sample import file with fake data at `scripts/sample-guests.csv` and run scenarios 1 and 2 from `specs/001-guest-data-model/quickstart.md` by hand
 
 **Checkpoint**: User Story 1 works on its own.
 
@@ -99,30 +103,30 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 ## Phase 4: User Story 2 - Guests RSVP for their household (Priority: P1)
 
-**Goal**: A household responder signs in by magic link, sees only their household and its invited events, answers yes or no for each guest and event, names plus-ones, and changes answers until the deadline.
+**Goal**: Through the guest API (no screens), a household responder signs in by magic link, reads only their household and its invited events, answers yes or no for each guest and event, names plus-ones, and changes answers until the deadline. The designer's frontend calls this API.
 
-**Independent Test**: With a seeded household, sign in, answer every invited person and event, save, return later, and see and change the saved answers; another household's data is never visible (spec User Story 2 scenarios 1–5).
+**Independent Test**: With a seeded household, use only the guest API (through `scripts/guest-api-smoke.ts`) to sign in, answer every invited person and event, save, return later, and see and change the saved answers; another household's data is never returned (spec User Story 2 scenarios 1–5).
 
 ### Tests for User Story 2
 
-- [ ] T038 [P] [US2] Write the pgTAP test `supabase/tests/database/210-rsvp-rpc.test.sql` covering `get_my_rsvp()`, `submit_household_rsvp(payload jsonb)` (attendance, dietary categories and notes, `message_to_couple`; meals are added in User Story 3), and `name_plus_one(guest_id, first_name, last_name)`: success; guest of household B using household A's guest or event ids gets `forbidden`; an event the guest is not invited to is `forbidden`; after the effective deadline or when `settings.rsvp_open` is false the call raises `rsvp_closed` and a partly past-deadline payload fails atomically; staff are not bound by the deadline; anon gets `not_a_guest`; `name_plus_one` on a named guest raises `not_a_placeholder`; each status change writes `rsvp_history` and `audit_log` with `actor_kind` `guest`
-- [ ] T039 [P] [US2] Write the pgTAP test `supabase/tests/database/220-staff-rsvp.test.sql` for `staff_set_rsvp(guest_id, event_id, status)`: succeeds after the deadline, records the staff member in `responded_by`, `actor_kind` is `couple` or `planner`, guests get `forbidden`
-- [ ] T040 [P] [US2] Write `src/lib/email/__tests__/verify-hook.test.ts` and `src/app/api/auth/send-email/__tests__/route.test.ts`: a body with a bad or missing Standard Webhooks signature returns 401 with no explanatory body; verification uses the raw body; a `magiclink` payload renders `emails/magic-link` and calls Resend; other action types return 200 without sending; a Resend failure returns 500; nothing in the response reveals whether the address is a known guest
-- [ ] T041 [P] [US2] Write `src/app/rsvp/__tests__/actions.test.ts`: the sign-in action calls `signInWithOtp` with `shouldCreateUser: false` and returns the same neutral message for a known address, an unknown address, and a Supabase error (research R2); it logs only an outcome code
-- [ ] T042 [P] [US2] Write component tests in `src/components/rsvp/__tests__/rsvp-form.test.tsx`: shows only invited events per guest, attendance controls per guest and event, plus-one naming for placeholders, a "deadline passed, please contact us" state with controls disabled, saved answers shown on return, and a household message field
-- [ ] T043 [P] [US2] Write `emails/__tests__/magic-link.test.tsx` rendering the template with a sample link and asserting the link and greeting appear and no other personal data does
+- [ ] T040 [P] [US2] Write the pgTAP test `supabase/tests/database/210-rsvp-rpc.test.sql` covering `get_my_rsvp()`, `submit_household_rsvp(payload jsonb)` (attendance, dietary categories and notes, `message_to_couple`; meals are added in User Story 3), and `name_plus_one(guest_id, first_name, last_name)`: success; guest of household B using household A's guest or event ids gets `forbidden`; an event the guest is not invited to is `forbidden`; after the effective deadline or when `settings.rsvp_open` is false the call raises `rsvp_closed` and a partly past-deadline payload fails atomically; staff are not bound by the deadline; anon gets `not_a_guest`; `name_plus_one` on a named guest raises `not_a_placeholder`; each status change writes `rsvp_history` and `audit_log` with `actor_kind` `guest` Also assert `get_my_rsvp()` returns for every event `is_required`, `group_key`, `display_order`, and the effective deadline, and omits events the guest is not invited to, so a frontend can label optional events without extra queries (FR-029)
+- [ ] T041 [P] [US2] Write the pgTAP test `supabase/tests/database/220-staff-rsvp.test.sql` for `staff_set_rsvp(guest_id, event_id, status)`: succeeds after the deadline, records the staff member in `responded_by`, `actor_kind` is `couple` or `planner`, guests get `forbidden`
+- [ ] T042 [P] [US2] Write `src/lib/email/__tests__/verify-hook.test.ts` and `src/app/api/auth/send-email/__tests__/route.test.ts`: a body with a bad or missing Standard Webhooks signature returns 401 with no explanatory body; verification uses the raw body; a `magiclink` payload renders `emails/magic-link` and calls Resend; other action types return 200 without sending; a Resend failure returns 500; nothing in the response reveals whether the address is a known guest
+- [ ] T043 [P] [US2] Write route tests for the guest API under `src/app/api/guest/` (`sign-in/__tests__/route.test.ts`, `rsvp/__tests__/route.test.ts`, `plus-one/__tests__/route.test.ts`, `sign-out/__tests__/route.test.ts`) per `contracts/guest-api.md`: `POST /api/guest/sign-in` calls `signInWithOtp` with `shouldCreateUser: false` and returns the same 202 and neutral message for a known address, an unknown address, and a Supabase error, logging only an outcome code (research R2); `GET /api/guest/rsvp`, `PUT /api/guest/rsvp`, and `POST /api/guest/plus-one` return 401 when no guest session exists, 403 for another household's ids or a staff session, 409 `rsvp_closed` after the deadline, 422 with zod issue paths for an invalid payload, and the updated RSVP on success
+- [ ] T044 [P] [US2] Write `emails/__tests__/magic-link.test.tsx` rendering the template with a sample link and asserting the link and greeting appear and no other personal data does
 
 ### Implementation for User Story 2
 
-- [ ] T044 [US2] Create migration `supabase/migrations/<timestamp>_rsvp_rpc.sql` with `get_my_rsvp`, `submit_household_rsvp`, `name_plus_one`, and `staff_set_rsvp` as specified in `contracts/database-rpc.md` (security definer, fixed `search_path`, stable error codes `not_a_guest`, `forbidden`, `rsvp_closed`, `not_a_placeholder`; moving a guest to `declined` clears their meal selections for that event once meals exist); run the pgTAP tests until they pass
-- [ ] T045 [P] [US2] Create the React Email template `emails/magic-link.tsx` and its preview props for `npm run email:dev`
-- [ ] T046 [P] [US2] Implement `src/lib/email/resend.ts` (client from `RESEND_API_KEY`, server-only), `src/lib/email/send.ts` (send helper that takes an idempotency key), and `src/lib/email/verify-hook.ts` (Standard Webhooks verification with `SEND_EMAIL_HOOK_SECRET`)
-- [ ] T047 [US2] Implement `src/app/api/auth/send-email/route.ts` per `contracts/http-endpoints.md`
-- [ ] T048 [US2] Add `[auth.hook.send_email]` (enabled, `uri` pointing at the local route, `secrets = "env(SEND_EMAIL_HOOK_SECRET)"`) to `supabase/config.toml`, and document the production hook setup in `docs/` (tracked by the manual-task issue, https://github.com/cmhac/wedding-website/issues/3)
-- [ ] T049 [US2] Implement the guest sign-in page `src/app/rsvp/sign-in/page.tsx` and `src/app/rsvp/actions.ts` (neutral message in all cases), plus the auth callback route `src/app/auth/callback/route.ts`
-- [ ] T050 [US2] Implement the RSVP page `src/app/rsvp/page.tsx` (greeting from the household display name, loads `get_my_rsvp`) and `src/components/rsvp/rsvp-form.tsx`, saving through a server action in `src/app/rsvp/actions.ts` that validates the payload with zod and calls `submit_household_rsvp`
-- [ ] T051 [US2] Add the staff "answer on behalf" control to `src/app/admin/households/[id]/page.tsx` calling `staff_set_rsvp`
-- [ ] T052 [US2] Run scenarios 3, 4, 5 (attendance part), and 6 from `specs/001-guest-data-model/quickstart.md` against the local stack
+- [ ] T045 [US2] Create migration `supabase/migrations/<timestamp>_rsvp_rpc.sql` with `get_my_rsvp`, `submit_household_rsvp`, `name_plus_one`, and `staff_set_rsvp` as specified in `contracts/database-rpc.md` (security definer, fixed `search_path`, stable error codes `not_a_guest`, `forbidden`, `rsvp_closed`, `not_a_placeholder`; moving a guest to `declined` clears their meal selections for that event once meals exist); run the pgTAP tests until they pass
+- [ ] T046 [P] [US2] Create the React Email template `emails/magic-link.tsx` and its preview props for `npm run email:dev`
+- [ ] T047 [P] [US2] Implement `src/lib/email/resend.ts` (client from `RESEND_API_KEY`, server-only), `src/lib/email/send.ts` (send helper that takes an idempotency key), and `src/lib/email/verify-hook.ts` (Standard Webhooks verification with `SEND_EMAIL_HOOK_SECRET`)
+- [ ] T048 [US2] Implement `src/app/api/auth/send-email/route.ts` per `contracts/http-endpoints.md`
+- [ ] T049 [US2] Add `[auth.hook.send_email]` (enabled, `uri` pointing at the local route, `secrets = "env(SEND_EMAIL_HOOK_SECRET)"`) to `supabase/config.toml`, and document the production hook setup in `docs/` (tracked by the manual-task issue, https://github.com/cmhac/wedding-website/issues/3)
+- [ ] T050 [US2] Create `src/lib/guest-api/schemas.ts` (exported zod request and response schemas with inferred types) and `src/lib/guest-api/client.ts` (small typed fetch wrappers the designer's frontend can call), with tests in `src/lib/guest-api/__tests__/schemas.test.ts`; these are plain modules with no React components, pages, or styling
+- [ ] T051 [US2] Implement the guest API route handlers `src/app/api/guest/sign-in/route.ts`, `src/app/api/guest/rsvp/route.ts` (GET and PUT), `src/app/api/guest/plus-one/route.ts`, and `src/app/api/guest/sign-out/route.ts` per `contracts/guest-api.md`, delegating to `get_my_rsvp`, `submit_household_rsvp`, and `name_plus_one`, validating with the schemas from `src/lib/guest-api/schemas.ts`, and mapping database error codes to the HTTP statuses in the contract
+- [ ] T052 [US2] Add the staff "answer on behalf" control to `src/app/admin/households/[id]/page.tsx` calling `staff_set_rsvp`
+- [ ] T053 [US2] Create `scripts/guest-api-smoke.ts`, a command-line client that exercises the guest API end to end against the local stack (request a sign-in link, read the link from local mail capture, complete sign-in, read the RSVP, submit answers, name a plus-one, hit the deadline error) and prints outcomes only, never names or emails; it stands in for the designer's frontend during validation
+- [ ] T054 [US2] Run scenarios 3, 4, 5 (attendance part), and 6 from `specs/001-guest-data-model/quickstart.md` against the local stack using `scripts/guest-api-smoke.ts`
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -136,22 +140,23 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 ### Tests for User Story 3
 
-- [ ] T053 [P] [US3] Write the pgTAP test `supabase/tests/database/310-menus-rls.test.sql`: draft menus are visible only to staff; guests see `published` and `closed` menus only for events they are invited to, with non-archived dishes, tags, and categories; anon sees nothing; guests cannot write menus, courses, dishes, tags, or categories; `menus.event_id` is unique; `dishes` unique (`id`, `course_id`)
-- [ ] T054 [P] [US3] Write the pgTAP test `supabase/tests/database/320-meal-selections.test.sql`: a selection requires an `attending` invitation to the course's event, a `published` menu for guests (staff may write in any status), and a non-archived dish belonging to the course (composite foreign key (`dish_id`, `course_id`)); choosing for a declined or uninvited event is rejected; switching to `declined` removes selections and writes `meal_selection_history` with reason `declined`; `submit_household_rsvp` accepts `meals` and raises `invalid_meal` for the cases above
-- [ ] T055 [P] [US3] Write the pgTAP test `supabase/tests/database/330-dietary-views.test.sql`: `meal_conflicts` flags a `diet` category restriction when the chosen dish lacks the tag and an `allergen` category restriction when the dish has the tag (research R9), `dish_totals` counts only attending guests and shows "not yet chosen", `dietary_list` excludes declining guests and carries severity and notes, views are `security_invoker` and staff-only
-- [ ] T056 [P] [US3] Write the pgTAP test `supabase/tests/database/340-archive-dish.test.sql` for `archive_dish(dish_id)`: returns the affected guests and households, moves selections to `meal_selection_history` with reason `dish_archived`, sets `archived_at`, removes the dish from totals, staff only; and for `staff_set_meal`
-- [ ] T057 [P] [US3] Write component tests `src/components/rsvp/__tests__/meal-choice.test.tsx` and `src/components/rsvp/__tests__/dietary-form.test.tsx` (declined guests are not asked for a dish; choices are disabled while the menu is unpublished or closed; standard categories with allergy or preference; free-text notes) and `src/components/admin/__tests__/menu-editor.test.tsx` (courses, dishes, tags, publish and close, archive confirmation listing affected guests)
+- [ ] T055 [P] [US3] Write the pgTAP test `supabase/tests/database/310-menus-rls.test.sql`: draft menus are visible only to staff; guests see `published` and `closed` menus only for events they are invited to, with non-archived dishes, tags, and categories; anon sees nothing; guests cannot write menus, courses, dishes, tags, or categories; `menus.event_id` is unique; `dishes` unique (`id`, `course_id`)
+- [ ] T056 [P] [US3] Write the pgTAP test `supabase/tests/database/320-meal-selections.test.sql`: a selection requires an `attending` invitation to the course's event, a `published` menu for guests (staff may write in any status), and a non-archived dish belonging to the course (composite foreign key (`dish_id`, `course_id`)); choosing for a declined or uninvited event is rejected; switching to `declined` removes selections and writes `meal_selection_history` with reason `declined`; `submit_household_rsvp` accepts `meals` and raises `invalid_meal` for the cases above
+- [ ] T057 [P] [US3] Write the pgTAP test `supabase/tests/database/330-dietary-views.test.sql`: `meal_conflicts` flags a `diet` category restriction when the chosen dish lacks the tag and an `allergen` category restriction when the dish has the tag (research R9), `dish_totals` counts only attending guests and shows "not yet chosen", `dietary_list` excludes declining guests and carries severity and notes, views are `security_invoker` and staff-only
+- [ ] T058 [P] [US3] Write the pgTAP test `supabase/tests/database/340-archive-dish.test.sql` for `archive_dish(dish_id)`: returns the affected guests and households, moves selections to `meal_selection_history` with reason `dish_archived`, sets `archived_at`, removes the dish from totals, staff only; and for `staff_set_meal`
+- [ ] T059 [P] [US3] Extend the guest API route tests in `src/app/api/guest/rsvp/__tests__/route.test.ts` for meals and dietary: `PUT /api/guest/rsvp` accepts `meals` and `dietary` and maps the database error `invalid_meal` to 422; `GET /api/guest/rsvp` returns published menus (courses, dishes, tags) and the guest's selections only for events they attend, never draft menus or archived dishes; dietary `severity` is `allergy` or `preference`
+- [ ] T060 [P] [US3] Write component tests `src/components/admin/__tests__/menu-editor.test.tsx` for the admin menu editor: courses, dishes, tags, publish and close, archive confirmation listing the affected guests; functional markup only
 
 ### Implementation for User Story 3
 
-- [ ] T058 [US3] Create migration `supabase/migrations/<timestamp>_menus_and_dietary.sql` with `menus` (`event_id` unique, `status` `menu_status`), `courses` (`display_order`, `requires_choice boolean default true`), `dishes` (`archived_at` null, unique (`id`, `course_id`)), `dietary_categories` (`key text PK`, `label`, `kind` `dietary_kind`, `display_order`), `dish_tags` (PK (`dish_id`, `category_key`)), `guest_dietary` (PK (`guest_id`, `category_key`), `severity` `allergy` or `preference`, `details`), `meal_selections` (PK (`guest_id`, `course_id`), composite FK (`dish_id`, `course_id`) → `dishes`, `chosen_at`, `chosen_by`), `meal_selection_history`, the selection-rule trigger, RLS exactly as in data-model.md, and the seeded standard categories (diet: vegetarian, vegan, gluten-free, dairy-free, halal, kosher; allergen: nuts, peanuts, shellfish, eggs, and other common ones)
-- [ ] T059 [US3] Create migration `supabase/migrations/<timestamp>_meal_views_and_rpc.sql` with the views `meal_conflicts`, `dish_totals`, `dietary_list` (all `security_invoker = true`), `archive_dish`, `staff_set_meal`, and an updated `submit_household_rsvp` that accepts `meals` and `dietary` per `contracts/database-rpc.md`; run `npx supabase test db` until the tests above pass
-- [ ] T060 [US3] Extend `supabase/seed.sql` with a ceremony-dinner menu (starter and entrée, three entrées with tags including one containing nuts and one vegetarian) and a rehearsal-dinner menu, and extend `supabase/tests/database/040-seed-sanity.test.sql` accordingly
-- [ ] T061 [US3] Regenerate `src/types/database.ts` with `npm run db:types`
-- [ ] T062 [P] [US3] Implement `src/components/rsvp/meal-choice.tsx` and `src/components/rsvp/dietary-form.tsx` and wire them into `src/components/rsvp/rsvp-form.tsx` and the payload validation in `src/app/rsvp/actions.ts`
-- [ ] T063 [US3] Implement the admin menu editor `src/app/admin/events/[slug]/menu/page.tsx` with `src/components/admin/menu-editor.tsx` and server actions in `src/app/admin/events/[slug]/menu/actions.ts` (create and reorder courses and dishes, tag dishes, publish and close choices, archive a dish and show who must choose again)
-- [ ] T064 [US3] Add a staff view `src/app/admin/dietary/page.tsx` listing restrictions by guest with severity, notes, and conflict flags
-- [ ] T065 [US3] Run scenarios 5 (meal and allergy part) and 11 from `specs/001-guest-data-model/quickstart.md`
+- [ ] T061 [US3] Create migration `supabase/migrations/<timestamp>_menus_and_dietary.sql` with `menus` (`event_id` unique, `status` `menu_status`), `courses` (`display_order`, `requires_choice boolean default true`), `dishes` (`archived_at` null, unique (`id`, `course_id`)), `dietary_categories` (`key text PK`, `label`, `kind` `dietary_kind`, `display_order`), `dish_tags` (PK (`dish_id`, `category_key`)), `guest_dietary` (PK (`guest_id`, `category_key`), `severity` `allergy` or `preference`, `details`), `meal_selections` (PK (`guest_id`, `course_id`), composite FK (`dish_id`, `course_id`) → `dishes`, `chosen_at`, `chosen_by`), `meal_selection_history`, the selection-rule trigger, RLS exactly as in data-model.md, and the seeded standard categories (diet: vegetarian, vegan, gluten-free, dairy-free, halal, kosher; allergen: nuts, peanuts, shellfish, eggs, and other common ones)
+- [ ] T062 [US3] Create migration `supabase/migrations/<timestamp>_meal_views_and_rpc.sql` with the views `meal_conflicts`, `dish_totals`, `dietary_list` (all `security_invoker = true`), `archive_dish`, `staff_set_meal`, and an updated `submit_household_rsvp` that accepts `meals` and `dietary` per `contracts/database-rpc.md`; run `npx supabase test db` until the tests above pass
+- [ ] T063 [US3] Extend `supabase/seed.sql` with a ceremony-dinner menu (starter and entrée, three entrées with tags including one containing nuts and one vegetarian) and a rehearsal-dinner menu, and extend `supabase/tests/database/040-seed-sanity.test.sql` accordingly
+- [ ] T064 [US3] Regenerate `src/types/database.ts` with `npm run db:types`
+- [ ] T065 [US3] Extend `src/lib/guest-api/schemas.ts` and `src/app/api/guest/rsvp/route.ts` with the `meals` and `dietary` fields and error mapping so the route tests pass; update `contracts/guest-api.md` and the guest API client if the shapes differ from the contract
+- [ ] T066 [US3] Implement the admin menu editor `src/app/admin/events/[slug]/menu/page.tsx` with `src/components/admin/menu-editor.tsx` and server actions in `src/app/admin/events/[slug]/menu/actions.ts` (create and reorder courses and dishes, tag dishes, publish and close choices, archive a dish and show who must choose again)
+- [ ] T067 [US3] Add a staff view `src/app/admin/dietary/page.tsx` listing restrictions by guest with severity, notes, and conflict flags
+- [ ] T068 [US3] Run scenarios 5 (meal and allergy part) and 11 from `specs/001-guest-data-model/quickstart.md`
 
 **Checkpoint**: Menus and dietary data work independently of sends and the dashboard.
 
@@ -161,21 +166,19 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 **Goal**: Optional events are invited separately and never make a household count as unresponsive for required events; each has its own counts, menu, and late-invite path.
 
-**Independent Test**: With a seeded list where only some guests are invited to the welcome party and a different subset to the rehearsal, each guest sees only their own optional events, and per-event headcounts are correct and separate (spec User Story 4 scenarios 1–5).
+**Independent Test**: With a seeded list where only some guests are invited to the welcome party and a different subset to the rehearsal, the guest API returns each guest only their own optional events (flagged optional, with their group and order) and per-event headcounts are correct and separate (spec User Story 4 scenarios 1–5). How a frontend labels them is the designer's concern.
 
 ### Tests for User Story 4
 
-- [ ] T066 [P] [US4] Write the pgTAP test `supabase/tests/database/410-household-progress.test.sql` for the view `household_rsvp_progress`: pending required events, pending optional events, and pending meal choices are counted separately; a household that answered every required event but not the welcome party has zero pending required; a rehearsal-only guest (invited to no required event) is handled; the view is `security_invoker` and staff-only
-- [ ] T067 [P] [US4] Write component tests in `src/components/rsvp/__tests__/optional-events.test.tsx`: optional events are labeled optional, events the guest is not invited to never appear, grouped under `group_key`, and the rehearsal shows its own menu
-- [ ] T068 [P] [US4] Write component tests in `src/components/admin/__tests__/event-invitations.test.tsx`: add one guest or household to an event after invitations exist without changing others, and the list shows each event's own invited, attending, declined, and pending counts
+- [ ] T069 [P] [US4] Write the pgTAP test `supabase/tests/database/410-household-progress.test.sql` for the view `household_rsvp_progress`: pending required events, pending optional events, and pending meal choices are counted separately; a household that answered every required event but not the welcome party has zero pending required; a rehearsal-only guest (invited to no required event) is handled; the view is `security_invoker` and staff-only
+- [ ] T070 [P] [US4] Write component tests in `src/components/admin/__tests__/event-invitations.test.tsx`: add one guest or household to an event after invitations exist without changing others, and the list shows each event's own invited, attending, declined, and pending counts
 
 ### Implementation for User Story 4
 
-- [ ] T069 [US4] Create migration `supabase/migrations/<timestamp>_household_progress.sql` with the `household_rsvp_progress` view (`security_invoker = true`) and run the pgTAP test until it passes
-- [ ] T070 [P] [US4] Update `src/components/rsvp/rsvp-form.tsx` to label optional events, group by `group_key`, and order by `display_order`
-- [ ] T071 [US4] Implement `src/app/admin/events/page.tsx` (events with required or optional flag, group, deadline, and counts) and `src/app/admin/events/[slug]/invitations/page.tsx` (invite selected guests or households later through `invite`) with a server action in `src/app/admin/events/[slug]/invitations/actions.ts`
-- [ ] T072 [US4] Add event create and edit forms `src/app/admin/events/[slug]/page.tsx` (name, start time, venue name, required or optional, `group_key`, `rsvp_deadline`, `display_order`)
-- [ ] T073 [US4] Run scenarios 2 and 7 (the progress part) from `specs/001-guest-data-model/quickstart.md`
+- [ ] T071 [US4] Create migration `supabase/migrations/<timestamp>_household_progress.sql` with the `household_rsvp_progress` view (`security_invoker = true`) and run the pgTAP test until it passes
+- [ ] T072 [US4] Implement `src/app/admin/events/page.tsx` (events with required or optional flag, group, deadline, and counts) and `src/app/admin/events/[slug]/invitations/page.tsx` (invite selected guests or households later through `invite`) with a server action in `src/app/admin/events/[slug]/invitations/actions.ts`
+- [ ] T073 [US4] Add event create and edit forms `src/app/admin/events/[slug]/page.tsx` (name, start time, venue name, required or optional, `group_key`, `rsvp_deadline`, `display_order`)
+- [ ] T074 [US4] Run scenarios 2 and 7 (the progress part) from `specs/001-guest-data-model/quickstart.md`
 
 **Checkpoint**: All four P1 stories work together.
 
@@ -189,30 +192,30 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 ### Tests for User Story 5
 
-- [ ] T074 [P] [US5] Write the pgTAP test `supabase/tests/database/510-messaging-rls.test.sql`: `message_types`, `campaigns`, `messages`, and `message_events` are staff-only (anon and guests read and write nothing); unique (`campaign_id`, `household_id`) on `messages`; unique `provider_event_id` on `message_events`; campaign transitions `draft → scheduled → sending → done` and `draft | scheduled → cancelled`, with edits refused once `sending`; deleting a household sets `messages.household_id` and `to_email` to null
-- [ ] T075 [P] [US5] Write the pgTAP test `supabase/tests/database/520-resolve-audience.test.sql` against the seeded list covering every filter in `contracts/audience-filter.md`: `all`, `household`, `invited_to_event`, `required_events_unanswered` (optional events never count), `optional_event_unanswered`, `meals_not_chosen`, `delivery_problem`, combined with AND; output carries `deliverable` and `skip_reason` (`no_email`, `opted_out`); opted-out households are skipped for non-essential types but not for `is_essential` types
-- [ ] T076 [P] [US5] Write the pgTAP test `supabase/tests/database/530-message-events.test.sql` for `claim_campaign_messages` (moves `queued` to `sending`, `for update skip locked`, two concurrent claims never return the same row), `record_message_event` (dedupes by event id; ranking `queued 0 < sending 1 < sent 2 < delivered 3`; `bounced`, `complained`, `failed` terminal and win over ranks 0–3; a late `sent` after `delivered` is ignored; bounce or complaint sets `households.delivery_problem`; changing `contact_email` clears it), `due_scheduled_campaigns`, and that execute is revoked from `anon` and `authenticated` for the service-role-only functions
-- [ ] T077 [P] [US5] Write `src/lib/campaigns/__tests__/audience.test.ts`: the zod schema accepts the documented examples and rejects invalid combinations (`all` with filters, `household` without `household_id`, unknown filter keys)
-- [ ] T078 [P] [US5] Write `src/lib/campaigns/__tests__/dispatch.test.ts` with a mocked Resend client: one `messages` row per household; second run changes nothing; the Resend call carries `Idempotency-Key` equal to the message id; no-email households are skipped and counted; opted-out households skipped for non-essential types; Resend failure marks the message `failed` with an error code and continues; campaign ends `done` when no `queued` messages remain; response shape `{ campaign_id, queued, sent, skipped: { no_email, opted_out, other }, failed }`
-- [ ] T079 [P] [US5] Write route tests `src/app/api/campaigns/[id]/send/__tests__/route.test.ts` (staff only, 409 unless `draft` or `scheduled`, retry-safe), `src/app/api/internal/dispatch-scheduled/__tests__/route.test.ts` (401 without the exact bearer `CRON_SECRET`, constant-time comparison, runs due campaigns, updates `settings.last_dispatch_at`), and `src/app/api/webhooks/resend/__tests__/route.test.ts` (400 on a bad signature using the raw body, duplicate `svix-id` returns 200 with no change, out-of-order events never regress status, unknown message ids return 200, unhandled event types return 200)
-- [ ] T080 [P] [US5] Write render tests for `emails/save-the-date.tsx`, `emails/invitation.tsx`, `emails/rsvp-reminder.tsx`, `emails/optional-events-reminder.tsx`, and `emails/update.tsx` in `emails/__tests__/` (greeting from household display name, link to the RSVP page, no other personal data)
-- [ ] T081 [P] [US5] Write tests for the reminder opt-out: pgTAP `supabase/tests/database/540-opt-out.test.sql` for `set_reminders_opt_out(opt_out boolean)` (a guest changes only their own household; anon `not_a_guest`) and a component test in `src/components/rsvp/__tests__/opt-out.test.tsx`
-- [ ] T082 [P] [US5] Write component tests in `src/components/admin/__tests__/campaign-form.test.tsx` and `src/components/admin/__tests__/campaign-status.test.tsx`: choose type and audience, preview shows deliverable count and the list of households needing a paper invitation, schedule or send now, cancel before sending, per-household status with delivery problems highlighted
+- [ ] T075 [P] [US5] Write the pgTAP test `supabase/tests/database/510-messaging-rls.test.sql`: `message_types`, `campaigns`, `messages`, and `message_events` are staff-only (anon and guests read and write nothing); unique (`campaign_id`, `household_id`) on `messages`; unique `provider_event_id` on `message_events`; campaign transitions `draft → scheduled → sending → done` and `draft | scheduled → cancelled`, with edits refused once `sending`; deleting a household sets `messages.household_id` and `to_email` to null
+- [ ] T076 [P] [US5] Write the pgTAP test `supabase/tests/database/520-resolve-audience.test.sql` against the seeded list covering every filter in `contracts/audience-filter.md`: `all`, `household`, `invited_to_event`, `required_events_unanswered` (optional events never count), `optional_event_unanswered`, `meals_not_chosen`, `delivery_problem`, combined with AND; output carries `deliverable` and `skip_reason` (`no_email`, `opted_out`); opted-out households are skipped for non-essential types but not for `is_essential` types
+- [ ] T077 [P] [US5] Write the pgTAP test `supabase/tests/database/530-message-events.test.sql` for `claim_campaign_messages` (moves `queued` to `sending`, `for update skip locked`, two concurrent claims never return the same row), `record_message_event` (dedupes by event id; ranking `queued 0 < sending 1 < sent 2 < delivered 3`; `bounced`, `complained`, `failed` terminal and win over ranks 0–3; a late `sent` after `delivered` is ignored; bounce or complaint sets `households.delivery_problem`; changing `contact_email` clears it), `due_scheduled_campaigns`, and that execute is revoked from `anon` and `authenticated` for the service-role-only functions
+- [ ] T078 [P] [US5] Write `src/lib/campaigns/__tests__/audience.test.ts`: the zod schema accepts the documented examples and rejects invalid combinations (`all` with filters, `household` without `household_id`, unknown filter keys)
+- [ ] T079 [P] [US5] Write `src/lib/campaigns/__tests__/dispatch.test.ts` with a mocked Resend client: one `messages` row per household; second run changes nothing; the Resend call carries `Idempotency-Key` equal to the message id; no-email households are skipped and counted; opted-out households skipped for non-essential types; Resend failure marks the message `failed` with an error code and continues; campaign ends `done` when no `queued` messages remain; response shape `{ campaign_id, queued, sent, skipped: { no_email, opted_out, other }, failed }`
+- [ ] T080 [P] [US5] Write route tests `src/app/api/campaigns/[id]/send/__tests__/route.test.ts` (staff only, 409 unless `draft` or `scheduled`, retry-safe), `src/app/api/internal/dispatch-scheduled/__tests__/route.test.ts` (401 without the exact bearer `CRON_SECRET`, constant-time comparison, runs due campaigns, updates `settings.last_dispatch_at`), and `src/app/api/webhooks/resend/__tests__/route.test.ts` (400 on a bad signature using the raw body, duplicate `svix-id` returns 200 with no change, out-of-order events never regress status, unknown message ids return 200, unhandled event types return 200)
+- [ ] T081 [P] [US5] Write render tests for `emails/save-the-date.tsx`, `emails/invitation.tsx`, `emails/rsvp-reminder.tsx`, `emails/optional-events-reminder.tsx`, and `emails/update.tsx` in `emails/__tests__/` (greeting from household display name, link to the RSVP page, no other personal data)
+- [ ] T082 [P] [US5] Write tests for the reminder opt-out: pgTAP `supabase/tests/database/540-opt-out.test.sql` for `set_reminders_opt_out(opt_out boolean)` (a guest changes only their own household; anon gets `not_a_guest`) and a route test in `src/app/api/guest/opt-out/__tests__/route.test.ts` for `POST /api/guest/opt-out` (401 without a guest session, 422 for a non-boolean, 200 with the new value)
+- [ ] T083 [P] [US5] Write component tests in `src/components/admin/__tests__/campaign-form.test.tsx` and `src/components/admin/__tests__/campaign-status.test.tsx`: choose type and audience, preview shows deliverable count and the list of households needing a paper invitation, schedule or send now, cancel before sending, per-household status with delivery problems highlighted
 
 ### Implementation for User Story 5
 
-- [ ] T083 [US5] Create migration `supabase/migrations/<timestamp>_messaging.sql` with `message_types` (`key` PK, `label`, `is_essential`, `template_key`; seeded: `save_the_date`, `invitation`, `rsvp_reminder`, `optional_events_reminder`, `update`), `campaigns` (`audience jsonb not null`, `status` `campaign_status`, `scheduled_for`), `messages` (unique (`campaign_id`, `household_id`), `to_email` citext snapshot, `status` `message_status`, `skip_reason`, `provider_message_id` unique null), `message_events` (`provider_event_id` unique, no payload body), the transition trigger, audit triggers on `campaigns`, and staff-only RLS
-- [ ] T084 [US5] Create migration `supabase/migrations/<timestamp>_messaging_rpc.sql` with `resolve_audience`, `claim_campaign_messages`, `record_message_event`, `due_scheduled_campaigns`, and `set_reminders_opt_out`, revoking execute on the service-role-only functions from `anon` and `authenticated`; run `npx supabase test db` until the tests above pass
-- [ ] T085 [US5] Add `set_reminders_opt_out(opt_out boolean)` (guest-facing, changes only the caller's household) to `specs/001-guest-data-model/contracts/database-rpc.md`, which the contract omitted
-- [ ] T086 [US5] Regenerate `src/types/database.ts` with `npm run db:types`
-- [ ] T087 [P] [US5] Implement `src/lib/campaigns/audience.ts` (zod schema from `contracts/audience-filter.md`) and `src/lib/campaigns/status.ts` (status ranking shared with the webhook handler)
-- [ ] T088 [P] [US5] Create the React Email templates `emails/save-the-date.tsx`, `emails/invitation.tsx`, `emails/rsvp-reminder.tsx`, `emails/optional-events-reminder.tsx`, and `emails/update.tsx`, with a template registry in `emails/index.ts` keyed by `message_types.template_key`
-- [ ] T089 [US5] Implement `src/lib/campaigns/dispatch.ts` (queue messages through the unique constraint, claim batches, send with the idempotency key, record results) so the dispatch tests pass
-- [ ] T090 [US5] Implement `src/app/api/campaigns/[id]/send/route.ts`, `src/app/api/internal/dispatch-scheduled/route.ts`, and `src/app/api/webhooks/resend/route.ts` per `contracts/http-endpoints.md`; before relying on the webhook handler, check Resend's current event reference for the event type names `email.sent`, `email.delivered`, `email.bounced`, and `email.complained` and record the result in a comment in the route file
-- [ ] T091 [US5] Create migration `supabase/migrations/<timestamp>_cron_jobs.sql` enabling `pg_cron` and `pg_net` and scheduling `dispatch-scheduled` every 5 minutes with the site URL and `CRON_SECRET` read from Supabase Vault; guard so the job is skipped when the secrets are absent (local development)
-- [ ] T092 [US5] Implement the admin campaigns screens `src/app/admin/campaigns/page.tsx`, `src/app/admin/campaigns/new/page.tsx`, and `src/app/admin/campaigns/[id]/page.tsx` with `src/components/admin/campaign-form.tsx` and `src/components/admin/campaign-status.tsx`, server actions in `src/app/admin/campaigns/actions.ts`
-- [ ] T093 [US5] Add the "don't send me reminders" toggle to `src/components/rsvp/rsvp-form.tsx` calling `set_reminders_opt_out`
-- [ ] T094 [US5] Run scenarios 7 to 10 from `specs/001-guest-data-model/quickstart.md`, sending to local mail capture and posting signed test webhook payloads
+- [ ] T084 [US5] Create migration `supabase/migrations/<timestamp>_messaging.sql` with `message_types` (`key` PK, `label`, `is_essential`, `template_key`; seeded: `save_the_date`, `invitation`, `rsvp_reminder`, `optional_events_reminder`, `update`), `campaigns` (`audience jsonb not null`, `status` `campaign_status`, `scheduled_for`), `messages` (unique (`campaign_id`, `household_id`), `to_email` citext snapshot, `status` `message_status`, `skip_reason`, `provider_message_id` unique null), `message_events` (`provider_event_id` unique, no payload body), the transition trigger, audit triggers on `campaigns`, and staff-only RLS
+- [ ] T085 [US5] Create migration `supabase/migrations/<timestamp>_messaging_rpc.sql` with `resolve_audience`, `claim_campaign_messages`, `record_message_event`, `due_scheduled_campaigns`, and `set_reminders_opt_out`, revoking execute on the service-role-only functions from `anon` and `authenticated`; run `npx supabase test db` until the tests above pass
+- [ ] T086 [US5] Add `set_reminders_opt_out(opt_out boolean)` (guest-facing, changes only the caller's household) to `specs/001-guest-data-model/contracts/database-rpc.md`, which the contract omitted, and the matching endpoint to `contracts/guest-api.md`
+- [ ] T087 [US5] Regenerate `src/types/database.ts` with `npm run db:types`
+- [ ] T088 [P] [US5] Implement `src/lib/campaigns/audience.ts` (zod schema from `contracts/audience-filter.md`) and `src/lib/campaigns/status.ts` (status ranking shared with the webhook handler)
+- [ ] T089 [P] [US5] Create the React Email templates `emails/save-the-date.tsx`, `emails/invitation.tsx`, `emails/rsvp-reminder.tsx`, `emails/optional-events-reminder.tsx`, and `emails/update.tsx`, with a template registry in `emails/index.ts` keyed by `message_types.template_key`
+- [ ] T090 [US5] Implement `src/lib/campaigns/dispatch.ts` (queue messages through the unique constraint, claim batches, send with the idempotency key, record results) so the dispatch tests pass
+- [ ] T091 [US5] Implement `src/app/api/campaigns/[id]/send/route.ts`, `src/app/api/internal/dispatch-scheduled/route.ts`, and `src/app/api/webhooks/resend/route.ts` per `contracts/http-endpoints.md`; before relying on the webhook handler, check Resend's current event reference for the event type names `email.sent`, `email.delivered`, `email.bounced`, and `email.complained` and record the result in a comment in the route file
+- [ ] T092 [US5] Create migration `supabase/migrations/<timestamp>_cron_jobs.sql` enabling `pg_cron` and `pg_net` and scheduling `dispatch-scheduled` every 5 minutes with the site URL and `CRON_SECRET` read from Supabase Vault; guard so the job is skipped when the secrets are absent (local development)
+- [ ] T093 [US5] Implement the admin campaigns screens `src/app/admin/campaigns/page.tsx`, `src/app/admin/campaigns/new/page.tsx`, and `src/app/admin/campaigns/[id]/page.tsx` with `src/components/admin/campaign-form.tsx` and `src/components/admin/campaign-status.tsx`, server actions in `src/app/admin/campaigns/actions.ts`
+- [ ] T094 [US5] Implement `src/app/api/guest/opt-out/route.ts` (`POST /api/guest/opt-out`, body `{ "opt_out": boolean }`) calling `set_reminders_opt_out`, and add it to `src/lib/guest-api/schemas.ts` and `src/lib/guest-api/client.ts`
+- [ ] T095 [US5] Run scenarios 7 to 10 from `specs/001-guest-data-model/quickstart.md`, sending to local mail capture and posting signed test webhook payloads
 
 **Checkpoint**: Sends are idempotent and delivery status tracks correctly.
 
@@ -226,17 +229,17 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 ### Tests for User Story 6
 
-- [ ] T095 [P] [US6] Write the pgTAP test `supabase/tests/database/610-event-counts.test.sql` for the view `event_counts` (invited, attending, declined, pending per event, counts equal a hand-computed total from the seed, `security_invoker`, staff only) and that counts change immediately when an answer changes
-- [ ] T096 [P] [US6] Write `src/lib/exports/__tests__/csv.test.ts`: header row, one row per guest per event for `guests` and `responses`, the `caterer` export with per-dish totals and restrictions (attending only) and `meal_conflicts`, and spreadsheet-safe quoting (cells starting with `=`, `+`, `-`, or `@` are prefixed to prevent formula injection)
-- [ ] T097 [P] [US6] Write `src/app/api/exports/[kind]/__tests__/route.test.ts`: non-staff gets 403, unknown kind gets 404, valid kinds return CSV with the correct content type and a download filename
-- [ ] T098 [P] [US6] Write component tests `src/components/admin/__tests__/dashboard.test.tsx`: per-event counts, meal and dietary totals, households needing follow-up, and last scheduled dispatch time
+- [ ] T096 [P] [US6] Write the pgTAP test `supabase/tests/database/610-event-counts.test.sql` for the view `event_counts` (invited, attending, declined, pending per event, counts equal a hand-computed total from the seed, `security_invoker`, staff only) and that counts change immediately when an answer changes
+- [ ] T097 [P] [US6] Write `src/lib/exports/__tests__/csv.test.ts`: header row, one row per guest per event for `guests` and `responses`, the `caterer` export with per-dish totals and restrictions (attending only) and `meal_conflicts`, and spreadsheet-safe quoting (cells starting with `=`, `+`, `-`, or `@` are prefixed to prevent formula injection)
+- [ ] T098 [P] [US6] Write `src/app/api/exports/[kind]/__tests__/route.test.ts`: non-staff gets 403, unknown kind gets 404, valid kinds return CSV with the correct content type and a download filename
+- [ ] T099 [P] [US6] Write component tests `src/components/admin/__tests__/dashboard.test.tsx`: per-event counts, meal and dietary totals, households needing follow-up, and last scheduled dispatch time
 
 ### Implementation for User Story 6
 
-- [ ] T099 [US6] Create migration `supabase/migrations/<timestamp>_event_counts.sql` with the `event_counts` view (`security_invoker = true`) and run the pgTAP test until it passes
-- [ ] T100 [P] [US6] Implement `src/lib/exports/csv.ts` (builders and safe quoting) and `src/app/api/exports/[kind]/route.ts` for `guests`, `responses`, and `caterer`
-- [ ] T101 [US6] Implement the dashboard `src/app/admin/page.tsx` and `src/components/admin/dashboard.tsx` using `event_counts`, `dish_totals`, `dietary_list`, `household_rsvp_progress`, and households with `delivery_problem`, with download buttons for each export
-- [ ] T102 [US6] Run scenario 14 from `specs/001-guest-data-model/quickstart.md`, comparing the dashboard and the caterer export with a manual count of the seeded answers
+- [ ] T100 [US6] Create migration `supabase/migrations/<timestamp>_event_counts.sql` with the `event_counts` view (`security_invoker = true`) and run the pgTAP test until it passes
+- [ ] T101 [P] [US6] Implement `src/lib/exports/csv.ts` (builders and safe quoting) and `src/app/api/exports/[kind]/route.ts` for `guests`, `responses`, and `caterer`
+- [ ] T102 [US6] Implement the dashboard `src/app/admin/page.tsx` and `src/components/admin/dashboard.tsx` using `event_counts`, `dish_totals`, `dietary_list`, `household_rsvp_progress`, and households with `delivery_problem`, with download buttons for each export
+- [ ] T103 [US6] Run scenario 14 from `specs/001-guest-data-model/quickstart.md`, comparing the dashboard and the caterer export with a manual count of the seeded answers
 
 **Checkpoint**: Dashboard and exports match the underlying data.
 
@@ -250,50 +253,52 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 ### Tests for User Story 7
 
-- [ ] T103 [P] [US7] Write the pgTAP test `supabase/tests/database/710-planner.test.sql`: a `planner` can read and write every table a `couple` user can except `staff`; a `planner` cannot insert, update, or delete `staff` rows, cannot demote a couple member, and cannot remove the last `couple` row; changes made by the planner show `actor_kind = 'planner'` in `audit_log`, `rsvp_history`, and `responded_by`; after the couple delete the planner's `staff` row the planner's next query returns no staff-only data and staff RPCs raise `forbidden`
-- [ ] T104 [P] [US7] Write component tests in `src/components/admin/__tests__/staff-access.test.tsx` and `src/app/admin/staff/__tests__/actions.test.ts`: only couple members see add and revoke controls, a planner sees the list without them, revoking calls the server action and the list updates, and the last couple member cannot be removed
+- [ ] T104 [P] [US7] Write the pgTAP test `supabase/tests/database/710-planner.test.sql`: a `planner` can read and write every table a `couple` user can except `staff`; a `planner` cannot insert, update, or delete `staff` rows, cannot demote a couple member, and cannot remove the last `couple` row; changes made by the planner show `actor_kind = 'planner'` in `audit_log`, `rsvp_history`, and `responded_by`; after the couple delete the planner's `staff` row the planner's next query returns no staff-only data and staff RPCs raise `forbidden`
+- [ ] T105 [P] [US7] Write component tests in `src/components/admin/__tests__/staff-access.test.tsx` and `src/app/admin/staff/__tests__/actions.test.ts`: only couple members see add and revoke controls, a planner sees the list without them, revoking calls the server action and the list updates, and the last couple member cannot be removed
 
 ### Implementation for User Story 7
 
-- [ ] T105 [US7] Implement `src/app/admin/staff/page.tsx`, `src/components/admin/staff-access.tsx`, and `src/app/admin/staff/actions.ts` (grant planner access by creating the Auth user through the admin client and inserting the `staff` row; revoke by deleting it; both require a `couple` session)
-- [ ] T106 [US7] Show the acting staff member's name in the audit trail view `src/app/admin/activity/page.tsx` (read `audit_log` and `rsvp_history`, display `actor_kind` and the staff `display_name`; no guest values)
-- [ ] T107 [US7] Run scenarios 12 and 13 from `specs/001-guest-data-model/quickstart.md`
+- [ ] T106 [US7] Implement `src/app/admin/staff/page.tsx`, `src/components/admin/staff-access.tsx`, and `src/app/admin/staff/actions.ts` (grant planner access by creating the Auth user through the admin client and inserting the `staff` row; revoke by deleting it; both require a `couple` session)
+- [ ] T107 [US7] Show the acting staff member's name in the audit trail view `src/app/admin/activity/page.tsx` (read `audit_log` and `rsvp_history`, display `actor_kind` and the staff `display_name`; no guest values)
+- [ ] T108 [US7] Run scenarios 12 and 13 from `specs/001-guest-data-model/quickstart.md`
 
 **Checkpoint**: Planner access works and cannot lock out the couple.
 
 ---
 
-## Phase 10: User Story 8 - Public website content stays in the code (Priority: P3)
+## Phase 10: User Story 8 - Designer handoff, public site out of scope (Priority: P3)
 
-**Goal**: Public pages render for anyone, with no sign-in and no database, with hard-coded text.
+**Goal**: The designer's frontend can use the guest API without help from us, and nothing in this repository builds or styles the public site.
 
-**Independent Test**: Public pages render with the database empty or unavailable, and the RSVP page works only for recognized guests (spec User Story 8 scenarios 1–2).
+**Independent Test**: A client that uses only the published guest API documentation completes sign-in and an RSVP against the local stack, with no screens from this repository involved (spec User Story 8 scenarios 1–2).
+
+**Scope guardrail**: No task in this feature creates a public page, a guest-facing screen, a layout, navigation, theme, or any visual design. If a request seems to need one, stop and ask.
 
 ### Tests for User Story 8
 
-- [ ] T108 [P] [US8] Write `src/app/__tests__/public-pages.test.tsx` rendering each public page (home, details, schedule, travel, registry, FAQ) with the Supabase clients mocked to throw, asserting the page still renders its hard-coded text
-- [ ] T109 [P] [US8] Write `src/app/__tests__/public-isolation.test.ts` asserting no module under `src/app/(public)` imports from `src/lib/supabase` or `src/lib/email` (FR-025, SC-007)
+- [ ] T109 [P] [US8] Write `src/lib/guest-api/__tests__/contract.test.ts` asserting that every guest API route's success and error responses parse against the exported response schemas, and that the endpoint table in `contracts/guest-api.md` lists exactly the route handlers that exist under `src/app/api/guest/` so the documentation cannot drift
+- [ ] T110 [P] [US8] Write `src/app/api/guest/__tests__/no-staff-leak.test.ts` asserting that no guest API response contains `notes`, `address`, other households' ids, draft menus, `messages`, or audit data (FR-011, SC-003)
 
 ### Implementation for User Story 8
 
-- [ ] T110 [US8] Create the hard-coded pages `src/app/(public)/page.tsx`, `src/app/(public)/details/page.tsx`, `src/app/(public)/schedule/page.tsx`, `src/app/(public)/travel/page.tsx`, `src/app/(public)/registry/page.tsx`, and `src/app/(public)/faq/page.tsx`, with a shared layout and navigation in `src/app/(public)/layout.tsx` and `src/components/site-nav.tsx` (replace any default Next.js starter page at `src/app/page.tsx`); the couple supply the real text, so use clearly marked placeholder copy
-- [ ] T111 [US8] Add an RSVP call-to-action linking to `/rsvp` in `src/app/(public)/page.tsx`
-- [ ] T112 [US8] Run scenario 15 from `specs/001-guest-data-model/quickstart.md` with the local database stopped
+- [ ] T111 [US8] Publish the handoff document `docs/guest-api.md` for the designer, generated from `contracts/guest-api.md`: endpoints and payloads, the sign-in flow and the neutral-message behavior, session cookies and the same-origin assumption, error codes and statuses, the post-sign-in redirect path (`/rsvp`), example `fetch` calls using `src/lib/guest-api/client.ts`, and a plain statement that no UI is provided
+- [ ] T112 [US8] Confirm the "Scope" section in `CLAUDE.md` (added with this plan) is still accurate and link `docs/guest-api.md` from it
+- [ ] T113 [US8] Run scenario 15 from `specs/001-guest-data-model/quickstart.md`: the full guest API flow through `scripts/guest-api-smoke.ts` with the database-backed admin screens unused, then confirm no page or layout was added under `src/app` outside `admin`, `api`, and `auth`
 
-**Checkpoint**: All user stories work independently.
+**Checkpoint**: The designer can build against `docs/guest-api.md`.
 
 ---
 
 ## Phase 11: Polish & Cross-Cutting Concerns
 
-- [ ] T113 Write the cross-cutting pgTAP test `supabase/tests/database/900-rls-coverage.test.sql` asserting that every table in the `public` schema has row-level security enabled and at least one policy, and that no table grants any privilege to `anon`
-- [ ] T114 [P] Search the repository for logging of guest data: confirm no `console.*` calls under `src/` and `scripts/` outside `src/lib/log.ts`, and add an ESLint `no-console` rule to `eslint.config.mjs` with an exception for `src/lib/log.ts`
-- [ ] T115 [P] Update `CLAUDE.md` (Commands: `test:db`; Layout: `src/app/admin`, `src/app/rsvp`, `src/lib/campaigns`, `src/lib/guests`, `src/lib/exports`, `supabase/tests`) and `README.md` in the same change as the behavior (Constitution workflow)
-- [ ] T116 [P] Document in `docs/` the final state of every manual setting from the manual-task issue (https://github.com/cmhac/wedding-website/issues/3): Resend domain and webhook, Supabase auth hook and sign-up setting, Vault secrets, hosting variables
-- [ ] T117 Once the couple confirm the proposals, change the status line in `docs/decisions/0002` through `0008` from "proposed" to "accepted" with the date, and update `docs/architecture.md`
-- [ ] T118 Run every scenario in `specs/001-guest-data-model/quickstart.md` end to end against the local stack and record any deviation in `specs/001-guest-data-model/quickstart.md`
-- [ ] T119 Run the `/security-review` skill on the branch and fix any findings, paying particular attention to the guest sign-in neutral message, the webhook and cron endpoints, the service-role key boundary, and CSV formula injection
-- [ ] T120 Final gate: `npm run format:check && npm run lint && npm run type-check && npm test && npx supabase test db && npm run build` all pass
+- [ ] T114 Write the cross-cutting pgTAP test `supabase/tests/database/900-rls-coverage.test.sql` asserting that every table in the `public` schema has row-level security enabled and at least one policy, and that no table grants any privilege to `anon`
+- [ ] T115 [P] Search the repository for logging of guest data: confirm no `console.*` calls under `src/` and `scripts/` outside `src/lib/log.ts`, and add an ESLint `no-console` rule to `eslint.config.mjs` with an exception for `src/lib/log.ts`
+- [ ] T116 [P] Update `CLAUDE.md` (Commands: `test:db`; Layout: `src/app/admin`, `src/app/api/guest`, `src/lib/guest-api`, `src/lib/campaigns`, `src/lib/guests`, `src/lib/exports`, `supabase/tests`) and `README.md` in the same change as the behavior (Constitution workflow)
+- [ ] T117 [P] Document in `docs/` the final state of every manual setting from the manual-task issue (https://github.com/cmhac/wedding-website/issues/3): Resend domain and webhook, Supabase auth hook and sign-up setting, Vault secrets, hosting variables
+- [ ] T118 Once the couple confirm the proposals, change the status line in `docs/decisions/0002` through `0008` from "proposed" to "accepted" with the date, and update `docs/architecture.md`
+- [ ] T119 Run every scenario in `specs/001-guest-data-model/quickstart.md` end to end against the local stack and record any deviation in `specs/001-guest-data-model/quickstart.md`
+- [ ] T120 Run the `/security-review` skill on the branch and fix any findings, paying particular attention to the guest sign-in neutral message, the webhook and cron endpoints, the service-role key boundary, and CSV formula injection
+- [ ] T121 Final gate: `npm run format:check && npm run lint && npm run type-check && npm test && npx supabase test db && npm run build` all pass
 
 ---
 
@@ -310,12 +315,12 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 - **US1**: needs only Foundational. It is the MVP.
 - **US2**: needs Foundational; reads the guests and invitations US1 creates, but can be tested with seed data.
-- **US3**: needs Foundational and, for the guest meal UI, the RSVP form from US2.
-- **US4**: needs Foundational; its guest-facing labels extend the RSVP form from US2.
+- **US3**: needs Foundational and the guest API from US2 (it extends the same RSVP endpoints).
+- **US4**: needs Foundational; it extends what the guest API returns from US2 and adds admin screens.
 - **US5**: needs Foundational; audience filters use the views from US3 and US4 (`household_rsvp_progress`, meal state), so build it after those.
 - **US6**: needs US3 (meal views) and US4 (progress view).
 - **US7**: needs Foundational (staff table and policies already exist); can run any time after, and is easiest to verify once US1 and US5 exist.
-- **US8**: independent; may run in parallel with anything.
+- **US8**: needs the guest API from US2 to US5 to document; the contract test and handoff document can be drafted earlier and finished last.
 
 ### Within each story
 
@@ -329,18 +334,17 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: `src/app`, `
 
 - Tasks marked [P] touch different files and can run together.
 - All test-writing tasks within a story are [P].
-- US8 can proceed alongside any other story by a second person or agent.
-- After US2, the US3 and US4 UI work can proceed in parallel since they touch different components.
+- After US2, the US3 and US4 admin screens can proceed in parallel since they touch different files.
 
 ### Parallel example: User Story 1 tests
 
 ```text
-T024 import and duplicates pgTAP test
-T025 invite pgTAP test
-T026 import parser Jest test
-T027 household access Jest test
-T028 import route test
-T029 household form and guest list component tests
+T026 import and duplicates pgTAP test
+T027 invite pgTAP test
+T028 import parser Jest test
+T029 household access Jest test
+T030 import route test
+T031 household form and guest list component tests
 ```
 
 ## Implementation Strategy
@@ -354,11 +358,11 @@ T029 household form and guest list component tests
 ### Incremental delivery
 
 1. Foundation → US1: the list.
-2. US2: guests respond.
+2. US2: guests respond (through the guest API; the designer builds the screens).
 3. US3 and US4: meals and optional events.
 4. US5: sends (needs the manual Resend and Supabase setup in issue #3 before anything real is sent).
 5. US6 and US7: dashboard and planner.
-6. US8: public pages, any time.
+6. US8: designer handoff (guest API document and contract test), once the guest API is complete.
 
 ### Notes
 

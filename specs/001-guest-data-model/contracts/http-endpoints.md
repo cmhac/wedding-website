@@ -11,14 +11,14 @@ All handlers run on the server, read secrets only from server environment variab
 | `POST /api/guests/import`               | Staff browser                     | Signed-in staff session                                | CSV import with per-row errors                    |
 | `GET /api/exports/[kind]`               | Staff browser                     | Signed-in staff session                                | `guests`, `responses`, `caterer` as CSV           |
 
-Guest sign-in and RSVP use a server action and the RPCs in [database-rpc.md](./database-rpc.md), not public endpoints.
+Guest-facing endpoints (sign-in, RSVP, plus-one, opt-out) are specified in [guest-api.md](./guest-api.md) and use the RPCs in [database-rpc.md](./database-rpc.md).
 
 ## `POST /api/auth/send-email`
 
 - Verify the Standard Webhooks signature over the **raw** body. Reject with 401 on failure, without a body that explains why.
 - Payload is Supabase's hook payload (user email, token data, action type). Only `magiclink` is expected; other types return 200 with no send.
 - Renders `emails/magic-link` and sends with Resend. On Resend failure return 500 so Supabase surfaces an error to the sign-in action.
-- Never echoes whether the address is a known guest. The sign-in server action shows one neutral message either way.
+- Never echoes whether the address is a known guest. The sign-in endpoints (`POST /api/guest/sign-in` and the staff sign-in) return one neutral message either way.
 
 ## `POST /api/webhooks/resend`
 

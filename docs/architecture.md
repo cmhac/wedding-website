@@ -6,7 +6,7 @@ proposes answers to all seven open decisions below.
 
 ## Goals
 
-- Public wedding website (details, schedule, travel, registry, etc.)
+- Public wedding website (details, schedule, travel, registry, etc.), designed and built by the couple's designer. This repository covers the backend, the admin area, and a guest API the designer's frontend calls; it builds no public or guest-facing screens
 - RSVP management for guests, and an admin view for Chris and Hannah
 - Guest communications (invitations, reminders, updates) by email
 - Magic-link sign-in for everyone: the couple (admin) and guests

@@ -13,7 +13,7 @@ email would let strangers create accounts.
 Consequences:
 
 - Contact emails are unique across households; two households cannot share one.
-- The sign-in action shows the same neutral message whether or not the address
+- The sign-in endpoint returns the same neutral message whether or not the address
   is on the guest list, because an unregistered address returns an error that
   would otherwise reveal list membership.
 

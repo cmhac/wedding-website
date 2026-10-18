@@ -27,7 +27,7 @@ Conventions: `id uuid primary key default gen_random_uuid()`, `created_at`/`upda
 | audit log, history tables                          | none | none                                | read                                           |
 | staff, settings                                    | none | none (read deadline through an RPC) | `staff` rows: couple only; settings: all staff |
 
-There are no anonymous reads of any table. Public pages contain only hard-coded text.
+There are no anonymous reads of any table. Guests reach their data only through the guest API in [guest-api.md](./contracts/guest-api.md).
 
 ## Entities
 

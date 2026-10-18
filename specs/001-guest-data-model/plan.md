@@ -6,7 +6,7 @@
 
 ## Summary
 
-Build the database, access rules, server logic, and email pipeline behind the guest list, per-event invitations, RSVPs, menus and dietary needs, and invitation/reminder sends. Public pages stay hard-coded.
+Build the database, access rules, server logic, email pipeline, and admin area behind the guest list, per-event invitations, RSVPs, menus and dietary needs, and invitation/reminder sends. **Scope: backend and admin only.** The couple's designer builds the public site and every guest-facing screen; this plan builds none of them and instead provides a documented guest API for the designer's frontend to call.
 
 The approach: one Postgres schema in Supabase, with row-level security as the access control. Guests are pre-created Supabase Auth users (one per household, signing in by magic link). Staff (Chris, Hannah, the planner) are Auth users listed in a `staff` table. Guests write only through `SECURITY DEFINER` functions that enforce deadlines. All email sending, scheduled dispatch, and Resend webhooks run as Next.js route handlers, so templates, send logic, and tests share one runtime. There are no Edge Functions. This plan resolves the open decisions in `docs/architecture.md` (recorded as proposed in `docs/decisions/`).
 
@@ -28,7 +28,7 @@ The approach: one Postgres schema in Supabase, with row-level security as the ac
 
 **Constraints**: Guest data never logged. Secrets server-only. Sends are idempotent. Resend webhooks are at-least-once and may arrive out of order. The auth email rate limit applies unless custom SMTP or the auth email hook is configured.
 
-**Scale/Scope**: ~10 tables of core data, ~6 supporting tables, ~8 RPCs, 5 route handlers, 4 email templates (invitation, save-the-date, reminder, update), plus the magic-link auth email.
+**Scale/Scope**: ~10 tables of core data, ~6 supporting tables, ~8 RPCs, 6 admin and internal route handlers, 7 guest API endpoints, 5 email templates (save-the-date, invitation, two reminders, update) plus the magic-link auth email. Admin screens are functional only, with no visual design.
 
 ## Constitution Check
 
@@ -57,6 +57,7 @@ specs/001-guest-data-model/
 ├── quickstart.md        # Phase 1: how to validate end to end
 ├── contracts/
 │   ├── database-rpc.md       # Guest-facing and staff RPCs
+│   ├── guest-api.md          # HTTP interface for the designer's frontend
 │   ├── http-endpoints.md     # Route handlers and webhooks
 │   └── audience-filter.md    # Recipient-selection schema for sends
 ├── checklists/requirements.md
@@ -74,10 +75,10 @@ supabase/
 
 src/
 ├── app/
-│   ├── (public)/               # hard-coded pages: details, schedule, travel, registry, FAQ
-│   ├── rsvp/                   # guest sign-in and RSVP flow
-│   ├── admin/                  # staff area: guests, events, menus, campaigns, dashboard
+│   ├── admin/                  # staff area: guests, events, menus, campaigns, dashboard (functional only)
+│   ├── auth/callback/route.ts  # completes sign-in; redirects staff to /admin, guests to /rsvp
 │   └── api/
+│       ├── guest/              # guest API for the designer's frontend (contracts/guest-api.md)
 │       ├── auth/send-email/route.ts            # Supabase "Send Email" hook
 │       ├── webhooks/resend/route.ts            # delivery events
 │       ├── campaigns/[id]/send/route.ts        # send now (staff)
@@ -90,6 +91,7 @@ src/
 │   ├── email/                  # Resend client, send helpers, webhook verification
 │   ├── campaigns/              # audience schema, dispatch, status ranking
 │   ├── guests/                 # import parsing and validation
+│   ├── guest-api/              # zod schemas and typed client for the guest API
 │   └── exports/                # csv builders
 └── types/database.ts           # generated
 
@@ -98,7 +100,7 @@ scripts/                        # import-guests, create-staff-user
 docs/decisions/                 # 0002–0008 for the decisions in research.md
 ```
 
-**Structure Decision**: Single Next.js project with `supabase/` beside it, as already laid out in `CLAUDE.md`. No separate backend, because Next.js route handlers and server actions cover every server need and keep email code in the same runtime as the templates.
+**Structure Decision**: The designer's public pages and guest-facing screens (including whatever serves `/rsvp`) are not in this plan and are not created by it. Single Next.js project with `supabase/` beside it, as already laid out in `CLAUDE.md`. No separate backend, because Next.js route handlers and server actions cover every server need and keep email code in the same runtime as the templates.
 
 ## Complexity Tracking
 

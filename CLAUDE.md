@@ -13,6 +13,10 @@ open decisions.
 - Jest + React Testing Library, ESLint (flat config), Prettier, Husky + lint-staged
 - npm
 
+## Scope
+
+This repository's work is **backend and admin only**. The couple's designer owns visual design, the public site, and every guest-facing screen (including the RSVP screens). Do not build, style, or lay out public or guest-facing pages, and do not add a design system or theming. Admin screens (`src/app/admin`) are functional only: plain forms and tables. The integration point for the designer is the guest API (`src/app/api/guest`, contract in `specs/001-guest-data-model/contracts/guest-api.md`). If a task seems to need a public page or visual design, stop and ask.
+
 ## Layout
 
 | Path               | Contents                                                         |

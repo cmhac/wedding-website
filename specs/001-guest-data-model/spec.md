@@ -29,7 +29,7 @@ Chris or Hannah (the "couple") record who is invited: each guest, which househol
 
 ### User Story 2 - Guests RSVP for their household (Priority: P1)
 
-A guest follows their personal link or signs in with the email their invitation was sent to, sees only their own household and the events they are invited to, and responds yes or no for each person and each event, and can change their answers until the RSVP deadline. Meal choices and dietary needs are covered in User Story 3, and the optional welcome party and rehearsal in User Story 4.
+A guest follows their personal link or signs in with the email their invitation was sent to, sees only their own household and the events they are invited to, and responds yes or no for each person and each event, and can change their answers until the RSVP deadline. Meal choices and dietary needs are covered in User Story 3, and the optional welcome party and rehearsal in User Story 4. The screens a guest sees are built by the designer; this story covers the data, rules, and interface behind them.
 
 **Why this priority**: Collecting accurate responses is the core purpose of the guest-facing part of the site.
 
@@ -132,18 +132,18 @@ The couple give their wedding planner their own sign-in. The planner has the sam
 
 ---
 
-### User Story 8 - Public website content stays in the code (Priority: P3)
+### User Story 8 - Designer handoff, with the public site out of scope (Priority: P3)
 
-Visitors can read the public pages (details, schedule, travel, registry, FAQ) without signing in. All that text is written directly into the site, not stored or edited as data. Guest-specific pages (RSVP, personalized greeting) draw only on the guest data in this model.
+The public website (home, details, schedule, travel, registry, FAQ) and every guest-facing screen, including the RSVP screens, are designed and built by the couple's designer, not in this feature. This feature supplies the data, the access rules, and a documented guest-facing interface that the designer's screens call. The system works whether or not those screens exist yet.
 
-**Why this priority**: It bounds scope: the data model does not need to store page content, and the public site works for anyone.
+**Why this priority**: It draws the boundary: backend and admin are in scope; visual design and public pages are not. It matters less than the data features but must be explicit so no visual work is built by mistake.
 
-**Independent Test**: Public pages render with the database empty or unavailable; the RSVP page works only for recognized guests.
+**Independent Test**: A client that uses only the published interface documentation can sign in as a guest, read the household's RSVP, and submit answers, with none of the designer's screens present.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor who is not signed in, **When** they open a public page, **Then** it displays with no guest data required.
-2. **Given** a signed-in guest, **When** they open the RSVP page, **Then** they see a greeting using their household's display name.
+1. **Given** the published interface documentation and a seeded household, **When** a client follows it to sign in and RSVP, **Then** it succeeds without any other knowledge of the system.
+2. **Given** no guest-facing screens exist, **When** the couple use the admin area, **Then** every admin function works.
 
 ---
 
@@ -233,7 +233,8 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 
 **Website and privacy**
 
-- **FR-025**: Public pages MUST work without any guest data and without signing in; page text MUST NOT be stored in or edited through this data model.
+- **FR-025**: This feature MUST NOT build, style, or lay out the public site or any guest-facing screen; the couple's designer owns them. Page text MUST NOT be stored in or edited through this data model.
+- **FR-043**: The system MUST provide a documented, versioned-in-the-repository guest-facing interface covering sign-in, reading and saving a household's RSVP (attendance, meals, dietary needs, message), naming a plus-one, and reminder opt-out. It MUST return enough event information (required or optional, group, order, deadline, closed state) for any frontend to present the events without extra queries, and MUST be exercisable without any of this repository's screens.
 - **FR-026**: Guest data (names, emails, addresses, dietary needs, responses) is personal data: it MUST NOT appear in logs, and seed data and test fixtures MUST be fake.
 - **FR-027**: The system MUST retain all guest data, responses, and send history until an administrator deletes it; nothing is deleted automatically or on a schedule. Deleting a guest or household MUST remove or irreversibly anonymize their personal data and keep aggregate counts consistent.
 - **FR-028**: Each household MUST have exactly one designated responder, one adult whose email is the household's contact email, who answers attendance, meals, and dietary needs for every guest in the household. Other household members have no sign-in of their own, and their personal email, if recorded, is for the couple's reference only.
@@ -267,7 +268,7 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 - **SC-004**: A reminder to all non-responders reaches 100% of reachable non-responders exactly once, and 0 responders or opted-out guests, even when the send is retried.
 - **SC-005**: Dashboard counts match a manual count of the underlying answers in 100% of tested scenarios.
 - **SC-006**: Every guest-facing change and every email sent can be traced afterward (who, what, when), answering any "what did we tell them or what did they tell us" question in under 1 minute.
-- **SC-007**: Public pages load and are fully readable for a visitor with no account and no guest data present.
+- **SC-007**: A developer who has only the published guest interface documentation can build a working sign-in and RSVP flow without asking the backend authors a question, and an automated check confirms the documentation matches the interface.
 - **SC-008**: The caterer export is produced in under 1 minute and needs no manual reformatting.
 - **SC-009**: In acceptance testing, 100% of dishes chosen by attending guests appear in per-dish totals exactly once, and 0 choices by declining guests do.
 - **SC-010**: Every recorded allergy for an attending guest appears on the dietary list, and every chosen dish whose tags conflict with an allergy is flagged.
@@ -278,7 +279,7 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 
 - Chris and Hannah are the only administrators. The wedding planner has the same access as the couple but is a distinct, attributable account the couple can revoke. There is no role for family helpers in v1, and there is one planner account.
 - The welcome party and rehearsal are modeled as ordinary events marked optional and grouped under the wedding weekend, not a separate kind of record, so they share the same invitations, RSVP, meal, and reminder machinery.
-- Menus are entered by the couple in the system (unlike page text, which is hard-coded) because guests choose from them and totals depend on them. The public menu text on pages is hard-coded separately and must be kept in sync by hand.
+- Menus are entered by the couple in the system (unlike page text, which is hard-coded) because guests choose from them and totals depend on them. Any menu text on the designer's pages is separate and must be kept in sync by hand.
 - No children are invited, so the data model has no child or infant distinction and no children's menu.
 - Data is kept indefinitely; the couple delete it manually when they choose.
 - Dietary restrictions are asked once per guest and apply to all events, with a free-text note for event-specific cases.
@@ -286,8 +287,11 @@ Visitors can read the public pages (details, schedule, travel, registry, FAQ) wi
 - The household is the unit of invitation and communication; per-person addressing exists only for personal email and opt-out.
 - Per-event invitations are tracked per guest, not per household, to support cases such as a guest invited to the ceremony but not the reception.
 - Plus-ones are modeled as an allowance of unnamed seats on a household, not a separate concept; extra seats beyond the allowance require the couple's approval.
-- Page text, photos, schedule prose, travel info, and registry links are hard-coded in the site. Event name, time, and venue are in the data model only because invitations, RSVPs, and emails need them, so they must be kept consistent with the pages by hand.
+- The designer builds all public pages and guest-facing screens, with their own hard-coded content. Event name, time, and venue are in the data model only because invitations, RSVPs, and emails need them, so the designer's schedule must be kept consistent with them by hand.
+- Admin screens are functional only: plain forms and tables, with no visual design or design-system work.
+- The designer's frontend is served from the same site as this backend, so guest sign-in sessions are same-origin cookies. To be confirmed with the designer.
 - Guests are recognized by email, so the household email needs to exist before a guest can sign in. Households without email are managed by the couple.
 - Email delivery uses a third-party provider that reports delivered, bounced, and complained events; the technical choices (identity model, hosting, where sends run, household model) are for the plan and the open decisions in `docs/architecture.md`, not this spec.
 - Roughly 100 to 200 guests across a few events; performance at larger scale is out of scope.
 - Seating charts, gift/registry tracking, SMS, and a guest-facing photo gallery are out of scope for this feature.
+- Visual design and all public and guest-facing screens are out of scope; the designer owns them.
