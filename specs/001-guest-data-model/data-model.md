@@ -65,7 +65,7 @@ There are no anonymous reads of any table. Guests reach their data only through 
 
 - Unique `contact_email` is what makes one email map to one sign-in account (research R2).
 - Possible-duplicate detection (FR-005): a function `find_duplicate_households()` returns pairs with the same normalized display name or address; it flags, never merges.
-- RLS: guest `select` where `auth_user_id = auth.uid()`; no guest insert/update/delete (writes go through RPCs). Staff all.
+- RLS: guest `select` where `auth_user_id = auth.uid()`; no guest insert/update/delete (writes go through RPCs). Staff all rows, but column privileges stop the `authenticated` role from inserting or deleting households or updating `contact_email` and `auth_user_id`: those changes go through the admin API route handlers, which also create, update, or remove the linked sign-in account.
 
 ### guests
 
@@ -162,7 +162,7 @@ Rules enforced by trigger (FR-034):
 
 **message_types**: `key text PK` (`save_the_date`, `invitation`, `rsvp_reminder`, `optional_events_reminder`, `update`), `label`, `is_essential boolean` (FR-021), `template_key text` (matches a file in `emails/`).
 
-**campaigns**: `id`, `message_type_key → message_types`, `name`, `audience jsonb not null` (validated by [audience-filter.md](./contracts/audience-filter.md)), `status enum campaign_status` (`draft`, `scheduled`, `sending`, `done`, `cancelled`), `scheduled_for timestamptz null`, `created_by`, `started_at`, `completed_at`.
+**campaigns**: `id`, `message_type_key → message_types`, `name`, `audience jsonb not null` (validated by [audience-filter.md](./contracts/audience-filter.md)), `status enum campaign_status` (`draft`, `scheduled`, `sending`, `done`, `cancelled`), `scheduled_for timestamptz null`, `created_by`, `started_at`, `completed_at`. A check constraint `campaigns_audience_valid` calls `is_valid_audience(audience)` (allowed scopes and filter keys, per the audience-filter contract), so writes made directly by an admin frontend cannot store an invalid audience.
 
 State transitions: `draft → scheduled → sending → done`; `draft | scheduled → cancelled`. Editing is allowed only in `draft` and `scheduled`; `sending` and later are immutable (FR-017).
 

@@ -32,4 +32,5 @@
 ## Notes
 
 - All clarifications resolved (planner has full access, data kept until manually deleted, one responder per household, no children).
+- Scope: backend only; no screens or visual components of any kind (public, guest-facing, or admin).
 - Ready for `/speckit-plan`.

@@ -1,6 +1,6 @@
 # Quickstart: Validate the data model end to end
 
-A validation guide, not an implementation guide. The guest-facing screens belong to the designer, so guest scenarios run through the guest API (`scripts/guest-api-smoke.ts`) rather than a browser; only the admin area has screens here. It assumes the tasks in `tasks.md` are done. Contracts: [database-rpc.md](./contracts/database-rpc.md), [http-endpoints.md](./contracts/http-endpoints.md), [audience-filter.md](./contracts/audience-filter.md). Design: [data-model.md](./data-model.md).
+A validation guide, not an implementation guide. No screens are built here, so guest scenarios run through the guest API (`scripts/guest-api-smoke.ts`), and admin scenarios run through the admin API (the route tests, `curl`, or the scripts in `scripts/`) rather than a browser. It assumes the tasks in `tasks.md` are done. Contracts: [database-rpc.md](./contracts/database-rpc.md), [http-endpoints.md](./contracts/http-endpoints.md), [audience-filter.md](./contracts/audience-filter.md). Design: [data-model.md](./data-model.md).
 
 ## Prerequisites
 
@@ -44,8 +44,8 @@ Each maps to a spec user story and to an automated test; run them by hand once a
 | 11  | Archive a dish that two guests chose                                                                               | Both listed; selections moved to history; dish absent from totals                               | FR-038         |
 | 12  | As the planner: edit an RSVP, send a campaign; then try to delete a couple row in `staff`                          | First two succeed and are attributed to the planner; delete refused                             | US7            |
 | 13  | Revoke the planner, then make any request as them                                                                  | Refused on the next request                                                                     | FR-041         |
-| 14  | Compare dashboard counts and the caterer export to a manual count of seeded answers                                | Identical                                                                                       | SC-005, SC-009 |
-| 15  | Run the whole guest flow with `scripts/guest-api-smoke.ts` and no guest-facing screens present                     | Sign-in, read, save, plus-one, and deadline error all work using only `docs/guest-api.md`       | US8, SC-007    |
+| 14  | Compare the event-count view and the caterer export to a manual count of seeded answers                            | Identical                                                                                       | SC-005, SC-009 |
+| 15  | Run the whole guest flow with `scripts/guest-api-smoke.ts` and no screens present                                  | Sign-in, read, save, plus-one, and deadline error all work using only `docs/guest-api.md`       | US8, SC-007    |
 
 ## Automated checks
 

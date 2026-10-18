@@ -6,17 +6,19 @@
 
 **Status**: Draft
 
+**Scope**: Backend only. This feature builds the database, access rules, server logic, email pipeline, and two documented interfaces (a guest API and an admin API). It builds **no screens and no visual components of any kind**: not the public site, not guest-facing screens, and not admin screens. Those are built separately (the couple's designer owns visual design), against the interfaces specified here. Where this spec says the couple "see", "open", or "enter" something, it means the capability is available through the admin interface, not that a screen is built here.
+
 **Input**: User description: "Data model for the wedding website: a hard-coded-content website frontend (no CMS) plus guest, household/invite, event, RSVP, and invite/reminder (email) management."
 
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Build and maintain the guest list (Priority: P1)
 
-Chris or Hannah (the "couple") record who is invited: each guest, which household (party) they belong to, which events each guest is invited to, and how to reach the household. They can add, edit, and remove guests and households at any time, import an existing list in bulk, and see the whole list at a glance.
+Chris or Hannah (the "couple") record who is invited: each guest, which household (party) they belong to, which events each guest is invited to, and how to reach the household. They can add, edit, and remove guests and households at any time, import an existing list in bulk, and retrieve the whole list, through the admin interface.
 
 **Why this priority**: Everything else (RSVPs, invitations, reminders) depends on an accurate list of who is invited to what. A usable guest list alone already replaces a spreadsheet.
 
-**Independent Test**: With only this story built, the couple can create households and guests, assign event invitations, edit them, and view totals per event, with no RSVP or email features present.
+**Independent Test**: With only this story built, using only the admin interface the couple can create households and guests, assign event invitations, edit them, and retrieve totals per event, with no RSVP or email features present.
 
 **Acceptance Scenarios**:
 
@@ -47,7 +49,7 @@ A guest follows their personal link or signs in with the email their invitation 
 
 ### User Story 3 - Publish a menu and collect meal choices and dietary needs (Priority: P1)
 
-The couple enter the menu for each meal event: courses, the dishes offered in each, and tags such as vegetarian, vegan, gluten-free, or contains nuts. Each attending guest picks a dish for each course they must choose (for example, entrée), and tells the couple about dietary restrictions and allergies, either by ticking common categories or in free text. The couple see totals per dish and a list of restrictions by guest, and can export them for the caterer.
+The couple enter the menu for each meal event: courses, the dishes offered in each, and tags such as vegetarian, vegan, gluten-free, or contains nuts. Each attending guest picks a dish for each course they must choose (for example, entrée), and tells the couple about dietary restrictions and allergies, either by ticking common categories or in free text. The couple can retrieve totals per dish and a list of restrictions by guest, and export them for the caterer.
 
 **Why this priority**: Catering counts and guest safety depend on it, and it has to be collected at the same time as attendance.
 
@@ -66,7 +68,7 @@ The couple enter the menu for each meal event: courses, the dishes offered in ea
 
 ### User Story 4 - Optional welcome party and rehearsal invitations (Priority: P1)
 
-The welcome party and the rehearsal (and dinner) are sub-events of the wedding weekend, and are invited separately from the main events. The couple choose, guest by guest, who is invited to each. An invitation to an optional event is an invitation, not an expectation: a guest who has answered the main events is not treated as "has not responded" just because they have not answered an optional event. Guests see these as clearly optional and answer yes or no, and the rehearsal invite can go only to the people who need it (for example, the wedding party and immediate family).
+The welcome party and the rehearsal (and dinner) are sub-events of the wedding weekend, and are invited separately from the main events. The couple choose, guest by guest, who is invited to each. An invitation to an optional event is an invitation, not an expectation: a guest who has answered the main events is not treated as "has not responded" just because they have not answered an optional event. The guest interface marks these as optional so a frontend can present them that way, and guests answer yes or no, and the rehearsal invite can go only to the people who need it (for example, the wedding party and immediate family).
 
 **Why this priority**: Both events go to different, smaller groups than the main events and have their own headcounts and meals, so the model must support them from the start.
 
@@ -100,9 +102,9 @@ The couple compose invitation, reminder, and update emails from a fixed set of t
 
 ---
 
-### User Story 6 - Couple's dashboard and exports (Priority: P2)
+### User Story 6 - Reporting and exports (Priority: P2)
 
-The couple see headcounts per event (invited, attending, declined, no response), meal and dietary totals, households needing follow-up, and can export the list and responses for caterers and venues.
+The couple can retrieve headcounts per event (invited, attending, declined, no response), meal and dietary totals, households needing follow-up, and can export the list and responses for caterers and venues.
 
 **Why this priority**: Turns the collected data into decisions (catering counts, seating) but is not required to collect it.
 
@@ -110,14 +112,14 @@ The couple see headcounts per event (invited, attending, declined, no response),
 
 **Acceptance Scenarios**:
 
-1. **Given** seeded responses, **When** the couple opens the dashboard, **Then** per-event counts match the underlying answers exactly.
-2. **Given** a guest changes an answer, **When** the couple refreshes, **Then** counts reflect it immediately.
+1. **Given** seeded responses, **When** the couple request the event counts, **Then** per-event counts match the underlying answers exactly.
+2. **Given** a guest changes an answer, **When** the couple request the counts again, **Then** they reflect it immediately.
 
 ---
 
 ### User Story 7 - Wedding planner access (Priority: P2)
 
-The couple give their wedding planner their own sign-in. The planner has the same access as the couple: they can manage the guest list, events, menus, RSVPs, and emails, and see the dashboard and exports. The planner's actions are recorded under their own name so the couple can tell who changed what. The couple can add or remove the planner's access at any time.
+The couple give their wedding planner their own sign-in. The planner has the same access as the couple: they can manage the guest list, events, menus, RSVPs, and emails, and read the reports and exports. The planner's actions are recorded under their own name so the couple can tell who changed what. The couple can add or remove the planner's access at any time.
 
 **Why this priority**: The planner works directly with caterers and the venue and needs to look things up and make changes without asking the couple each time.
 
@@ -125,25 +127,26 @@ The couple give their wedding planner their own sign-in. The planner has the sam
 
 **Acceptance Scenarios**:
 
-1. **Given** a signed-in planner, **When** they open the dashboard, **Then** they see counts and meal and dietary totals for every event.
+1. **Given** a signed-in planner, **When** they request the event counts, **Then** they receive counts and meal and dietary totals for every event.
 2. **Given** a signed-in planner, **When** they edit a guest's RSVP or send a reminder, **Then** it succeeds and the change is recorded as made by the planner.
 3. **Given** the couple remove the planner's access, **When** the planner next makes any request, **Then** it is refused.
 4. **Given** a signed-in planner, **When** they try to remove a couple member's access, **Then** it is refused.
 
 ---
 
-### User Story 8 - Designer handoff, with the public site out of scope (Priority: P3)
+### User Story 8 - Interface handoff, with all screens out of scope (Priority: P3)
 
-The public website (home, details, schedule, travel, registry, FAQ) and every guest-facing screen, including the RSVP screens, are designed and built by the couple's designer, not in this feature. This feature supplies the data, the access rules, and a documented guest-facing interface that the designer's screens call. The system works whether or not those screens exist yet.
+Every screen is out of scope: the public website (home, details, schedule, travel, registry, FAQ), the guest-facing screens including RSVP, and the admin screens. This feature supplies the data, the access rules, and two documented interfaces, a guest interface and an admin interface, that whoever builds those screens calls. The system works whether or not any screen exists.
 
-**Why this priority**: It draws the boundary: backend and admin are in scope; visual design and public pages are not. It matters less than the data features but must be explicit so no visual work is built by mistake.
+**Why this priority**: It draws the boundary so no screen or visual component is built by mistake. It matters less than the data features but must be explicit.
 
-**Independent Test**: A client that uses only the published interface documentation can sign in as a guest, read the household's RSVP, and submit answers, with none of the designer's screens present.
+**Independent Test**: A client that uses only the published interface documentation can sign in as a guest and RSVP, and sign in as staff and import guests, create a campaign, and read the reports, with no screens present.
 
 **Acceptance Scenarios**:
 
-1. **Given** the published interface documentation and a seeded household, **When** a client follows it to sign in and RSVP, **Then** it succeeds without any other knowledge of the system.
-2. **Given** no guest-facing screens exist, **When** the couple use the admin area, **Then** every admin function works.
+1. **Given** the published guest interface documentation and a seeded household, **When** a client follows it to sign in and RSVP, **Then** it succeeds without any other knowledge of the system.
+2. **Given** the published admin interface documentation and a seeded staff account, **When** a client follows it to import a guest list and read event counts, **Then** it succeeds.
+3. **Given** no screens exist, **When** the couple use only the command-line scripts, **Then** they can still import guests and create staff accounts.
 
 ---
 
@@ -228,13 +231,14 @@ The public website (home, details, schedule, travel, registry, FAQ) and every gu
 
 **Dashboard and exports**
 
-- **FR-023**: The couple and the planner MUST be able to see, per event, counts of invited, attending, declining, and no response, plus meal and dietary totals and households needing follow-up.
+- **FR-023**: The couple and the planner MUST be able to retrieve, per event, counts of invited, attending, declining, and no response, plus meal and dietary totals and households needing follow-up.
 - **FR-024**: The couple and the planner MUST be able to export the guest list, responses, meal choices, and dietary data in a spreadsheet-friendly format, one row per guest per event, with a separate caterer-oriented export of per-dish totals and dietary restrictions by event.
 
 **Website and privacy**
 
-- **FR-025**: This feature MUST NOT build, style, or lay out the public site or any guest-facing screen; the couple's designer owns them. Page text MUST NOT be stored in or edited through this data model.
+- **FR-025**: This feature MUST NOT build, style, or lay out any screen or visual component: not the public site, not any guest-facing screen, and not any admin screen. Email templates are the only rendered output and MUST be plain, with copy and structure only: no colors, fonts, images, logos, or layout work. The couple's designer owns visual design. Page text MUST NOT be stored in or edited through this data model.
 - **FR-043**: The system MUST provide a documented, versioned-in-the-repository guest-facing interface covering sign-in, reading and saving a household's RSVP (attendance, meals, dietary needs, message), naming a plus-one, and reminder opt-out. It MUST return enough event information (required or optional, group, order, deadline, closed state) for any frontend to present the events without extra queries, and MUST be exercisable without any of this repository's screens.
+- **FR-044**: The system MUST provide a documented admin-facing interface covering every capability in this spec that the couple and planner use (guest and household management, import, invitations, RSVPs on behalf, events, menus, campaigns and sends, reports, exports, and staff access), made up of direct data access under access rules plus a small set of endpoints for operations that need server secrets. It MUST be exercisable without any screen, and its documentation MUST match the implementation.
 - **FR-026**: Guest data (names, emails, addresses, dietary needs, responses) is personal data: it MUST NOT appear in logs, and seed data and test fixtures MUST be fake.
 - **FR-027**: The system MUST retain all guest data, responses, and send history until an administrator deletes it; nothing is deleted automatically or on a schedule. Deleting a guest or household MUST remove or irreversibly anonymize their personal data and keep aggregate counts consistent.
 - **FR-028**: Each household MUST have exactly one designated responder, one adult whose email is the household's contact email, who answers attendance, meals, and dietary needs for every guest in the household. Other household members have no sign-in of their own, and their personal email, if recorded, is for the couple's reference only.
@@ -262,13 +266,13 @@ The public website (home, details, schedule, travel, registry, FAQ) and every gu
 
 ### Measurable Outcomes
 
-- **SC-001**: The couple can enter or import a 150-person guest list, with household and per-event invitations assigned, in under 30 minutes.
-- **SC-002**: A guest can complete an RSVP for a four-person household across all events in under 3 minutes without help.
+- **SC-001**: A 150-person guest list import file, with households and per-event invitations, is processed in under 1 minute, with every invalid row reported by number and reason and no partial households created.
+- **SC-002**: A client can complete an RSVP for a four-person household across all events with one read request and one save request, and every validation failure comes back with enough detail to show the guest what to fix.
 - **SC-003**: In acceptance testing, no guest can read or change another household's data (zero leaks across all tested access paths).
 - **SC-004**: A reminder to all non-responders reaches 100% of reachable non-responders exactly once, and 0 responders or opted-out guests, even when the send is retried.
-- **SC-005**: Dashboard counts match a manual count of the underlying answers in 100% of tested scenarios.
+- **SC-005**: Reported counts match a manual count of the underlying answers in 100% of tested scenarios.
 - **SC-006**: Every guest-facing change and every email sent can be traced afterward (who, what, when), answering any "what did we tell them or what did they tell us" question in under 1 minute.
-- **SC-007**: A developer who has only the published guest interface documentation can build a working sign-in and RSVP flow without asking the backend authors a question, and an automated check confirms the documentation matches the interface.
+- **SC-007**: A developer who has only the published guest and admin interface documentation can build a working guest RSVP flow and the admin functions without asking the backend authors a question, and automated checks confirm each document matches its interface.
 - **SC-008**: The caterer export is produced in under 1 minute and needs no manual reformatting.
 - **SC-009**: In acceptance testing, 100% of dishes chosen by attending guests appear in per-dish totals exactly once, and 0 choices by declining guests do.
 - **SC-010**: Every recorded allergy for an attending guest appears on the dietary list, and every chosen dish whose tags conflict with an allergy is flagged.
@@ -287,11 +291,11 @@ The public website (home, details, schedule, travel, registry, FAQ) and every gu
 - The household is the unit of invitation and communication; per-person addressing exists only for personal email and opt-out.
 - Per-event invitations are tracked per guest, not per household, to support cases such as a guest invited to the ceremony but not the reception.
 - Plus-ones are modeled as an allowance of unnamed seats on a household, not a separate concept; extra seats beyond the allowance require the couple's approval.
-- The designer builds all public pages and guest-facing screens, with their own hard-coded content. Event name, time, and venue are in the data model only because invitations, RSVPs, and emails need them, so the designer's schedule must be kept consistent with them by hand.
-- Admin screens are functional only: plain forms and tables, with no visual design or design-system work.
-- The designer's frontend is served from the same site as this backend, so guest sign-in sessions are same-origin cookies. To be confirmed with the designer.
+- The designer, or whoever builds the screens, builds all public pages, guest-facing screens, and admin screens, with their own hard-coded content. Event name, time, and venue are in the data model only because invitations, RSVPs, and emails need them, so the designer's schedule must be kept consistent with them by hand.
+- No admin screens are built here. They are built separately (likely by the designer), against the admin interface, and served from the same site as this backend. To be confirmed with the designer. Until they exist, the couple can use the command-line scripts and the database dashboard.
+- The guest and admin frontends are served from the same site as this backend, so sign-in sessions are same-origin cookies. To be confirmed with the designer.
 - Guests are recognized by email, so the household email needs to exist before a guest can sign in. Households without email are managed by the couple.
 - Email delivery uses a third-party provider that reports delivered, bounced, and complained events; the technical choices (identity model, hosting, where sends run, household model) are for the plan and the open decisions in `docs/architecture.md`, not this spec.
 - Roughly 100 to 200 guests across a few events; performance at larger scale is out of scope.
 - Seating charts, gift/registry tracking, SMS, and a guest-facing photo gallery are out of scope for this feature.
-- Visual design and all public and guest-facing screens are out of scope; the designer owns them.
+- Visual design, every screen (public, guest-facing, and admin), and every other visual component are out of scope. The designer owns visual design.

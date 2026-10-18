@@ -31,7 +31,7 @@ A campaign's `audience` is stored as JSON and validated with zod before saving (
 | `deliverable` | true when the household has a contact email and (for non-essential types) has not opted out |
 | `skip_reason` | `no_email`, `opted_out`, or null                                                            |
 
-Households with no email are returned (so the UI can list them for paper invitations) but are never sent to.
+Households with no email are returned (so whoever builds the admin screens can list them for paper invitations) but are never sent to.
 
 ## Examples
 

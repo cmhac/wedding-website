@@ -6,20 +6,20 @@ proposes answers to all seven open decisions below.
 
 ## Goals
 
-- Public wedding website (details, schedule, travel, registry, etc.), designed and built by the couple's designer. This repository covers the backend, the admin area, and a guest API the designer's frontend calls; it builds no public or guest-facing screens
-- RSVP management for guests, and an admin view for Chris and Hannah
+- Public wedding website (details, schedule, travel, registry, etc.), designed and built by the couple's designer. This repository covers the backend only, exposed through a guest API and an admin API; it builds no screens or visual components (public, guest-facing, or admin)
+- RSVP management for guests, and an admin interface for Chris and Hannah and their planner (the screens are built separately)
 - Guest communications (invitations, reminders, updates) by email
 - Magic-link sign-in for everyone: the couple (admin) and guests
 
 ## Components
 
-| Concern             | Tool                                               | Lives in                        |
-| ------------------- | -------------------------------------------------- | ------------------------------- |
-| Frontend            | Next.js, React, Tailwind                           | `src/app`, `src/components`     |
-| Database, auth, API | Supabase                                           | `supabase/`, `src/lib/supabase` |
-| Backend logic       | Next.js server code and/or Supabase Edge Functions | `src/app`, `supabase/functions` |
-| Email design        | React Email                                        | `emails/`                       |
-| Email delivery      | Resend                                             | `src/lib/email`                 |
+| Concern             | Tool                                                    | Lives in                        |
+| ------------------- | ------------------------------------------------------- | ------------------------------- |
+| Frontend            | Next.js, React, Tailwind (screens are built separately) | `src/app`, `src/components`     |
+| Database, auth, API | Supabase                                                | `supabase/`, `src/lib/supabase` |
+| Backend logic       | Next.js server code and/or Supabase Edge Functions      | `src/app`, `supabase/functions` |
+| Email design        | React Email                                             | `emails/`                       |
+| Email delivery      | Resend                                                  | `src/lib/email`                 |
 
 ## Open decisions
 

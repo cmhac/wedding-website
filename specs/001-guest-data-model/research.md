@@ -29,7 +29,7 @@ Resolves every open decision in `docs/architecture.md` that this feature depends
 
 - **Decision**: Next.js route handlers, not Supabase Edge Functions. "Send now" is a staff-only route. Scheduled sends are picked up by `pg_cron` calling a secret-protected route through `pg_net`, every 5 minutes.
 - **Rationale**: Templates in `emails/`, the Resend client, and Jest tests all live in the Node runtime. Edge Functions run on Deno and would need the templates duplicated or bundled. Supabase documents `pg_cron` + `pg_net` as the way to call functions on a schedule, with the secret in Vault.
-- **Risks noted**: `pg_cron`/`pg_net` jobs can fail silently, so the dispatch route is idempotent and the dashboard shows `last dispatch` time; a missed run only delays a scheduled send by one interval.
+- **Risks noted**: `pg_cron`/`pg_net` jobs can fail silently, so the dispatch route is idempotent and `settings.last_dispatch_at` records the last run so the admin interface can report it; a missed run only delays a scheduled send by one interval.
 - **Alternatives**: Edge Functions (rejected above); host cron (not chosen, since cron limits depend on the host plan, which was not verified).
 - **Source**: [Scheduling Edge Functions](https://supabase.com/docs/guides/functions/schedule-functions) (describes `pg_cron` with `pg_net`; the same call works for any HTTPS URL).
 

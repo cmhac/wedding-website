@@ -6,7 +6,7 @@
 
 ## Summary
 
-Build the database, access rules, server logic, email pipeline, and admin area behind the guest list, per-event invitations, RSVPs, menus and dietary needs, and invitation/reminder sends. **Scope: backend and admin only.** The couple's designer builds the public site and every guest-facing screen; this plan builds none of them and instead provides a documented guest API for the designer's frontend to call.
+Build the database, access rules, server logic, and email pipeline behind the guest list, per-event invitations, RSVPs, menus and dietary needs, and invitation/reminder sends. **Scope: backend only.** This plan builds no screens and no visual components of any kind: not the public site, not guest-facing screens, and not admin screens. The designer (or whoever builds the screens) works against two documented interfaces this plan provides: a guest API and an admin API.
 
 The approach: one Postgres schema in Supabase, with row-level security as the access control. Guests are pre-created Supabase Auth users (one per household, signing in by magic link). Staff (Chris, Hannah, the planner) are Auth users listed in a `staff` table. Guests write only through `SECURITY DEFINER` functions that enforce deadlines. All email sending, scheduled dispatch, and Resend webhooks run as Next.js route handlers, so templates, send logic, and tests share one runtime. There are no Edge Functions. This plan resolves the open decisions in `docs/architecture.md` (recorded as proposed in `docs/decisions/`).
 
@@ -14,7 +14,7 @@ The approach: one Postgres schema in Supabase, with row-level security as the ac
 
 **Language/Version**: TypeScript 6.0.x (strict), Node 26 (`.nvmrc`), SQL (Postgres 17 per `supabase/config.toml`)
 
-**Primary Dependencies**: Next.js 16 (App Router), React 19, `@supabase/ssr` and `@supabase/supabase-js`, `resend`, `@react-email/components`, `zod`, Tailwind CSS 4. No new runtime dependencies are planned. A CSV parser for the import is the only likely addition.
+**Primary Dependencies**: Next.js 16 (App Router), React 19, `@supabase/ssr` and `@supabase/supabase-js`, `resend`, `@react-email/components`, `zod`, Tailwind CSS 4 (in the repository's stack, but this feature builds no UI, so it is unused here). No new runtime dependencies are planned. A CSV parser for the import is the only likely addition.
 
 **Storage**: Supabase Postgres with row-level security, migrations in `supabase/migrations/`, DB tests in `supabase/tests/` (pgTAP via `supabase test db`)
 
@@ -28,7 +28,7 @@ The approach: one Postgres schema in Supabase, with row-level security as the ac
 
 **Constraints**: Guest data never logged. Secrets server-only. Sends are idempotent. Resend webhooks are at-least-once and may arrive out of order. The auth email rate limit applies unless custom SMTP or the auth email hook is configured.
 
-**Scale/Scope**: ~10 tables of core data, ~6 supporting tables, ~8 RPCs, 6 admin and internal route handlers, 7 guest API endpoints, 5 email templates (save-the-date, invitation, two reminders, update) plus the magic-link auth email. Admin screens are functional only, with no visual design.
+**Scale/Scope**: ~10 tables of core data, ~6 supporting tables, ~8 RPCs, ~13 route handlers (admin, internal, and webhook), 7 guest API endpoints, 5 plain email templates (save-the-date, invitation, two reminders, update) plus the magic-link auth email. No screens.
 
 ## Constitution Check
 
@@ -38,7 +38,7 @@ _Gate: passed before Phase 0; re-checked after Phase 1 design._
 | ---------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | I. Test-first                                  | Pass   | `tasks.md` will order every task test-first. pgTAP tests precede each migration; Jest tests precede each route handler, with success and error paths.                                                                             |
 | II. Schema by migration, RLS everywhere        | Pass   | Every table in [data-model.md](./data-model.md) has RLS enabled, a stated policy per role (anonymous, guest, staff), and a pgTAP test proving what each role can and cannot do. `src/types/database.ts` is generated.             |
-| III. Secrets and guest data stay protected     | Pass   | Service-role key and Resend key stay in route handlers and server actions. Webhook and hook secrets are server-only. The audit log and message events store no names, emails, or dietary values. Seeds use fake data.             |
+| III. Secrets and guest data stay protected     | Pass   | Service-role key and Resend key stay in route handlers. Webhook and hook secrets are server-only. The audit log and message events store no names, emails, or dietary values. Seeds use fake data.                                |
 | IV. One repository                             | Pass   | Schema, tests, templates, send logic, import script, and docs all live in this repo. Dashboard-only settings (auth hook URL, Resend webhook, DNS) are listed in [quickstart.md](./quickstart.md) and to be documented in `docs/`. |
 | V. Current tooling, recorded decisions         | Pass   | No new tool versions pinned. All open decisions are written up as `docs/decisions/0002`–`0008` (status: proposed until the couple confirm).                                                                                       |
 | Stack section: no silent open-decision choices | Pass   | Each open decision (hosting, guest identity, auth emails, send location, household model, sending domain, admin authorization) is resolved explicitly in research.md and a decision record.                                       |
@@ -57,7 +57,8 @@ specs/001-guest-data-model/
 ├── quickstart.md        # Phase 1: how to validate end to end
 ├── contracts/
 │   ├── database-rpc.md       # Guest-facing and staff RPCs
-│   ├── guest-api.md          # HTTP interface for the designer's frontend
+│   ├── guest-api.md          # HTTP interface for the guest frontend
+│   ├── admin-api.md          # Direct-access and HTTP interface for the admin frontend
 │   ├── http-endpoints.md     # Route handlers and webhooks
 │   └── audience-filter.md    # Recipient-selection schema for sends
 ├── checklists/requirements.md
@@ -75,32 +76,29 @@ supabase/
 
 src/
 ├── app/
-│   ├── admin/                  # staff area: guests, events, menus, campaigns, dashboard (functional only)
-│   ├── auth/callback/route.ts  # completes sign-in; redirects staff to /admin, guests to /rsvp
+│   ├── auth/callback/route.ts  # completes sign-in; redirects staff to /admin, guests to /rsvp (paths served by the screen builders)
 │   └── api/
-│       ├── guest/              # guest API for the designer's frontend (contracts/guest-api.md)
+│       ├── guest/              # guest API (contracts/guest-api.md)
+│       ├── admin/              # sign-in, households, import, send, exports, staff (contracts/admin-api.md)
 │       ├── auth/send-email/route.ts            # Supabase "Send Email" hook
 │       ├── webhooks/resend/route.ts            # delivery events
-│       ├── campaigns/[id]/send/route.ts        # send now (staff)
-│       ├── internal/dispatch-scheduled/route.ts# called by pg_cron
-│       ├── guests/import/route.ts              # CSV import (staff)
-│       └── exports/[kind]/route.ts             # guests.csv, caterer.csv (staff)
-├── components/
+│       └── internal/dispatch-scheduled/route.ts# called by pg_cron
 ├── lib/
 │   ├── supabase/               # browser, server, middleware, admin (service-role) clients
 │   ├── email/                  # Resend client, send helpers, webhook verification
 │   ├── campaigns/              # audience schema, dispatch, status ranking
 │   ├── guests/                 # import parsing and validation
 │   ├── guest-api/              # zod schemas and typed client for the guest API
+│   ├── admin-api/              # zod schemas and typed client for the admin API
 │   └── exports/                # csv builders
 └── types/database.ts           # generated
 
 emails/                         # React Email templates: magic-link, save-the-date, invitation, reminder, update
-scripts/                        # import-guests, create-staff-user
+scripts/                        # import-guests, create-staff-user, guest-api-smoke
 docs/decisions/                 # 0002–0008 for the decisions in research.md
 ```
 
-**Structure Decision**: The designer's public pages and guest-facing screens (including whatever serves `/rsvp`) are not in this plan and are not created by it. Single Next.js project with `supabase/` beside it, as already laid out in `CLAUDE.md`. No separate backend, because Next.js route handlers and server actions cover every server need and keep email code in the same runtime as the templates.
+**Structure Decision**: No screens are created by this plan: the public site, guest-facing screens (including whatever serves `/rsvp`), and admin screens (including whatever serves `/admin`) are all out of scope, so there is no `src/components` work and no page under `src/app` beyond route handlers. Single Next.js project with `supabase/` beside it, as already laid out in `CLAUDE.md`. No separate backend, because Next.js route handlers cover every server need and keep email code in the same runtime as the templates.
 
 ## Complexity Tracking
 
