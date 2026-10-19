@@ -27,7 +27,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 
 **Purpose**: Tooling, configuration, and dependencies. Nothing here needs a database table.
 
-- [ ] T001 Gate: confirm the proposed decisions are accepted (sub-issues #4, #5, and #6 closed, and the status line in `docs/decisions/0002` to `0008` set to "accepted"); if not, stop and ask before starting Phase 2, because the Supabase sign-up setting and several later tasks depend on them
+- [ ] T001 Gate: confirm the proposed decisions are accepted (the three GitHub sub-issues for confirming the hosting choice (#4), confirming the other proposed decision records (#5), and choosing the sending domain (#6) are closed, and the status line in `docs/decisions/0002` to `0008` is set to "accepted"); if not, stop and ask before starting Phase 2, because the Supabase sign-up setting and several later tasks depend on them
 - [ ] T002 Add the new server-only variable names with empty values to `.env.example`: `SEND_EMAIL_HOOK_SECRET`, `RESEND_WEBHOOK_SECRET`, `CRON_SECRET` (names only, per Constitution III), and the non-secret `GUEST_RSVP_PATH` (default `/rsvp`, the path where the guest frontend serves the RSVP, used to build links in emails)
 - [ ] T003 In `supabase/config.toml` set `enable_signup = false` under both `[auth]` and `[auth.email]` so guests and staff exist only when created by server code (decision 0003)
 - [ ] T004 [P] Add the `test:db` script (`supabase test db`) to `package.json` and list it under Commands in `CLAUDE.md`

@@ -44,6 +44,12 @@ This repository's work is **backend only**. Do not build any screen or visual co
   Copy `.env.example` to `.env.local`; `.env*` is gitignored.
 - **Guest data is personal data.** Don't log emails or addresses, and keep
   fixtures fake.
+- **Plain-English references.** Never refer to a task, issue, decision record,
+  finding, or any other placeholder or ID number (T001, #4, 0003, FR-018, D1)
+  without saying in plain English what it is. Name the thing first ("the
+  hosting decision", "the task that checks the decisions are confirmed"), and
+  add the ID only as a pointer afterwards. This applies to chat replies,
+  commit messages, issues, and docs.
 - **Before pushing:** `npm run format:check && npm run lint && npm run type-check && npm test`.
   The pre-push hook runs lint, type-check and tests.
 
