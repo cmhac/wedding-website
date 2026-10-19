@@ -88,7 +88,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [ ] T032 [P] [US1] Write `src/lib/guests/__tests__/household-access.test.ts`: creating or changing a household `contact_email` creates or updates the linked Auth user through the admin client and sets `auth_user_id`; a contact email already used by another household returns a clear error that names no other household's data (research R2); clearing the email unlinks the user and marks the household paper-only
 - [ ] T033 [P] [US1] Write `src/app/api/admin/guests/import/__tests__/route.test.ts`: non-staff gets 403, a valid CSV returns `{created: {households, guests, invitations}, errors: []}`, a CSV with one bad row returns that row's error and still creates the valid households
 - [ ] T034 [P] [US1] Write route tests `src/app/api/admin/households/__tests__/route.test.ts` and `src/app/api/admin/households/[id]/__tests__/route.test.ts` per `contracts/admin-api.md`: anon gets 401 and a guest gets 403; `POST` creates a household with its guests and its linked Auth user; `PATCH` changing `contact_email` updates the Auth user and `auth_user_id`, and clearing it unlinks the user and marks the household paper-only; a contact email already used by another household returns 409 `email_in_use` naming no other household's data; `DELETE` removes the household, its guests, and the Auth user (FR-027)
-- [ ] T035 [P] [US1] Write the pgTAP test `supabase/tests/database/610-event-counts.test.sql` for the view `event_counts` (invited, attending, declined, pending per event, counts equal a hand-computed total from the seed, `security_invoker`, staff only) and that counts change immediately when an answer changes
+- [ ] T035 [P] [US1] Write the pgTAP test `supabase/tests/database/130-event-counts.test.sql` for the view `event_counts` (invited, attending, declined, pending per event, counts equal a hand-computed total from the seed, `security_invoker`, staff only) and that counts change immediately when an answer changes
 
 ### Implementation for User Story 1
 
@@ -311,7 +311,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - **US3**: needs Foundational and the guest API from US2 (it extends the same RSVP endpoints).
 - **US4**: needs Foundational; it extends what the guest API returns from US2 and adds the progress view.
 - **US5**: needs Foundational; audience filters use the views from US3 and US4 (`household_rsvp_progress`, meal state), so build it after those.
-- **US6**: needs US3 (meal views) and US4 (progress view).
+- **US6**: needs US1 (the `event_counts` view), US3 (meal views), and US4 (progress view).
 - **US7**: needs Foundational (staff table and policies already exist); can run any time after, and is easiest to verify once US1 and US5 exist.
 - **US8**: needs the guest API and admin API from the earlier stories to document; the contract tests and handoff documents can be drafted earlier and finished last.
 
