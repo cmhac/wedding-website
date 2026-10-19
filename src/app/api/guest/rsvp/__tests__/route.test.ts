@@ -69,6 +69,87 @@ describe("GET /api/guest/rsvp", () => {
   });
 });
 
+const COURSE = "33333333-3333-4333-8333-333333333333";
+const DISH = "44444444-4444-4444-8444-444444444444";
+const MEAL_PAYLOAD = {
+  guests: [
+    {
+      guest_id: GUEST,
+      dietary_notes: "No shellfish please",
+      dietary: [
+        { category_key: "nuts", severity: "allergy", details: null },
+        { category_key: "vegetarian", severity: "preference" },
+      ],
+      responses: [{ event_id: EVENT, status: "attending" }],
+      meals: [{ course_id: COURSE, dish_id: DISH }],
+    },
+  ],
+};
+
+describe("PUT /api/guest/rsvp meals and dietary", () => {
+  it("passes meals and dietary through to the database call", async () => {
+    const res = await PUT(put(MEAL_PAYLOAD));
+    expect(res.status).toBe(200);
+    expect(mockRpc).toHaveBeenCalledWith("submit_household_rsvp", {
+      payload: MEAL_PAYLOAD,
+    });
+  });
+
+  it("answers 422 invalid_meal when the database refuses the dish", async () => {
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { message: "invalid_meal" },
+    });
+    const res = await PUT(put(MEAL_PAYLOAD));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.code).toBe("invalid_meal");
+  });
+
+  it("rejects a dietary severity other than allergy or preference", async () => {
+    const bad = structuredClone(MEAL_PAYLOAD);
+    bad.guests[0].dietary[0].severity = "dislike";
+    const res = await PUT(put(bad));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.issues[0].path).toEqual([
+      "guests",
+      0,
+      "dietary",
+      0,
+      "severity",
+    ]);
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects a meal whose ids are not uuids", async () => {
+    const bad = structuredClone(MEAL_PAYLOAD);
+    bad.guests[0].meals[0].dish_id = "not-a-uuid";
+    const res = await PUT(put(bad));
+    expect(res.status).toBe(422);
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("returns the menu and selections from the database untouched on GET", async () => {
+    const withMenu = {
+      household: { display_name: "The Fakes" },
+      guests: [
+        {
+          invitations: [
+            {
+              menu: {
+                status: "published",
+                courses: [{ id: COURSE, dishes: [{ id: DISH, tags: [] }] }],
+                selection: [{ course_id: COURSE, dish_id: DISH }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    mockRpc.mockResolvedValue({ data: withMenu, error: null });
+    expect(await (await GET()).json()).toEqual(withMenu);
+  });
+});
+
 describe("PUT /api/guest/rsvp", () => {
   it("submits the payload and returns the updated RSVP", async () => {
     const res = await PUT(put(PAYLOAD));

@@ -149,7 +149,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [ ] T061 [P] [US3] Write the pgTAP test `supabase/tests/database/330-dietary-views.test.sql`: `meal_conflicts` flags a `diet` category restriction when the chosen dish lacks the tag and an `allergen` category restriction when the dish has the tag (research R9), `dish_totals` counts only attending guests and shows "not yet chosen", `dietary_list` excludes declining guests and carries severity and notes, views are `security_invoker` and staff-only
 - [ ] T062 [P] [US3] Write the pgTAP test `supabase/tests/database/340-archive-dish.test.sql` for `archive_dish(dish_id)`: returns the affected guests and households, moves selections to `meal_selection_history` with reason `dish_archived`, sets `archived_at`, removes the dish from totals, staff only; and for `staff_set_meal`
 - [ ] T063 [P] [US3] Write the pgTAP test `supabase/tests/database/350-dietary-meal-rls.test.sql` proving row-level security on `guest_dietary`, `meal_selections`, and `meal_selection_history` (Constitution II): guest A reads only household A's rows and none of household B's; anon reads nothing; a guest cannot insert, update, or delete any of the three tables directly (writes go through the RPCs); staff can read and write them; a guest of household B cannot read or write household A's rows through `submit_household_rsvp`, `get_my_rsvp`, or direct selects
-- [ ] T064 [P] [US3] Extend the guest API route tests in `src/app/api/guest/rsvp/__tests__/route.test.ts` for meals and dietary: `PUT /api/guest/rsvp` accepts `meals` and `dietary` and maps the database error `invalid_meal` to 422; `GET /api/guest/rsvp` returns published menus (courses, dishes, tags) and the guest's selections only for events they attend, never draft menus or archived dishes; dietary `severity` is `allergy` or `preference`
+- [x] T064 [P] [US3] Extend the guest API route tests in `src/app/api/guest/rsvp/__tests__/route.test.ts` for meals and dietary: `PUT /api/guest/rsvp` accepts `meals` and `dietary` and maps the database error `invalid_meal` to 422; `GET /api/guest/rsvp` returns published menus (courses, dishes, tags) and the guest's selections only for events they attend, never draft menus or archived dishes; dietary `severity` is `allergy` or `preference`
 
 ### Implementation for User Story 3
 
@@ -157,7 +157,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [ ] T066 [US3] Create migration `supabase/migrations/<timestamp>_meal_views_and_rpc.sql` with the views `meal_conflicts`, `dish_totals`, `dietary_list` (all `security_invoker = true`), `archive_dish`, `staff_set_meal`, an updated `submit_household_rsvp` that accepts `meals` and structured `dietary` per `contracts/database-rpc.md`, and an updated `get_my_rsvp` that also returns published and closed menus (courses, non-archived dishes, tags) for events the guest attends, the guest's selections, the guest's `dietary` rows, and `dietary_categories`, per `contracts/guest-api.md`; run `npx supabase test db` until the tests above pass
 - [ ] T067 [US3] Extend `supabase/seed.sql` with a ceremony-dinner menu (starter and entrée, three entrées with tags including one containing nuts and one vegetarian) and a rehearsal-dinner menu, and extend `supabase/tests/database/040-seed-sanity.test.sql` accordingly
 - [ ] T068 [US3] Regenerate `src/types/database.ts` with `npm run db:types`
-- [ ] T069 [US3] Extend `src/lib/guest-api/schemas.ts` and `src/app/api/guest/rsvp/route.ts` with the `meals` and `dietary` fields and error mapping so the route tests pass; update `contracts/guest-api.md` and the guest API client if the shapes differ from the contract
+- [x] T069 [US3] Extend `src/lib/guest-api/schemas.ts` and `src/app/api/guest/rsvp/route.ts` with the `meals` and `dietary` fields and error mapping so the route tests pass; update `contracts/guest-api.md` and the guest API client if the shapes differ from the contract
 - [ ] T070 [US3] Run scenarios 5 (meal and allergy part) and 11 from `specs/001-guest-data-model/quickstart.md`
 
 **Checkpoint**: Menus and dietary data work independently of sends and the reporting views.
@@ -227,11 +227,11 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 ### Tests for User Story 6
 
 - [ ] T093 [P] [US6] Write `src/lib/exports/__tests__/csv.test.ts`: header row, one row per guest per event for `guests` and `responses`, the `caterer` export with per-dish totals and restrictions (attending only) and `meal_conflicts`, and spreadsheet-safe quoting (cells starting with `=`, `+`, `-`, or `@` are prefixed to prevent formula injection); and a scale test that the `guests`, `responses`, and `caterer` exports for a generated 150-guest list are each built in under 60 seconds (SC-008)
-- [ ] T094 [P] [US6] Write `src/app/api/admin/exports/[kind]/__tests__/route.test.ts`: non-staff gets 403, unknown kind gets 404, valid kinds return CSV with the correct content type and a download filename
+- [x] T094 [P] [US6] Write `src/app/api/admin/exports/[kind]/__tests__/route.test.ts`: non-staff gets 403, unknown kind gets 404, valid kinds return CSV with the correct content type and a download filename
 
 ### Implementation for User Story 6
 
-- [ ] T095 [P] [US6] Implement `src/lib/exports/csv.ts` (builders and safe quoting) and `src/app/api/admin/exports/[kind]/route.ts` for `guests`, `responses`, and `caterer`
+- [x] T095 [P] [US6] Implement `src/lib/exports/csv.ts` (builders and safe quoting) and `src/app/api/admin/exports/[kind]/route.ts` for `guests`, `responses`, and `caterer`
 - [ ] T096 [US6] Run scenario 14 from `specs/001-guest-data-model/quickstart.md`, comparing the reporting views and the caterer export with a manual count of the seeded answers
 
 **Checkpoint**: Reporting views and exports match the underlying data.
@@ -247,11 +247,11 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 ### Tests for User Story 7
 
 - [ ] T097 [P] [US7] Write the pgTAP test `supabase/tests/database/710-planner.test.sql`: a `planner` can read and write every table a `couple` user can except `staff`; a `planner` cannot insert, update, or delete `staff` rows, cannot demote a couple member, and cannot remove the last `couple` row; changes made by the planner show `actor_kind = 'planner'` in `audit_log`, `rsvp_history`, and `responded_by`; after the couple delete the planner's `staff` row the planner's next query returns no staff-only data and staff RPCs raise `forbidden`
-- [ ] T098 [P] [US7] Write route tests `src/app/api/admin/staff/__tests__/route.test.ts` and `src/app/api/admin/staff/[userId]/__tests__/route.test.ts` per `contracts/admin-api.md`: only a `couple` session can grant or revoke (a planner gets 403, a guest 403, anon 401); granting creates the Auth user and the `staff` row with role `planner`; revoking deletes the `staff` row and the next request by that user is refused; removing the last `couple` member returns 409 `last_couple`
+- [x] T098 [P] [US7] Write route tests `src/app/api/admin/staff/__tests__/route.test.ts` and `src/app/api/admin/staff/[userId]/__tests__/route.test.ts` per `contracts/admin-api.md`: only a `couple` session can grant or revoke (a planner gets 403, a guest 403, anon 401); granting creates the Auth user and the `staff` row with role `planner`; revoking deletes the `staff` row and the next request by that user is refused; removing the last `couple` member returns 409 `last_couple`
 
 ### Implementation for User Story 7
 
-- [ ] T099 [US7] Implement `src/app/api/admin/staff/route.ts` (POST, grant planner access by creating the Auth user through the admin client and inserting the `staff` row) and `src/app/api/admin/staff/[userId]/route.ts` (DELETE, revoke), both requiring `requireCouple()`, with schemas in `src/lib/admin-api/schemas.ts`
+- [x] T099 [US7] Implement `src/app/api/admin/staff/route.ts` (POST, grant planner access by creating the Auth user through the admin client and inserting the `staff` row) and `src/app/api/admin/staff/[userId]/route.ts` (DELETE, revoke), both requiring `requireCouple()`, with schemas in `src/lib/admin-api/schemas.ts`
 - [ ] T100 [US7] Run scenarios 12 and 13 from `specs/001-guest-data-model/quickstart.md`
 
 **Checkpoint**: Planner access works and cannot lock out the couple.
@@ -269,7 +269,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 ### Tests for User Story 8
 
 - [ ] T101 [P] [US8] Write `src/lib/guest-api/__tests__/contract.test.ts` and `src/lib/admin-api/__tests__/contract.test.ts` asserting that every route's success and error responses parse against the exported response schemas, and that the endpoint tables in `contracts/guest-api.md` and `contracts/admin-api.md` list exactly the route handlers that exist under `src/app/api/guest/` and `src/app/api/admin/` so the documentation cannot drift
-- [ ] T102 [P] [US8] Write `src/app/api/guest/__tests__/no-staff-leak.test.ts` asserting that no guest API response contains `notes`, `address`, other households' ids, draft menus, `messages`, or audit data (FR-011, SC-003)
+- [x] T102 [P] [US8] Write `src/app/api/guest/__tests__/no-staff-leak.test.ts` asserting that no guest API response contains `notes`, `address`, other households' ids, draft menus, `messages`, or audit data (FR-011, SC-003)
 - [ ] T103 [P] [US8] Write the pgTAP test `supabase/tests/database/810-admin-direct-access.test.sql` proving every capability in section 1 of `contracts/admin-api.md`: staff can perform each listed select, insert, update, delete, and RPC call, and a guest and anon cannot perform any of them; staff cannot write `households.contact_email`, `households.auth_user_id`, or insert or delete households directly
 
 ### Implementation for User Story 8

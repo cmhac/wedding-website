@@ -1,9 +1,6 @@
 /**
  * Request and response schemas for the guest API (contracts/guest-api.md).
  * Plain zod modules: the designer's frontend and the route handlers share them.
- *
- * Meals and dietary fields are added to the RSVP schemas in the later meals
- * stage; every object here is a plain z.object so they can be extended.
  */
 import { z } from "zod";
 
@@ -12,8 +9,24 @@ export const signInResponseSchema = z.object({ message: z.string() });
 
 export const rsvpStatusSchema = z.enum(["attending", "declined"]);
 
+export const dietarySeveritySchema = z.enum(["allergy", "preference"]);
+
+export const dietaryEntrySchema = z.object({
+  category_key: z.string().trim().min(1).max(100),
+  severity: dietarySeveritySchema,
+  details: z.string().max(500).nullish(),
+});
+
+export const mealChoiceSchema = z.object({
+  course_id: z.uuid(),
+  dish_id: z.uuid(),
+});
+
 export const guestRsvpInputSchema = z.object({
   guest_id: z.uuid(),
+  dietary_notes: z.string().max(2000).nullish(),
+  dietary: z.array(dietaryEntrySchema).max(50).optional(),
+  meals: z.array(mealChoiceSchema).max(50).optional(),
   responses: z
     .array(z.object({ event_id: z.uuid(), status: rsvpStatusSchema }))
     .max(50),
@@ -46,11 +59,32 @@ const eventSchema = z.looseObject({
   closed: z.boolean(),
 });
 
+const dishSchema = z.looseObject({
+  id: z.uuid(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  tags: z.array(z.string()),
+});
+
+const courseSchema = z.looseObject({
+  id: z.uuid(),
+  name: z.string(),
+  display_order: z.number().nullable().optional(),
+  requires_choice: z.boolean(),
+  dishes: z.array(dishSchema),
+});
+
+const menuSchema = z.looseObject({
+  status: z.enum(["published", "closed"]),
+  courses: z.array(courseSchema),
+  selection: z.array(mealChoiceSchema),
+});
+
 const invitationSchema = z.looseObject({
   status: z.enum(["pending", "attending", "declined"]),
   event: eventSchema,
-  // Menus are added in the meals stage.
-  menu: z.unknown().optional(),
+  // Present only for an attended event with a published or closed menu.
+  menu: menuSchema.optional(),
 });
 
 export const guestSchema = z.looseObject({
@@ -58,6 +92,8 @@ export const guestSchema = z.looseObject({
   first_name: z.string().nullable(),
   last_name: z.string().nullable(),
   is_placeholder: z.boolean(),
+  dietary_notes: z.string().nullable().optional(),
+  dietary: z.array(dietaryEntrySchema).optional(),
   invitations: z.array(invitationSchema),
 });
 
@@ -69,6 +105,15 @@ export const rsvpResponseSchema = z.looseObject({
     reminders_opt_out: z.boolean(),
   }),
   guests: z.array(guestSchema),
+  dietary_categories: z
+    .array(
+      z.looseObject({
+        key: z.string(),
+        label: z.string(),
+        kind: z.enum(["diet", "allergen"]),
+      }),
+    )
+    .optional(),
 });
 
 export const errorBodySchema = z.looseObject({
