@@ -130,7 +130,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [x] T055 [US2] Create `src/lib/guest-api/schemas.ts` (exported zod request and response schemas with inferred types) and `src/lib/guest-api/client.ts` (small typed fetch wrappers the screen builders' frontend can call), with tests in `src/lib/guest-api/__tests__/schemas.test.ts`; these are plain modules with no React components, pages, or styling
 - [x] T056 [US2] Implement the guest API route handlers `src/app/api/guest/sign-in/route.ts`, `src/app/api/guest/rsvp/route.ts` (GET and PUT), `src/app/api/guest/plus-one/route.ts`, and `src/app/api/guest/sign-out/route.ts` per `contracts/guest-api.md`, delegating to `get_my_rsvp`, `submit_household_rsvp`, and `name_plus_one`, validating with the schemas from `src/lib/guest-api/schemas.ts`, and mapping database error codes to the HTTP statuses in the contract
 - [x] T057 [US2] Create `scripts/guest-api-smoke.ts`, a command-line client that exercises the guest API end to end against the local stack (request a sign-in link, read the link from local mail capture, complete sign-in, read the RSVP, submit answers, name a plus-one, hit the deadline error) and prints outcomes only, never names or emails; it stands in for the designer's frontend during validation
-- [ ] T058 [US2] Run scenarios 3, 4, 5 (attendance part), and 6 from `specs/001-guest-data-model/quickstart.md` against the local stack using `scripts/guest-api-smoke.ts`
+- [x] T058 [US2] Run scenarios 3, 4, 5 (attendance part), and 6 from `specs/001-guest-data-model/quickstart.md` against the local stack using `scripts/guest-api-smoke.ts`
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -158,7 +158,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [x] T067 [US3] Extend `supabase/seed.sql` with a ceremony-dinner menu (starter and entrée, three entrées with tags including one containing nuts and one vegetarian) and a rehearsal-dinner menu, and extend `supabase/tests/database/040-seed-sanity.test.sql` accordingly
 - [x] T068 [US3] Regenerate `src/types/database.ts` with `npm run db:types`
 - [x] T069 [US3] Extend `src/lib/guest-api/schemas.ts` and `src/app/api/guest/rsvp/route.ts` with the `meals` and `dietary` fields and error mapping so the route tests pass; update `contracts/guest-api.md` and the guest API client if the shapes differ from the contract
-- [ ] T070 [US3] Run scenarios 5 (meal and allergy part) and 11 from `specs/001-guest-data-model/quickstart.md`
+- [x] T070 [US3] Run scenarios 5 (meal and allergy part) and 11 from `specs/001-guest-data-model/quickstart.md`
 
 **Checkpoint**: Menus and dietary data work independently of sends and the reporting views.
 
@@ -177,7 +177,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 ### Implementation for User Story 4
 
 - [x] T072 [US4] Create migration `supabase/migrations/<timestamp>_household_progress.sql` with the `household_rsvp_progress` view (`security_invoker = true`) and run the pgTAP test until it passes
-- [ ] T073 [US4] Run scenarios 2 and 7 (the progress part) from `specs/001-guest-data-model/quickstart.md`
+- [x] T073 [US4] Run scenarios 2 and 7 (the progress part) from `specs/001-guest-data-model/quickstart.md`
 
 **Checkpoint**: All four P1 stories work together.
 
@@ -212,7 +212,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [x] T089 [US5] Implement `src/app/api/admin/campaigns/[id]/send/route.ts`, `src/app/api/internal/dispatch-scheduled/route.ts`, and `src/app/api/webhooks/resend/route.ts` per `contracts/http-endpoints.md`; before relying on the webhook handler, check Resend's current event reference for the event type names `email.sent`, `email.delivered`, `email.bounced`, and `email.complained` and record the result in a comment in the route file
 - [x] T090 [US5] Create migration `supabase/migrations/<timestamp>_cron_jobs.sql` enabling `pg_cron` and `pg_net` and scheduling `dispatch-scheduled` every 5 minutes with the site URL and `CRON_SECRET` read from Supabase Vault; guard so the job is skipped when the secrets are absent (local development)
 - [x] T091 [US5] Implement `src/app/api/guest/opt-out/route.ts` (`POST /api/guest/opt-out`, body `{ "opt_out": boolean }`) calling `set_reminders_opt_out`, and add it to `src/lib/guest-api/schemas.ts` and `src/lib/guest-api/client.ts`
-- [ ] T092 [US5] Run scenarios 7 to 10 from `specs/001-guest-data-model/quickstart.md`, sending to local mail capture and posting signed test webhook payloads
+- [x] T092 [US5] Run scenarios 7 to 10 from `specs/001-guest-data-model/quickstart.md`, sending to local mail capture and posting signed test webhook payloads
 
 **Checkpoint**: Sends are idempotent and delivery status tracks correctly.
 
@@ -232,7 +232,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 ### Implementation for User Story 6
 
 - [x] T095 [P] [US6] Implement `src/lib/exports/csv.ts` (builders and safe quoting) and `src/app/api/admin/exports/[kind]/route.ts` for `guests`, `responses`, and `caterer`
-- [ ] T096 [US6] Run scenario 14 from `specs/001-guest-data-model/quickstart.md`, comparing the reporting views and the caterer export with a manual count of the seeded answers
+- [x] T096 [US6] Run scenario 14 from `specs/001-guest-data-model/quickstart.md`, comparing the reporting views and the caterer export with a manual count of the seeded answers
 
 **Checkpoint**: Reporting views and exports match the underlying data.
 
@@ -252,7 +252,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 ### Implementation for User Story 7
 
 - [x] T099 [US7] Implement `src/app/api/admin/staff/route.ts` (POST, grant planner access by creating the Auth user through the admin client and inserting the `staff` row) and `src/app/api/admin/staff/[userId]/route.ts` (DELETE, revoke), both requiring `requireCouple()`, with schemas in `src/lib/admin-api/schemas.ts`
-- [ ] T100 [US7] Run scenarios 12 and 13 from `specs/001-guest-data-model/quickstart.md`
+- [x] T100 [US7] Run scenarios 12 and 13 from `specs/001-guest-data-model/quickstart.md`
 
 **Checkpoint**: Planner access works and cannot lock out the couple.
 
@@ -276,7 +276,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 
 - [x] T104 [US8] Publish the handoff documents `docs/guest-api.md` and `docs/admin-api.md`, generated from `contracts/guest-api.md` and `contracts/admin-api.md`: endpoints and payloads, the sign-in flows and the neutral-message behavior, session cookies and the same-origin assumption, error codes and statuses, the post-sign-in redirect paths (`/rsvp` and `/admin`), the direct-data-access table for staff, example calls using `src/lib/guest-api/client.ts` and `src/lib/admin-api/client.ts`, and a plain statement that no UI is provided
 - [x] T105 [US8] Confirm the "Scope" section in `CLAUDE.md` (added with this plan) is still accurate and link `docs/guest-api.md` and `docs/admin-api.md` from it
-- [ ] T106 [US8] Run scenario 15 from `specs/001-guest-data-model/quickstart.md`: the full guest flow through `scripts/guest-api-smoke.ts`, then confirm no screen or visual component was added (`src/app` contains only `api` and `auth`, `src/components` is unchanged, and no stylesheet, theme, or design-system file was added)
+- [x] T106 [US8] Run scenario 15 from `specs/001-guest-data-model/quickstart.md`: the full guest flow through `scripts/guest-api-smoke.ts`, then confirm no screen or visual component was added (`src/app` contains only `api` and `auth`, `src/components` is unchanged, and no stylesheet, theme, or design-system file was added)
 
 **Checkpoint**: Screen builders can work from `docs/guest-api.md` and `docs/admin-api.md`.
 
@@ -289,7 +289,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [x] T109 [P] Update `CLAUDE.md` (Commands: `test:db`; Layout: `src/app/api/admin`, `src/app/api/guest`, `src/lib/admin-api`, `src/lib/guest-api`, `src/lib/campaigns`, `src/lib/guests`, `src/lib/exports`, `supabase/tests`) and `README.md` in the same change as the behavior (Constitution workflow)
 - [x] T110 [P] Document in `docs/` the final state of every manual setting from the manual-task issue (https://github.com/cmhac/wedding-website/issues/3): Resend domain and webhook, Supabase auth hook and sign-up setting, Vault secrets, hosting variables
 - [x] T111 Once the couple confirm the proposals, change the status line in `docs/decisions/0002` through `0008` from "proposed" to "accepted" with the date, and update `docs/architecture.md`
-- [ ] T112 Run every scenario in `specs/001-guest-data-model/quickstart.md` end to end against the local stack and record any deviation in `specs/001-guest-data-model/quickstart.md`
+- [x] T112 Run every scenario in `specs/001-guest-data-model/quickstart.md` end to end against the local stack and record any deviation in `specs/001-guest-data-model/quickstart.md`
 - [ ] T113 Run the `/security-review` skill on the branch and fix any findings, paying particular attention to the guest sign-in neutral message, the webhook and cron endpoints, the service-role key boundary, and CSV formula injection
 - [ ] T114 Final gate: `npm run format:check && npm run lint && npm run type-check && npm test && npx supabase test db && npm run build` all pass
 
