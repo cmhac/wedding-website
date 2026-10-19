@@ -6,7 +6,7 @@ jest.mock("@/lib/auth/guards", () => ({
   requireStaff: () => mockRequireStaff(),
 }));
 const adminClient = { fake: "admin" };
-const staffClient = { fake: "staff", from: jest.fn() };
+const staffClient = { fake: "staff", from: jest.fn(), rpc: jest.fn() };
 jest.mock("@/lib/supabase/admin", () => ({
   createAdminSupabase: () => adminClient,
 }));
@@ -48,17 +48,28 @@ const household = {
   paper_only: true,
 };
 
-/** Fake of the staff-session update used for non-email fields. */
+/**
+ * Fake of the staff-session update used for non-email fields. The write returns
+ * only the id (staff-only columns cannot be read back from the table); the
+ * saved row is then read through the staff-only `staff_households` function.
+ */
 function fakeOtherFieldsUpdate(result: { data: unknown; error: unknown }) {
-  const single = jest.fn(async () => result);
-  const chain: Record<string, unknown> = {
-    eq: jest.fn(() => chain),
-    select: jest.fn(() => chain),
-    single,
+  const written = result.error
+    ? result
+    : { data: { id: ID }, error: null as unknown };
+  const updateChain: Record<string, unknown> = {
+    eq: jest.fn(() => updateChain),
+    select: jest.fn(() => updateChain),
+    single: jest.fn(async () => written),
   };
-  const update = jest.fn(() => chain);
+  const update = jest.fn(() => updateChain);
   staffClient.from.mockReturnValue({ update });
-  return { update };
+  const readChain: Record<string, unknown> = {
+    eq: jest.fn(() => readChain),
+    single: jest.fn(async () => result),
+  };
+  staffClient.rpc.mockReturnValue(readChain);
+  return { update, updateChain };
 }
 
 beforeEach(() => {
@@ -127,6 +138,15 @@ describe("PATCH /api/admin/households/[id]", () => {
     expect(JSON.stringify(json)).not.toContain("@");
   });
 
+  it("returns 409 staff_account when the household is linked to a staff account", async () => {
+    mockUpdateEmail.mockResolvedValue({ ok: false, code: "staff_account" });
+    const res = await patch({ contact_email: "new@example.com" });
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.error.code).toBe("staff_account");
+    expect(JSON.stringify(json)).not.toContain("@");
+  });
+
   it("returns 422 invalid_payload when the database rejects the email", async () => {
     mockUpdateEmail.mockResolvedValue({ ok: false, code: "invalid_payload" });
     const res = await patch({ contact_email: "new@example.com" });
@@ -148,13 +168,16 @@ describe("PATCH /api/admin/households/[id]", () => {
   });
 
   it("updates other fields without touching the sign-in account", async () => {
-    const { update } = fakeOtherFieldsUpdate({
+    const { update, updateChain } = fakeOtherFieldsUpdate({
       data: { ...household, display_name: "Renamed" },
       error: null,
     });
     const res = await patch({ display_name: "Renamed" });
     expect(res.status).toBe(200);
     expect(update).toHaveBeenCalledWith({ display_name: "Renamed" });
+    // Never `select("*")`: staff-only columns are not readable from the table.
+    expect(updateChain.select).toHaveBeenCalledWith("id");
+    expect(staffClient.rpc).toHaveBeenCalledWith("staff_households");
     expect(mockUpdateEmail).not.toHaveBeenCalled();
     expect((await res.json()).household.display_name).toBe("Renamed");
   });

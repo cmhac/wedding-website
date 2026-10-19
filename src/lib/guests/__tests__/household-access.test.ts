@@ -254,6 +254,19 @@ describe("updateHouseholdContactEmail", () => {
     expect(res.ok && res.household.paper_only).toBe(true);
   });
 
+  it("refuses to change the email of a staff member's account, touching nothing", async () => {
+    const f = fakes({ households: [{ ...current }], staffUserIds: ["u1"] });
+    const res = await updateHouseholdContactEmail(
+      f.admin,
+      f.staff,
+      "h1",
+      "attacker@example.com",
+    );
+    expect(res).toEqual({ ok: false, code: "staff_account" });
+    expect(f.updateUserById).not.toHaveBeenCalled();
+    expect(f.rpc).not.toHaveBeenCalled();
+  });
+
   it("keeps the account when it belongs to a staff member", async () => {
     const f = fakes({ households: [{ ...current }], staffUserIds: ["u1"] });
     f.rpcResults.set_household_contact = { previous_auth_user_id: "u1" };

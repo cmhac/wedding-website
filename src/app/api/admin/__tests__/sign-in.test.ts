@@ -15,9 +15,17 @@ jest.mock("@/lib/supabase/server", () => ({
   }),
 }));
 jest.mock("@/lib/rate-limit", () => ({
+  ...jest.requireActual("@/lib/rate-limit"),
   createRateLimiter: () => ({ check: (k: string) => mockLimiter(k) }),
 }));
 const mockLimiter = jest.fn((_key: string) => true);
+const mockMinimum = jest.fn();
+jest.mock("@/lib/sign-in-timing", () => ({
+  withMinimumDuration: async (ms: number, work: () => Promise<unknown>) => {
+    mockMinimum(ms);
+    await work().catch(() => {});
+  },
+}));
 
 import { POST } from "../sign-in/route";
 
@@ -30,7 +38,7 @@ function request(body: unknown, raw = false) {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-forwarded-for": "1.2.3.4",
+      "x-forwarded-for": "6.6.6.6, 1.2.3.4",
     },
     body: raw ? (body as string) : JSON.stringify(body),
   });
@@ -44,13 +52,13 @@ beforeEach(() => {
 });
 
 describe("POST /api/admin/sign-in", () => {
-  it("asks Supabase for a link without creating users", async () => {
+  it("asks Supabase for a staff-audience link without creating users", async () => {
     await POST(request({ email: "planner@example.com" }));
     expect(mockSignInWithOtp).toHaveBeenCalledWith({
       email: "planner@example.com",
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: "http://localhost:3000/auth/callback",
+        emailRedirectTo: "http://localhost:3000/auth/callback?audience=staff",
       },
     });
   });
@@ -102,6 +110,26 @@ describe("POST /api/admin/sign-in", () => {
     expect(res.status).toBe(429);
     expect((await res.json()).error.code).toBe("rate_limited");
     expect(mockSignInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("limits by the trusted client address, not the leftmost forwarded hop", async () => {
+    await POST(request({ email: "planner@example.com" }));
+    const keys = mockLimiter.mock.calls.map((c) => c[0]);
+    expect(keys).toContain("1.2.3.4");
+    expect(keys).not.toContain("6.6.6.6");
+  });
+
+  it("limits per email address (lower-cased) and still answers the neutral 202 without calling Supabase", async () => {
+    mockLimiter.mockImplementation((k) => k !== "planner@example.com");
+    const res = await POST(request({ email: "Planner@Example.com" }));
+    expect(res.status).toBe(202);
+    expect(await res.json()).toEqual(NEUTRAL);
+    expect(mockSignInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("takes a fixed minimum time so the response time does not reveal whether the address is known", async () => {
+    await POST(request({ email: "planner@example.com" }));
+    expect(mockMinimum.mock.calls[0][0]).toBeGreaterThanOrEqual(1000);
   });
 
   it("never echoes the email address back", async () => {

@@ -1,6 +1,24 @@
 /**
- * Best-effort in-memory rate limiter (per server instance). It slows down
- * casual abuse of the sign-in endpoints; Supabase's own limits are the backstop.
+ * The caller's address for rate limiting. `x-real-ip` is set by the hosting
+ * platform; failing that, the rightmost `x-forwarded-for` hop is the one our
+ * own proxy appended. The leftmost hop is whatever the caller sent, so it is
+ * never trusted. Returns "unknown" when neither header is usable.
+ */
+export function clientIp(headers: Headers): string {
+  const real = headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const hops = (headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((h) => h.trim())
+    .filter(Boolean);
+  return hops[hops.length - 1] ?? "unknown";
+}
+
+/**
+ * Best-effort in-memory rate limiter (per server instance, so it resets on a
+ * restart and is not shared between instances). It slows down casual abuse of
+ * the sign-in endpoints; Supabase's own per-email limit is the real control
+ * (see docs/manual-setup.md).
  */
 export function createRateLimiter(options: {
   limit: number;

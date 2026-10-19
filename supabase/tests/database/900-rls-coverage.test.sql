@@ -5,7 +5,7 @@ begin;
 \set helpers_included 1
 \ir ../support/helpers.sql
 
-select plan(5);
+select plan(6);
 
 select is_empty(
   $$select c.relname from pg_class c
@@ -41,6 +41,17 @@ select is_empty(
      where n.nspname = 'public' and c.relkind = 'v'
        and not coalesce(c.reloptions @> array['security_invoker=true'], false)$$,
   'every public view is security_invoker'
+);
+
+-- Staff-only columns are not readable by the role guests share with staff.
+select is_empty(
+  $$select table_name, column_name from information_schema.role_column_grants
+     where table_schema = 'public' and grantee = 'authenticated' and privilege_type = 'SELECT'
+       and (table_name, column_name) in (
+         ('households', 'notes'), ('households', 'delivery_problem'),
+         ('households', 'rsvp_deadline_override'), ('households', 'address'),
+         ('guests', 'notes'), ('invitations', 'invited_by'), ('invitations', 'responded_by'))$$,
+  'authenticated cannot read the staff-only columns'
 );
 
 select * from finish();

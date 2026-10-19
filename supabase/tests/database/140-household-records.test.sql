@@ -116,7 +116,7 @@ select is(
   :'user_a', 'changing the email returns the previously linked account'
 );
 select results_eq(
-  $$select contact_email::text, delivery_problem from public.households where id = 'aaaaaaaa-0000-0000-0000-00000000000a'$$,
+  $$select contact_email::text, delivery_problem from public.staff_households() where id = 'aaaaaaaa-0000-0000-0000-00000000000a'$$,
   $$values ('New@Example.test'::text, false)$$,
   'the new email is stored and the delivery problem flag is cleared'
 );

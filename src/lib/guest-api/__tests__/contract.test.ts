@@ -20,7 +20,14 @@ jest.mock("@/lib/auth/guards", () => ({
 }));
 let allow = true;
 jest.mock("@/lib/rate-limit", () => ({
+  ...jest.requireActual("@/lib/rate-limit"),
   createRateLimiter: () => ({ check: () => allow }),
+}));
+
+jest.mock("@/lib/sign-in-timing", () => ({
+  withMinimumDuration: async (_ms: number, work: () => Promise<unknown>) => {
+    await work().catch(() => {});
+  },
 }));
 
 import { POST as signIn } from "@/app/api/guest/sign-in/route";

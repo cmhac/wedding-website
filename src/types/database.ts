@@ -755,6 +755,64 @@ isOneToOne: true
 "set_reminders_opt_out":
 { Args: { "opt_out": boolean }; Returns: boolean
                            },
+"staff_guests":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "created_at": string,
+"dietary_notes": string | null,
+"email": string | null,
+"first_name": string | null,
+"household_id": string,
+"id": string,
+"is_placeholder": boolean,
+"is_plus_one": boolean,
+"last_name": string | null,
+"notes": string | null,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "guests"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"staff_households":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "address": Json | null,
+"auth_user_id": string | null,
+"contact_email": string | null,
+"created_at": string,
+"delivery_problem": boolean,
+"display_name": string,
+"id": string,
+"message_to_couple": string | null,
+"notes": string | null,
+"plus_one_allowance": number,
+"reminders_opt_out": boolean,
+"rsvp_deadline_override": string | null,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "households"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"staff_invitations":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "event_id": string,
+"guest_id": string,
+"invited_at": string,
+"invited_by": string | null,
+"responded_at": string | null,
+"responded_by": string | null,
+"status": Database["public"]['Enums']["rsvp_status"]
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "invitations"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "staff_set_meal":
 { Args: { "course_id": string,"dish_id": string,"guest_id": string }; Returns: Json
                            },

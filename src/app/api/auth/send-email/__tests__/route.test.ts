@@ -103,12 +103,35 @@ describe("POST /api/auth/send-email", () => {
     });
   });
 
-  it("marks admin redirects as the staff audience", async () => {
+  it("marks the staff sign-in redirect as the staff audience", async () => {
     mockRegistry.magic_link = template;
-    await POST(request(payload("magiclink", "http://localhost:3000/admin")));
+    await POST(
+      request(
+        payload(
+          "magiclink",
+          "http://localhost:3000/auth/callback?audience=staff",
+        ),
+      ),
+    );
     expect(template).toHaveBeenCalledWith(
       expect.objectContaining({ audience: "staff" }),
     );
+  });
+
+  it("treats the plain callback and any other audience value as a guest", async () => {
+    mockRegistry.magic_link = template;
+    for (const redirect of [
+      "http://localhost:3000/auth/callback",
+      "http://localhost:3000/auth/callback?audience=other",
+      "http://localhost:3000/admin",
+      "not a url",
+    ]) {
+      template.mockClear();
+      await POST(request(payload("magiclink", redirect)));
+      expect(template).toHaveBeenCalledWith(
+        expect.objectContaining({ audience: "guest" }),
+      );
+    }
   });
 
   it("returns 500 template_missing when no template is registered", async () => {

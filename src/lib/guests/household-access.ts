@@ -12,7 +12,12 @@ import type { Database } from "../../types/database.ts";
 
 export type HouseholdAccessFailure = {
   ok: false;
-  code: "email_in_use" | "invalid_payload" | "not_found" | "failed";
+  code:
+    | "email_in_use"
+    | "invalid_payload"
+    | "not_found"
+    | "staff_account"
+    | "failed";
 };
 
 export type HouseholdSummary = {
@@ -50,7 +55,12 @@ function rpcCode(
   error: { message?: string } | null,
 ): HouseholdAccessFailure["code"] {
   const m = error?.message ?? "";
-  if (m === "email_in_use" || m === "invalid_payload" || m === "not_found") {
+  if (
+    m === "email_in_use" ||
+    m === "invalid_payload" ||
+    m === "not_found" ||
+    m === "staff_account"
+  ) {
     return m;
   }
   return "failed";
@@ -177,6 +187,11 @@ export async function updateHouseholdContactEmail(
   let changedExisting = false;
   if (email !== null) {
     if (userId) {
+      // A household linked to a staff member's account must never change that
+      // account's email: that would hand the account to whoever typed the address.
+      if (await isStaffUser(staff, userId)) {
+        return { ok: false, code: "staff_account" };
+      }
       const updated = await admin.auth.admin.updateUserById(userId, {
         email,
         email_confirm: true,

@@ -65,7 +65,7 @@ There are no anonymous reads of any table. Guests reach their data only through 
 
 - Unique `contact_email` is what makes one email map to one sign-in account (research R2).
 - Possible-duplicate detection (FR-005): a function `find_duplicate_households()` returns pairs with the same normalized display name or address; it flags, never merges.
-- RLS: guest `select` where `auth_user_id = auth.uid()`; no guest insert/update/delete (writes go through RPCs). Staff all rows, but column privileges stop the `authenticated` role from inserting or deleting households or updating `contact_email` and `auth_user_id`: those changes go through the admin API route handlers, which also create, update, or remove the linked sign-in account.
+- Column privileges hide `notes`, `delivery_problem`, `rsvp_deadline_override` and `address` from the `authenticated` role (guests share it with staff); staff read them through `staff_households()`. RLS: guest `select` where `auth_user_id = auth.uid()`; no guest insert/update/delete (writes go through RPCs). Staff all rows, but column privileges stop the `authenticated` role from inserting or deleting households or updating `contact_email` and `auth_user_id`: those changes go through the admin API route handlers, which also create, update, or remove the linked sign-in account.
 
 ### guests
 
@@ -83,7 +83,7 @@ There are no anonymous reads of any table. Guests reach their data only through 
 - Check: when `is_placeholder` is false, `first_name` and `last_name` are not null.
 - Trigger: placeholder count per household cannot exceed `plus_one_allowance`; reducing the allowance below the number of named plus-ones is refused with a message (spec edge case) and unnamed placeholders above the new limit are removed.
 - Unique per household on lower-cased (`first_name`, `last_name`) for non-placeholders (FR-005).
-- RLS: guest `select` on rows whose household is theirs. Guest writes only through `submit_household_rsvp` and `name_plus_one`.
+- Column privileges hide `notes` from guests (staff read it through `staff_guests()`). RLS: guest `select` on rows whose household is theirs. Guest writes only through `submit_household_rsvp` and `name_plus_one`.
 
 ### events
 
@@ -119,7 +119,7 @@ State transitions: `pending → attending | declined`; `attending ↔ declined` 
 
 - Effective deadline: `effective_rsvp_deadline(household, event) = coalesce(household.rsvp_deadline_override, event.rsvp_deadline, settings.default_rsvp_deadline)`. A guest write after the deadline, or when `settings.rsvp_open` is false, is refused; staff are not bound by it.
 - Removing an invitation deletes the row; `rsvp_history` keeps the earlier answers without personal data.
-- RLS: guest `select` own; staff all; no direct guest write.
+- Column privileges hide `invited_by` and `responded_by` from guests (staff read them through `staff_invitations()`). RLS: guest `select` own; staff all; no direct guest write.
 
 ### Menus
 

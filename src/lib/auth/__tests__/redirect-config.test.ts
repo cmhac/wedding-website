@@ -26,4 +26,16 @@ describe("local sign-in redirect allow-list", () => {
     expect(list).toContain("http://localhost:3000/auth/callback");
     expect(list).toContain("http://127.0.0.1:3000/auth/callback");
   });
+
+  it("permits the staff sign-in callback (with its audience marker) on every allowed host", () => {
+    const list = allowList();
+    for (const host of ["localhost", "127.0.0.1"]) {
+      expect(list).toContain(
+        `http://${host}:3000/auth/callback?audience=staff`,
+      );
+    }
+    expect(list).toContain(
+      `${siteUrlFromExample()}/auth/callback?audience=staff`,
+    );
+  });
 });

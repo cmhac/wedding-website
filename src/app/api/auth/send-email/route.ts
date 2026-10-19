@@ -28,11 +28,18 @@ function error(status: number, code: string) {
   return NextResponse.json({ error: { code, message: code } }, { status });
 }
 
-/** Staff sign-in links are requested with a redirect under `/admin`. */
+/**
+ * Staff sign-in links are requested with the allow-listed redirect
+ * `/auth/callback?audience=staff` (see the admin sign-in route); every other
+ * redirect is a guest link.
+ */
 function audienceFor(redirectTo: string): "guest" | "staff" {
   try {
-    const path = new URL(redirectTo).pathname;
-    return path === "/admin" || path.startsWith("/admin/") ? "staff" : "guest";
+    const url = new URL(redirectTo);
+    return url.pathname === "/auth/callback" &&
+      url.searchParams.get("audience") === "staff"
+      ? "staff"
+      : "guest";
   } catch {
     return "guest";
   }
