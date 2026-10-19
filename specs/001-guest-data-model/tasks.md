@@ -28,7 +28,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 **Purpose**: Tooling, configuration, and dependencies. Nothing here needs a database table.
 
 - [ ] T001 Add the new server-only variable names with empty values to `.env.example`: `SEND_EMAIL_HOOK_SECRET`, `RESEND_WEBHOOK_SECRET`, `CRON_SECRET` (names only, per Constitution III)
-- [ ] T002 In `supabase/config.toml` set `enable_signup = false` under both `[auth]` and `[auth.email]` so guests and staff exist only when created by server code (research R2)
+- [ ] T002 In `supabase/config.toml` set `enable_signup = false` under both `[auth]` and `[auth.email]` so guests and staff exist only when created by server code (decision 0003)
 - [ ] T003 [P] Add the `test:db` script (`supabase test db`) to `package.json` and list it under Commands in `CLAUDE.md`
 - [ ] T004 [P] Install `standardwebhooks` (Supabase Send Email hook signature verification) and `csv-parse` (guest import) with `npm install`, taking the latest versions (Constitution V); commit `package.json` and `package-lock.json`
 - [ ] T005 [P] Create `supabase/tests/support/helpers.sql` with reusable pgTAP helpers `tests.create_user(email text)` returning a uuid, `tests.authenticate_as(user_id uuid)` (sets role `authenticated` and `request.jwt.claims`), `tests.authenticate_anon()`, and `tests.clear_auth()`; each test file loads it with `\ir ../support/helpers.sql` (confirm `supabase test db` supports `\ir`; if not, inline the helpers in a shared `supabase/tests/database/000-helpers.sql` and note the finding in `docs/`)
@@ -282,7 +282,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [ ] T102 [P] Search the repository for logging of guest data: confirm no `console.*` calls under `src/` and `scripts/` outside `src/lib/log.ts`, and add an ESLint `no-console` rule to `eslint.config.mjs` with an exception for `src/lib/log.ts`
 - [ ] T103 [P] Update `CLAUDE.md` (Commands: `test:db`; Layout: `src/app/api/admin`, `src/app/api/guest`, `src/lib/admin-api`, `src/lib/guest-api`, `src/lib/campaigns`, `src/lib/guests`, `src/lib/exports`, `supabase/tests`) and `README.md` in the same change as the behavior (Constitution workflow)
 - [ ] T104 [P] Document in `docs/` the final state of every manual setting from the manual-task issue (https://github.com/cmhac/wedding-website/issues/3): Resend domain and webhook, Supabase auth hook and sign-up setting, Vault secrets, hosting variables
-- [ ] T105 Once the couple confirm the proposals, change the status line of decisions R1, R2, R3, R4, R7, R8, and R11 in `specs/001-guest-data-model/research.md` from "proposed" to "accepted" with the date, and update `docs/architecture.md`
+- [ ] T105 Once the couple confirm the proposals, change the status line in `docs/decisions/0002` through `0008` from "proposed" to "accepted" with the date, and update `docs/architecture.md`
 - [ ] T106 Run every scenario in `specs/001-guest-data-model/quickstart.md` end to end against the local stack and record any deviation in `specs/001-guest-data-model/quickstart.md`
 - [ ] T107 Run the `/security-review` skill on the branch and fix any findings, paying particular attention to the guest sign-in neutral message, the webhook and cron endpoints, the service-role key boundary, and CSV formula injection
 - [ ] T108 Final gate: `npm run format:check && npm run lint && npm run type-check && npm test && npx supabase test db && npm run build` all pass
@@ -356,4 +356,4 @@ T031 household route tests
 - Every task that adds a table or policy also adds a pgTAP test proving what anon, guest, and staff can and cannot do (Constitution II).
 - Fixtures and seed data are fake only (Constitution III).
 - Commit after each task or small group. Tests must never be skipped or disabled to get green.
-- Nothing real is emailed until the sending domain is verified (research R11).
+- Nothing real is emailed until the sending domain is verified (decision 0007).
