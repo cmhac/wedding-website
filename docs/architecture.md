@@ -2,7 +2,7 @@
 
 Status: planning. Nothing below is built yet. The first feature is specified in
 [`specs/001-guest-data-model`](../specs/001-guest-data-model/plan.md); its plan
-proposes answers to all seven open decisions below.
+records answers to all seven decisions below, accepted on 2026-10-19.
 
 ## Goals
 

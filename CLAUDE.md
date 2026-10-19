@@ -3,7 +3,7 @@
 Chris and Hannah's wedding website. This repo holds everything: the website
 frontend, backend code, database schema, email sending logic (email content is supplied separately), and
 docs. See [docs/architecture.md](docs/architecture.md) for the plan and the
-open decisions.
+recorded decisions.
 
 ## Stack
 
