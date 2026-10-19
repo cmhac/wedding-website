@@ -42,6 +42,16 @@ Preview email templates with `npm run email:dev`.
 | `npm run db:start` / `stop` / `reset`       | Local Supabase                          |
 | `npm run db:types`                          | Generate TypeScript types from local DB |
 
+### Create a staff sign-in (the couple or the planner)
+
+Staff sign-in accounts exist only because this script creates them; the sign-in
+endpoint never creates users. It needs `NEXT_PUBLIC_SUPABASE_URL` and
+`SUPABASE_SERVICE_ROLE_KEY` in `.env.local`, and prints only the new user id.
+
+```bash
+node --env-file=.env.local scripts/create-staff-user.ts <email> "<display name>" <couple|planner>
+```
+
 ## Repository layout
 
 See [CLAUDE.md](CLAUDE.md) for the directory map and conventions.
