@@ -3,6 +3,8 @@ begin;
 \set helpers_included 1
 \ir ../support/helpers.sql
 
+select tests.clear_data();
+
 select plan(32);
 
 -- Fixed ids so the assertions below can name people.

@@ -80,6 +80,24 @@ begin
 end;
 $$;
 
+-- Empties every table in the public schema (restoring the single settings row)
+-- and removes all sign-in accounts, so a test does not depend on seed.sql.
+-- Truncating fires no row triggers. Safe because the test's transaction rolls back.
+create or replace function tests.clear_data()
+returns void
+language plpgsql
+as $$
+declare
+  t record;
+begin
+  for t in select tablename from pg_tables where schemaname = 'public' loop
+    execute format('truncate table public.%I cascade', t.tablename);
+  end loop;
+  delete from auth.users;
+  insert into public.settings (id) values (true);
+end;
+$$;
+
 grant execute on all functions in schema tests to anon, authenticated, service_role;
 
 \if :{?helpers_included}

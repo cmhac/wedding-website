@@ -3,7 +3,9 @@ begin;
 \set helpers_included 1
 \ir ../support/helpers.sql
 
-select plan(37);
+select tests.clear_data();
+
+select plan(32);
 
 select tests.create_user('couple@example.test') as couple_user \gset
 select tests.create_user('planner@example.test') as planner_user \gset
