@@ -10,20 +10,38 @@ function fakeAdmin() {
     data: {
       created: { households: 1, guests: 1, invitations: 1 },
       errors: [],
+      household_ids: [{ ref: "h1", household_id: "hh-1" }],
     },
     error: null,
   }));
+  const createUser = jest.fn(async (_attrs: object) => ({
+    data: { user: { id: "user-1" } },
+    error: null,
+  }));
+  const update = jest.fn((_row: object) => ({
+    eq: async (_k: string, _v: string) => ({ error: null }),
+  }));
   const households = {
     select: () => households,
+    in: () => households,
     is: () => households,
-    not: async () => ({ data: [], error: null }),
+    not: async () => ({
+      data: [{ id: "hh-1", contact_email: "test@example.com" }],
+      error: null,
+    }),
+    update,
   };
   const from = jest.fn((table: string) =>
     table === "events"
       ? { select: async () => ({ data: [{ slug: "ceremony" }], error: null }) }
       : households,
   );
-  return { admin: { rpc, from } as never, rpc };
+  return {
+    admin: { rpc, from, auth: { admin: { createUser } } } as never,
+    rpc,
+    createUser,
+    update,
+  };
 }
 
 const read = (text: string) => async (_path: string) => text;
@@ -39,6 +57,19 @@ describe("importGuestsFromFile", () => {
     expect(rpc).toHaveBeenCalledWith("import_households", expect.anything());
     expect(report).toContain("1 households");
     expect(report).not.toContain("Ann");
+    expect(report).not.toContain("example.com");
+  });
+
+  it("links sign-in accounts to the imported households only, with the service role, reporting counts", async () => {
+    const { admin, createUser, update } = fakeAdmin();
+    const report = await importGuestsFromFile(
+      admin,
+      "guests.csv",
+      read(`${HEADER}\nh1,Test Household,test@example.com,Ann,Example,yes`),
+    );
+    expect(createUser).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith({ auth_user_id: "user-1" });
+    expect(report).toContain("1 linked, 0 failed");
     expect(report).not.toContain("example.com");
   });
 
@@ -73,6 +104,7 @@ describe("formatReport", () => {
       kind: "done",
       created: { households: 2, guests: 5, invitations: 7 },
       errors: [{ row: 3, field: "email", message: "Invalid email" }],
+      householdIds: [],
     });
     expect(text).toContain("2 households, 5 guests, 7 invitations");
     expect(text).toContain("Row 3 (email): Invalid email");

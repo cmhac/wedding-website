@@ -10,7 +10,7 @@ jest.mock("@/lib/supabase/admin", () => ({
 }));
 const mockLink = jest.fn();
 jest.mock("@/lib/guests/household-access", () => ({
-  linkPendingHouseholdAccounts: (...a: unknown[]) => mockLink(...a),
+  linkHouseholdAccounts: (...a: unknown[]) => mockLink(...a),
 }));
 
 import { AuthError } from "@/lib/auth/guards";
@@ -51,6 +51,7 @@ beforeEach(() => {
     data: {
       created: { households: 1, guests: 2, invitations: 1 },
       errors: [],
+      household_ids: [{ ref: "h1", household_id: "hh-1" }],
     },
     error: null,
   });
@@ -81,9 +82,11 @@ describe("POST /api/admin/guests/import", () => {
     );
   });
 
-  it("links sign-in accounts for the new households with the service-role client", async () => {
+  it("links sign-in accounts for the new households only, attributed to the staff member", async () => {
     await POST(request(valid));
-    expect(mockLink).toHaveBeenCalledWith({ fake: "admin" });
+    expect(mockLink).toHaveBeenCalledWith({ fake: "admin" }, ["hh-1"], {
+      staff: sessionClient,
+    });
   });
 
   it("returns the bad row's error and still creates the valid households", async () => {

@@ -12,6 +12,7 @@ function fakeClient(rpcResult?: { data: unknown; error: unknown }) {
         data: {
           created: { households: 1, guests: 2, invitations: 2 },
           errors: [],
+          household_ids: [{ ref: "h1", household_id: "hh-1" }],
         },
         error: null,
       },
@@ -46,6 +47,7 @@ describe("runGuestImport", () => {
       kind: "done",
       created: { households: 1, guests: 2, invitations: 2 },
       errors: [],
+      householdIds: ["hh-1"],
     });
   });
 

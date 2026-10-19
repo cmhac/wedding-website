@@ -18,15 +18,15 @@ All endpoints return JSON. Errors use one shape:
 
 `issues` appears only on `422`. Messages never contain other households' data or reveal whether an email is on the guest list.
 
-| Method and path            | Purpose                                     | Success | Errors                                                               |
-| -------------------------- | ------------------------------------------- | ------- | -------------------------------------------------------------------- |
-| `POST /api/guest/sign-in`  | Email a sign-in link                        | 202     | 422 invalid email format, 429 rate limited                           |
-| `POST /api/guest/sign-out` | End the session                             | 204     | none                                                                 |
-| `GET /api/guest/rsvp`      | Read the household, guests, events, menus   | 200     | 401 not signed in, 403 not a guest                                   |
-| `PUT /api/guest/rsvp`      | Save answers, meals, dietary needs, message | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal` |
-| `POST /api/guest/plus-one` | Name a plus-one placeholder                 | 200     | 401, 403, 409 `rsvp_closed`, 409 `not_a_placeholder`, 422            |
-| `POST /api/guest/opt-out`  | Turn reminder emails off or on              | 200     | 401, 403, 422                                                        |
-| `GET /auth/callback`       | Completes sign-in from the emailed link     | 302     | 302 to the sign-in failure path                                      |
+| Method and path            | Purpose                                     | Success | Errors                                                                    |
+| -------------------------- | ------------------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `POST /api/guest/sign-in`  | Email a sign-in link                        | 202     | 422 invalid email format, 429 rate limited                                |
+| `POST /api/guest/sign-out` | End the session                             | 204     | none                                                                      |
+| `GET /api/guest/rsvp`      | Read the household, guests, events, menus   | 200     | 401 not signed in, 403 not a guest                                        |
+| `PUT /api/guest/rsvp`      | Save answers, meals, dietary needs, message | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
+| `POST /api/guest/plus-one` | Name a plus-one placeholder                 | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
+| `POST /api/guest/opt-out`  | Turn reminder emails off or on              | 200     | 401, 403, 422                                                             |
+| `GET /auth/callback`       | Completes sign-in from the emailed link     | 302     | 302 to the sign-in failure path                                           |
 
 ## Sign-in
 

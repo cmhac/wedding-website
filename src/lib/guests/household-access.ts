@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../../types/database.ts";
 
 /**
  * Keeps a household's sign-in account (a Supabase Auth user) in step with its
@@ -11,7 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type HouseholdAccessFailure = {
   ok: false;
-  code: "email_in_use" | "not_found" | "failed";
+  code: "email_in_use" | "invalid_payload" | "not_found" | "failed";
 };
 
 export type HouseholdSummary = {
@@ -40,34 +41,32 @@ export type NewHousehold = {
   guests: NewGuest[];
 };
 
-type Admin = SupabaseClient;
+type Client = SupabaseClient<Database>;
 
 const normalize = (email: string) => email.trim().toLowerCase();
 
-function summary(row: Record<string, unknown>): HouseholdSummary {
-  const contact = (row.contact_email as string | null) ?? null;
-  return {
-    id: row.id as string,
-    display_name: row.display_name as string,
-    contact_email: contact,
-    auth_user_id: (row.auth_user_id as string | null) ?? null,
-    plus_one_allowance: Number(row.plus_one_allowance ?? 0),
-    paper_only: contact === null,
-  };
+/** The stable code word a staff-only database function raised, if any. */
+function rpcCode(
+  error: { message?: string } | null,
+): HouseholdAccessFailure["code"] {
+  const m = error?.message ?? "";
+  if (m === "email_in_use" || m === "invalid_payload" || m === "not_found") {
+    return m;
+  }
+  return "failed";
 }
 
-/** True when a household other than `exceptId` already uses this email. */
-async function emailTaken(admin: Admin, email: string, exceptId?: string) {
-  const { data, error } = await admin
-    .from("households")
-    .select("id")
-    .eq("contact_email", email);
-  if (error) return null;
-  return (data ?? []).some((r: { id: string }) => r.id !== exceptId);
+function summary(
+  row: Pick<
+    HouseholdSummary,
+    "id" | "display_name" | "contact_email" | "auth_user_id"
+  > & { plus_one_allowance: number },
+): HouseholdSummary {
+  return { ...row, paper_only: row.contact_email === null };
 }
 
 async function createAuthUser(
-  admin: Admin,
+  admin: Client,
   email: string,
 ): Promise<{ id: string } | HouseholdAccessFailure> {
   const { data, error } = await admin.auth.admin.createUser({
@@ -83,8 +82,25 @@ async function createAuthUser(
   return { id: data.user.id };
 }
 
+/** True when the account belongs to a staff member, so it must never be removed with a household. */
+async function isStaffUser(staff: Client, userId: string): Promise<boolean> {
+  const { data } = await staff
+    .from("staff")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+/**
+ * Creates the sign-in account with the service-role client (`admin`), then the
+ * household, guests and invitations through the staff-only database function
+ * with the signed-in staff member's client (`staff`), so the change is
+ * attributed to them. The account is removed again if the household fails.
+ */
 export async function createHouseholdWithAccess(
-  admin: Admin,
+  admin: Client,
+  staff: Client,
   input: NewHousehold,
 ): Promise<
   | { ok: true; household: HouseholdSummary; guestIds: string[] }
@@ -94,94 +110,72 @@ export async function createHouseholdWithAccess(
 
   let userId: string | null = null;
   if (email) {
-    const taken = await emailTaken(admin, email);
-    if (taken === null) return { ok: false, code: "failed" };
-    if (taken) return { ok: false, code: "email_in_use" };
     const created = await createAuthUser(admin, email);
     if ("ok" in created) return created;
     userId = created.id;
   }
 
-  const rollback = async (householdId?: string) => {
-    if (householdId) {
-      await admin.from("households").delete().eq("id", householdId);
-    }
-    if (userId) await admin.auth.admin.deleteUser(userId);
-  };
-
-  const inserted = await admin
-    .from("households")
-    .insert({
+  const { data, error } = await staff.rpc("create_household_record", {
+    payload: {
       display_name: input.display_name,
       contact_email: email,
       auth_user_id: userId,
       plus_one_allowance: input.plus_one_allowance ?? 0,
       address: input.address ?? null,
       notes: input.notes ?? null,
-    })
-    .select("*")
-    .single();
-  if (inserted.error || !inserted.data) {
-    await rollback();
-    // A concurrent save of the same email loses at the unique constraint.
-    return {
-      ok: false,
-      code: inserted.error?.code === "23505" ? "email_in_use" : "failed",
-    };
+      guests: input.guests.map((g) => ({
+        first_name: g.first_name,
+        last_name: g.last_name,
+        email: g.email ?? null,
+        dietary_notes: g.dietary_notes ?? null,
+        notes: g.notes ?? null,
+      })),
+    },
+  });
+  const result = data as { household_id: string; guest_ids: string[] } | null;
+  if (error || !result) {
+    if (userId) await admin.auth.admin.deleteUser(userId);
+    return { ok: false, code: rpcCode(error) };
   }
-  const household = summary(inserted.data);
-
-  let guestIds: string[] = [];
-  if (input.guests.length > 0) {
-    const guestRows = await admin
-      .from("guests")
-      .insert(
-        input.guests.map((g) => ({
-          household_id: household.id,
-          first_name: g.first_name,
-          last_name: g.last_name,
-          email: g.email ?? null,
-          dietary_notes: g.dietary_notes ?? null,
-          notes: g.notes ?? null,
-        })),
-      )
-      .select("id");
-    if (guestRows.error) {
-      await rollback(household.id);
-      return { ok: false, code: "failed" };
-    }
-    guestIds = ((guestRows.data ?? []) as { id: string }[]).map((g) => g.id);
-  }
-  return { ok: true, household, guestIds };
+  return {
+    ok: true,
+    household: summary({
+      id: result.household_id,
+      display_name: input.display_name,
+      contact_email: email,
+      auth_user_id: userId,
+      plus_one_allowance: input.plus_one_allowance ?? 0,
+    }),
+    guestIds: result.guest_ids ?? [],
+  };
 }
 
+/**
+ * Changes the contact email and keeps the sign-in account in step: the account
+ * is created, updated or (when the email is cleared) removed with `admin`, and
+ * the household is saved through `set_household_contact` with `staff`.
+ */
 export async function updateHouseholdContactEmail(
-  admin: Admin,
+  admin: Client,
+  staff: Client,
   householdId: string,
   contactEmail: string | null,
 ): Promise<{ ok: true; household: HouseholdSummary } | HouseholdAccessFailure> {
-  const current = await admin
+  const current = await staff
     .from("households")
-    .select("*")
+    .select("id, display_name, contact_email, auth_user_id, plus_one_allowance")
     .eq("id", householdId)
     .maybeSingle();
   if (current.error) return { ok: false, code: "failed" };
   if (!current.data) return { ok: false, code: "not_found" };
-  const userId = (current.data.auth_user_id as string | null) ?? null;
+  const userId = current.data.auth_user_id;
+  const oldEmail = current.data.contact_email;
   const email = contactEmail ? normalize(contactEmail) : null;
 
-  let nextUserId: string | null = userId;
-  if (email === null) {
-    // Clearing the email unlinks the sign-in account and makes the household paper-only.
-    if (userId) {
-      const removed = await admin.auth.admin.deleteUser(userId);
-      if (removed.error) return { ok: false, code: "failed" };
-    }
-    nextUserId = null;
-  } else {
-    const taken = await emailTaken(admin, email, householdId);
-    if (taken === null) return { ok: false, code: "failed" };
-    if (taken) return { ok: false, code: "email_in_use" };
+  let nextUserId: string | null = null;
+  let createdUserId: string | null = null;
+  let changedExisting = false;
+  if (email !== null) {
     if (userId) {
       const updated = await admin.auth.admin.updateUserById(userId, {
         email,
@@ -194,80 +188,120 @@ export async function updateHouseholdContactEmail(
             updated.error.code === "email_exists" ? "email_in_use" : "failed",
         };
       }
+      nextUserId = userId;
+      changedExisting = true;
     } else {
       const created = await createAuthUser(admin, email);
       if ("ok" in created) return created;
       nextUserId = created.id;
+      createdUserId = created.id;
     }
   }
 
-  const saved = await admin
-    .from("households")
-    .update({ contact_email: email, auth_user_id: nextUserId })
-    .eq("id", householdId)
-    .select("*")
-    .single();
-  if (saved.error || !saved.data) {
-    if (!userId && nextUserId) await admin.auth.admin.deleteUser(nextUserId);
-    return {
-      ok: false,
-      code: saved.error?.code === "23505" ? "email_in_use" : "failed",
-    };
+  const saved = await staff.rpc("set_household_contact", {
+    household_id: householdId,
+    // The function accepts null (paper-only); the generated argument types do not say so.
+    contact_email: email as string,
+    auth_user_id: nextUserId as string,
+  });
+  if (saved.error) {
+    if (createdUserId) await admin.auth.admin.deleteUser(createdUserId);
+    if (changedExisting && userId && oldEmail) {
+      await admin.auth.admin.updateUserById(userId, { email: oldEmail });
+    }
+    return { ok: false, code: rpcCode(saved.error) };
   }
-  return { ok: true, household: summary(saved.data) };
+
+  // Clearing the email unlinks the account; remove it unless it is a staff member's.
+  const previous = (
+    saved.data as { previous_auth_user_id: string | null } | null
+  )?.previous_auth_user_id;
+  if (email === null && previous && !(await isStaffUser(staff, previous))) {
+    const removed = await admin.auth.admin.deleteUser(previous);
+    if (removed.error) return { ok: false, code: "failed" };
+  }
+
+  return {
+    ok: true,
+    household: summary({
+      id: current.data.id,
+      display_name: current.data.display_name,
+      contact_email: email,
+      auth_user_id: nextUserId,
+      plus_one_allowance: Number(current.data.plus_one_allowance ?? 0),
+    }),
+  };
 }
 
-/** Deletes the household (its guests go with it) and then its sign-in account. */
+/**
+ * Deletes the household (its guests go with it) through the staff-only
+ * function, then its sign-in account, unless that account is a staff member's.
+ */
 export async function deleteHouseholdWithAccess(
-  admin: Admin,
+  admin: Client,
+  staff: Client,
   householdId: string,
 ): Promise<{ ok: true } | HouseholdAccessFailure> {
-  const current = await admin
-    .from("households")
-    .select("id, auth_user_id")
-    .eq("id", householdId)
-    .maybeSingle();
-  if (current.error) return { ok: false, code: "failed" };
-  if (!current.data) return { ok: false, code: "not_found" };
-
-  const removed = await admin.from("households").delete().eq("id", householdId);
-  if (removed.error) return { ok: false, code: "failed" };
-  const userId = current.data.auth_user_id as string | null;
-  if (userId) await admin.auth.admin.deleteUser(userId);
+  const { data, error } = await staff.rpc("delete_household_record", {
+    household_id: householdId,
+  });
+  if (error) return { ok: false, code: rpcCode(error) };
+  const result = data as {
+    auth_user_id: string | null;
+    auth_user_is_staff: boolean;
+  } | null;
+  if (result?.auth_user_id && !result.auth_user_is_staff) {
+    await admin.auth.admin.deleteUser(result.auth_user_id);
+  }
   return { ok: true };
 }
 
 /**
- * Creates and links sign-in accounts for households that have a contact email
- * but no account yet (for example, households just created by the CSV import,
- * which writes rows but cannot create Auth users). Returns counts only.
+ * Creates and links sign-in accounts for the listed households (the
+ * `household_ids` an import returns) that have a contact email but no account;
+ * the import itself creates none. With `options.staff`, the link is saved
+ * through `set_household_contact` so it is attributed to that staff member;
+ * without it (a script holding only the service-role key) the household row is
+ * updated directly. Returns counts only.
  */
-export async function linkPendingHouseholdAccounts(
-  admin: Admin,
+export async function linkHouseholdAccounts(
+  admin: Client,
+  householdIds: string[],
+  options: { staff?: Client } = {},
 ): Promise<{ linked: number; failed: number }> {
+  if (householdIds.length === 0) return { linked: 0, failed: 0 };
   const pending = await admin
     .from("households")
     .select("id, contact_email")
+    .in("id", householdIds)
     .is("auth_user_id", null)
     .not("contact_email", "is", null);
-  if (pending.error) return { linked: 0, failed: 0 };
+  if (pending.error) return { linked: 0, failed: householdIds.length };
 
   let linked = 0;
   let failed = 0;
-  for (const row of (pending.data ?? []) as {
-    id: string;
-    contact_email: string;
-  }[]) {
-    const created = await createAuthUser(admin, normalize(row.contact_email));
+  for (const row of pending.data ?? []) {
+    const email = normalize(row.contact_email as string);
+    const created = await createAuthUser(admin, email);
     if ("ok" in created) {
       failed++;
       continue;
     }
-    const saved = await admin
-      .from("households")
-      .update({ auth_user_id: created.id })
-      .eq("id", row.id);
-    if (saved.error) {
+    const error = options.staff
+      ? (
+          await options.staff.rpc("set_household_contact", {
+            household_id: row.id,
+            contact_email: email,
+            auth_user_id: created.id,
+          })
+        ).error
+      : (
+          await admin
+            .from("households")
+            .update({ auth_user_id: created.id })
+            .eq("id", row.id)
+        ).error;
+    if (error) {
       await admin.auth.admin.deleteUser(created.id);
       failed++;
     } else {

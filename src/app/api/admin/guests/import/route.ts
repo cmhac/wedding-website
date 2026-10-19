@@ -1,6 +1,6 @@
 import { authErrorResponse, requireStaff } from "@/lib/auth/guards";
 import { errorResponse } from "@/lib/api-errors";
-import { linkPendingHouseholdAccounts } from "@/lib/guests/household-access";
+import { linkHouseholdAccounts } from "@/lib/guests/household-access";
 import { runGuestImport } from "@/lib/guests/run-import";
 import { log } from "@/lib/log";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -10,7 +10,8 @@ const MAX_BYTES = 2 * 1024 * 1024;
 /**
  * POST /api/admin/guests/import: the request body is the CSV text. Runs as the
  * signed-in staff member so the import is attributed to them; the sign-in
- * accounts for the new households are then created with the service-role key.
+ * accounts for the new households are then created with the service-role key
+ * and linked through the staff member's session.
  */
 export async function POST(request: Request) {
   let session;
@@ -44,7 +45,11 @@ export async function POST(request: Request) {
       );
     }
     if (result.created.households > 0) {
-      const link = await linkPendingHouseholdAccounts(createAdminSupabase());
+      const link = await linkHouseholdAccounts(
+        createAdminSupabase(),
+        result.householdIds,
+        { staff: session.supabase },
+      );
       log.info("guest_import_accounts_linked", {
         linked: link.linked,
         failed: link.failed,

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "../../types/database.ts";
 import { parseGuestImport, type ImportError } from "./import.ts";
 
 /**
@@ -18,14 +19,24 @@ export type Counts = {
 };
 
 export type RunImportResult =
-  | { kind: "done"; created: Counts; errors: ImportError[] }
+  | {
+      kind: "done";
+      created: Counts;
+      errors: ImportError[];
+      /** The new households, to link sign-in accounts to afterwards. */
+      householdIds: string[];
+    }
   /** The file itself cannot be read (empty, not CSV, or missing columns). */
   | { kind: "invalid"; errors: ImportError[] };
 
-type RpcResult = { created?: Partial<Counts>; errors?: ImportError[] } | null;
+type RpcResult = {
+  created?: Partial<Counts>;
+  errors?: ImportError[];
+  household_ids?: { ref: string; household_id: string }[];
+} | null;
 
 export async function runGuestImport(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   csv: string,
 ): Promise<RunImportResult> {
   const events = await supabase.from("events").select("slug");
@@ -45,6 +56,7 @@ export async function runGuestImport(
 
   const created: Counts = { households: 0, guests: 0, invitations: 0 };
   const errors = [...parsed.errors];
+  const householdIds: string[] = [];
 
   if (parsed.households.length > 0) {
     const { data, error } = await supabase.rpc("import_households", {
@@ -56,8 +68,11 @@ export async function runGuestImport(
     created.guests = result?.created?.guests ?? 0;
     created.invitations = result?.created?.invitations ?? 0;
     errors.push(...(result?.errors ?? []));
+    householdIds.push(
+      ...(result?.household_ids ?? []).map((h) => h.household_id),
+    );
   }
 
   errors.sort((a, b) => a.row - b.row);
-  return { kind: "done", created, errors };
+  return { kind: "done", created, errors, householdIds };
 }

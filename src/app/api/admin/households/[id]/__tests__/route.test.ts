@@ -5,7 +5,8 @@ jest.mock("@/lib/auth/guards", () => ({
   ...jest.requireActual("@/lib/auth/guards"),
   requireStaff: () => mockRequireStaff(),
 }));
-const adminClient = { fake: "admin", from: jest.fn() };
+const adminClient = { fake: "admin" };
+const staffClient = { fake: "staff", from: jest.fn() };
 jest.mock("@/lib/supabase/admin", () => ({
   createAdminSupabase: () => adminClient,
 }));
@@ -47,7 +48,7 @@ const household = {
   paper_only: true,
 };
 
-/** Fake of the service-role update used for non-email fields. */
+/** Fake of the staff-session update used for non-email fields. */
 function fakeOtherFieldsUpdate(result: { data: unknown; error: unknown }) {
   const single = jest.fn(async () => result);
   const chain: Record<string, unknown> = {
@@ -56,13 +57,17 @@ function fakeOtherFieldsUpdate(result: { data: unknown; error: unknown }) {
     single,
   };
   const update = jest.fn(() => chain);
-  adminClient.from.mockReturnValue({ update });
+  staffClient.from.mockReturnValue({ update });
   return { update };
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockRequireStaff.mockResolvedValue({ kind: "staff", role: "planner" });
+  mockRequireStaff.mockResolvedValue({
+    kind: "staff",
+    role: "planner",
+    supabase: staffClient,
+  });
   mockUpdateEmail.mockResolvedValue({ ok: true, household });
   mockDelete.mockResolvedValue({ ok: true });
 });
@@ -92,6 +97,7 @@ describe("PATCH /api/admin/households/[id]", () => {
     expect(res.status).toBe(200);
     expect(mockUpdateEmail).toHaveBeenCalledWith(
       adminClient,
+      staffClient,
       ID,
       "new@example.com",
     );
@@ -103,7 +109,12 @@ describe("PATCH /api/admin/households/[id]", () => {
   it("clears the email, which marks the household paper-only", async () => {
     const res = await patch({ contact_email: null });
     expect(res.status).toBe(200);
-    expect(mockUpdateEmail).toHaveBeenCalledWith(adminClient, ID, null);
+    expect(mockUpdateEmail).toHaveBeenCalledWith(
+      adminClient,
+      staffClient,
+      ID,
+      null,
+    );
     expect((await res.json()).household.paper_only).toBe(true);
   });
 
@@ -114,6 +125,13 @@ describe("PATCH /api/admin/households/[id]", () => {
     const json = await res.json();
     expect(json.error.code).toBe("email_in_use");
     expect(JSON.stringify(json)).not.toContain("@");
+  });
+
+  it("returns 422 invalid_payload when the database rejects the email", async () => {
+    mockUpdateEmail.mockResolvedValue({ ok: false, code: "invalid_payload" });
+    const res = await patch({ contact_email: "new@example.com" });
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.code).toBe("invalid_payload");
   });
 
   it("returns 404 for an unknown or malformed id", async () => {
@@ -153,10 +171,10 @@ describe("DELETE /api/admin/households/[id]", () => {
     expect(mockDelete).not.toHaveBeenCalled();
   });
 
-  it("deletes the household, its guests and the Auth user, returning 204", async () => {
+  it("deletes the household through the staff session, returning 204", async () => {
     const res = await del();
     expect(res.status).toBe(204);
-    expect(mockDelete).toHaveBeenCalledWith(adminClient, ID);
+    expect(mockDelete).toHaveBeenCalledWith(adminClient, staffClient, ID);
   });
 
   it("returns 404 for an unknown household", async () => {

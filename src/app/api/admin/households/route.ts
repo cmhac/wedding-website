@@ -8,10 +8,11 @@ import { createHouseholdWithAccess } from "@/lib/guests/household-access";
 import { log } from "@/lib/log";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
-/** POST /api/admin/households: a household with its guests and sign-in account. */
+/** POST /api/admin/households: a household with its guests and sign-in account, attributed to the signed-in staff member. */
 export async function POST(request: Request) {
+  let session;
   try {
-    await requireStaff();
+    session = await requireStaff();
   } catch (e) {
     const denied = authErrorResponse(e);
     if (denied) return denied;
@@ -27,12 +28,16 @@ export async function POST(request: Request) {
   const parsed = createHouseholdRequestSchema.safeParse(json);
   if (!parsed.success) return validationError(parsed.error);
 
-  const result = await createHouseholdWithAccess(createAdminSupabase(), {
-    ...parsed.data,
-    contact_email: parsed.data.contact_email ?? null,
-    address: parsed.data.address ?? null,
-    notes: parsed.data.notes ?? null,
-  });
+  const result = await createHouseholdWithAccess(
+    createAdminSupabase(),
+    session.supabase,
+    {
+      ...parsed.data,
+      contact_email: parsed.data.contact_email ?? null,
+      address: parsed.data.address ?? null,
+      notes: parsed.data.notes ?? null,
+    },
+  );
   if (!result.ok) {
     if (result.code === "email_in_use") {
       return errorResponse(
@@ -40,6 +45,9 @@ export async function POST(request: Request) {
         "email_in_use",
         "That email address is already used by another household. Use a different address.",
       );
+    }
+    if (result.code === "invalid_payload") {
+      return errorResponse(422, "invalid_payload", "The request is not valid.");
     }
     log.error("household_create_failed", { code: result.code });
     return errorResponse(500, "server_error", "The household was not created.");

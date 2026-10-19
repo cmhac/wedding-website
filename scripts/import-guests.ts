@@ -11,7 +11,8 @@
  */
 import { readFile } from "node:fs/promises";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { linkPendingHouseholdAccounts } from "../src/lib/guests/household-access.ts";
+import type { Database } from "../src/types/database.ts";
+import { linkHouseholdAccounts } from "../src/lib/guests/household-access.ts";
 import {
   runGuestImport,
   type RunImportResult,
@@ -37,7 +38,7 @@ export function formatReport(result: RunImportResult): string {
 }
 
 export async function importGuestsFromFile(
-  admin: SupabaseClient,
+  admin: SupabaseClient<Database>,
   path: string,
   read: (path: string) => Promise<string> = (p) => readFile(p, "utf8"),
 ): Promise<string> {
@@ -45,7 +46,7 @@ export async function importGuestsFromFile(
   const result = await runGuestImport(admin, csv);
   const lines = [formatReport(result)];
   if (result.kind === "done" && result.created.households > 0) {
-    const link = await linkPendingHouseholdAccounts(admin);
+    const link = await linkHouseholdAccounts(admin, result.householdIds);
     lines.push(
       `Sign-in accounts: ${link.linked} linked, ${link.failed} failed.`,
     );
@@ -66,7 +67,7 @@ async function main() {
         "Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (for example with --env-file=.env.local).",
       );
     }
-    const admin = createClient(url, key, {
+    const admin = createClient<Database>(url, key, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     console.log(await importGuestsFromFile(admin, path));

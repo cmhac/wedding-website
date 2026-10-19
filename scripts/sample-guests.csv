@@ -1,0 +1,6 @@
+household_ref,household_name,contact_email,plus_one_allowance,first_name,last_name,guest_email,dietary_notes,notes,event:welcome-party,event:rehearsal,event:ceremony,event:reception,event:farewell-brunch
+sample-1,Sample Household One,sample.one@example.com,1,Alex,Sample,,,,yes,,yes,yes,yes
+sample-1,Sample Household One,sample.one@example.com,1,Blake,Sample,,Vegetarian,,yes,,yes,yes,yes
+sample-2,Sample Household Two,sample.two@example.com,0,Casey,Example,,,,,,yes,yes,
+sample-3,Sample Paper Household,,0,Drew,Testperson,,,Needs a paper invitation,,,yes,yes,
+sample-3,Sample Paper Household,,0,Emery,Testperson,,,,,,yes,yes,

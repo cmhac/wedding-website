@@ -39,9 +39,15 @@ const household = {
   paper_only: false,
 };
 
+const staffClient = { fake: "staff" };
+
 beforeEach(() => {
   jest.clearAllMocks();
-  mockRequireStaff.mockResolvedValue({ kind: "staff", role: "couple" });
+  mockRequireStaff.mockResolvedValue({
+    kind: "staff",
+    role: "couple",
+    supabase: staffClient,
+  });
   mockCreate.mockResolvedValue({ ok: true, household, guestIds: ["g1"] });
 });
 
@@ -63,6 +69,7 @@ describe("POST /api/admin/households", () => {
     expect(res.status).toBe(201);
     expect(mockCreate).toHaveBeenCalledWith(
       { fake: "admin" },
+      staffClient,
       expect.objectContaining({
         display_name: "Test Household",
         contact_email: "test@example.com",
@@ -82,6 +89,13 @@ describe("POST /api/admin/households", () => {
     const json = await res.json();
     expect(json.error.code).toBe("email_in_use");
     expect(JSON.stringify(json)).not.toContain("@");
+  });
+
+  it("returns 422 invalid_payload when the database rejects the household", async () => {
+    mockCreate.mockResolvedValue({ ok: false, code: "invalid_payload" });
+    const res = await POST(request(body));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.code).toBe("invalid_payload");
   });
 
   it("returns 422 for an invalid body and malformed JSON", async () => {

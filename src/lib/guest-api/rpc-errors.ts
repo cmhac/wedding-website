@@ -10,6 +10,10 @@ const MAP: Record<string, Mapped> = {
     status: 409,
     message: "That place has already been filled.",
   },
+  duplicate_name: {
+    status: 409,
+    message: "Someone with that name is already on your invitation.",
+  },
   invalid_meal: { status: 422, message: "That meal choice is not available." },
   invalid_payload: { status: 422, message: "The request is not valid." },
 };

@@ -100,7 +100,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [x] T041 [P] [US1] Implement `scripts/import-guests.ts` (reads a CSV path argument, calls the same import library, prints counts and row errors, never prints guest names or emails) with a test in `scripts/__tests__/import-guests.test.ts`
 - [x] T042 [US1] Create `src/lib/admin-api/schemas.ts` (exported zod request and response schemas with inferred types for the admin route handlers) and `src/lib/admin-api/client.ts` (small typed fetch wrappers for the admin frontend), with tests in `src/lib/admin-api/__tests__/schemas.test.ts`; plain modules with no React components or styling; later stories add their schemas here
 - [x] T043 [US1] Implement the household route handlers `src/app/api/admin/households/route.ts` (POST) and `src/app/api/admin/households/[id]/route.ts` (PATCH, DELETE) per `contracts/admin-api.md`, using `src/lib/guests/household-access.ts` and `requireStaff()`, with request and response schemas in `src/lib/admin-api/schemas.ts`
-- [ ] T044 [US1] Add a sample import file with fake data at `scripts/sample-guests.csv` and run scenarios 1 and 2 from `specs/001-guest-data-model/quickstart.md` by hand
+- [x] T044 [US1] Add a sample import file with fake data at `scripts/sample-guests.csv` and run scenarios 1 and 2 from `specs/001-guest-data-model/quickstart.md` by hand
 
 **Checkpoint**: User Story 1 works on its own.
 

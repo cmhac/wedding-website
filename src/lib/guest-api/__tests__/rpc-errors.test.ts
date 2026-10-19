@@ -14,6 +14,7 @@ describe("rpcErrorResponse", () => {
     ["not_a_placeholder", 409],
     ["invalid_meal", 422],
     ["invalid_payload", 422],
+    ["duplicate_name", 409],
   ])("maps %s to %i", async (code, status) => {
     const out = await run(code);
     expect(out.status).toBe(status);

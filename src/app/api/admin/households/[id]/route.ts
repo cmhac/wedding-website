@@ -9,6 +9,7 @@ import {
   deleteHouseholdWithAccess,
   updateHouseholdContactEmail,
 } from "@/lib/guests/household-access";
+import type { Session } from "@/lib/auth/session";
 import { log } from "@/lib/log";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
@@ -17,15 +18,18 @@ type Context = { params: Promise<{ id: string }> };
 const idSchema = z.uuid();
 const notFound = () => errorResponse(404, "not_found", "Household not found.");
 
-async function guard(): Promise<Response | null> {
+async function guard(): Promise<{ session: Session } | { denied: Response }> {
   try {
-    await requireStaff();
-    return null;
+    return { session: await requireStaff() };
   } catch (e) {
     const denied = authErrorResponse(e);
-    if (denied) return denied;
+    if (denied) return { denied };
     throw e;
   }
+}
+
+function invalid() {
+  return errorResponse(422, "invalid_payload", "The request is not valid.");
 }
 
 function emailInUse() {
@@ -38,8 +42,9 @@ function emailInUse() {
 
 /** PATCH /api/admin/households/[id]: change the contact email and other fields. */
 export async function PATCH(request: Request, { params }: Context) {
-  const denied = await guard();
-  if (denied) return denied;
+  const guarded = await guard();
+  if ("denied" in guarded) return guarded.denied;
+  const staff = guarded.session.supabase;
 
   const { id } = await params;
   if (!idSchema.safeParse(id).success) return notFound();
@@ -58,10 +63,16 @@ export async function PATCH(request: Request, { params }: Context) {
 
   let household: Record<string, unknown> | null = null;
   if (contact_email !== undefined) {
-    const result = await updateHouseholdContactEmail(admin, id, contact_email);
+    const result = await updateHouseholdContactEmail(
+      admin,
+      staff,
+      id,
+      contact_email,
+    );
     if (!result.ok) {
       if (result.code === "email_in_use") return emailInUse();
       if (result.code === "not_found") return notFound();
+      if (result.code === "invalid_payload") return invalid();
       log.error("household_update_failed", { code: result.code });
       return errorResponse(
         500,
@@ -73,7 +84,8 @@ export async function PATCH(request: Request, { params }: Context) {
   }
 
   if (Object.keys(others).length > 0) {
-    const saved = await admin
+    // Staff may update these columns directly; their own session keeps the audit trail theirs.
+    const saved = await staff
       .from("households")
       .update(others)
       .eq("id", id)
@@ -99,13 +111,18 @@ export async function PATCH(request: Request, { params }: Context) {
 
 /** DELETE /api/admin/households/[id]: the household, its guests, and its sign-in account. */
 export async function DELETE(_request: Request, { params }: Context) {
-  const denied = await guard();
-  if (denied) return denied;
+  const guarded = await guard();
+  if ("denied" in guarded) return guarded.denied;
+  const staff = guarded.session.supabase;
 
   const { id } = await params;
   if (!idSchema.safeParse(id).success) return notFound();
 
-  const result = await deleteHouseholdWithAccess(createAdminSupabase(), id);
+  const result = await deleteHouseholdWithAccess(
+    createAdminSupabase(),
+    staff,
+    id,
+  );
   if (!result.ok) {
     if (result.code === "not_found") return notFound();
     log.error("household_delete_failed", { code: result.code });
