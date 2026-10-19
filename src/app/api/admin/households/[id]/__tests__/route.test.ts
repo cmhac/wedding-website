@@ -1,0 +1,166 @@
+/** @jest-environment node */
+jest.mock("@/lib/log");
+const mockRequireStaff = jest.fn();
+jest.mock("@/lib/auth/guards", () => ({
+  ...jest.requireActual("@/lib/auth/guards"),
+  requireStaff: () => mockRequireStaff(),
+}));
+const adminClient = { fake: "admin", from: jest.fn() };
+jest.mock("@/lib/supabase/admin", () => ({
+  createAdminSupabase: () => adminClient,
+}));
+const mockUpdateEmail = jest.fn();
+const mockDelete = jest.fn();
+jest.mock("@/lib/guests/household-access", () => ({
+  updateHouseholdContactEmail: (...a: unknown[]) => mockUpdateEmail(...a),
+  deleteHouseholdWithAccess: (...a: unknown[]) => mockDelete(...a),
+}));
+
+import { AuthError } from "@/lib/auth/guards";
+import { DELETE, PATCH } from "../route";
+
+const ID = "5f1c2b8e-1111-4222-8333-944455556666";
+const ctx = (id = ID) => ({ params: Promise.resolve({ id }) });
+const patch = (b: unknown, id = ID) =>
+  PATCH(
+    new Request(`http://localhost:3000/api/admin/households/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(b),
+    }),
+    ctx(id),
+  );
+const del = (id = ID) =>
+  DELETE(
+    new Request(`http://localhost:3000/api/admin/households/${id}`, {
+      method: "DELETE",
+    }),
+    ctx(id),
+  );
+
+const household = {
+  id: ID,
+  display_name: "Test Household",
+  contact_email: null,
+  auth_user_id: null,
+  plus_one_allowance: 0,
+  paper_only: true,
+};
+
+/** Fake of the service-role update used for non-email fields. */
+function fakeOtherFieldsUpdate(result: { data: unknown; error: unknown }) {
+  const single = jest.fn(async () => result);
+  const chain: Record<string, unknown> = {
+    eq: jest.fn(() => chain),
+    select: jest.fn(() => chain),
+    single,
+  };
+  const update = jest.fn(() => chain);
+  adminClient.from.mockReturnValue({ update });
+  return { update };
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockRequireStaff.mockResolvedValue({ kind: "staff", role: "planner" });
+  mockUpdateEmail.mockResolvedValue({ ok: true, household });
+  mockDelete.mockResolvedValue({ ok: true });
+});
+
+describe("PATCH /api/admin/households/[id]", () => {
+  it("returns 401 without a session and 403 for a guest", async () => {
+    mockRequireStaff.mockRejectedValueOnce(
+      new AuthError(401, "unauthenticated"),
+    );
+    expect((await patch({ contact_email: null })).status).toBe(401);
+    mockRequireStaff.mockRejectedValueOnce(new AuthError(403, "forbidden"));
+    expect((await patch({ contact_email: null })).status).toBe(403);
+    expect(mockUpdateEmail).not.toHaveBeenCalled();
+  });
+
+  it("changes the contact email through the household-access helper", async () => {
+    mockUpdateEmail.mockResolvedValue({
+      ok: true,
+      household: {
+        ...household,
+        contact_email: "new@example.com",
+        auth_user_id: "u1",
+        paper_only: false,
+      },
+    });
+    const res = await patch({ contact_email: "new@example.com" });
+    expect(res.status).toBe(200);
+    expect(mockUpdateEmail).toHaveBeenCalledWith(
+      adminClient,
+      ID,
+      "new@example.com",
+    );
+    const json = await res.json();
+    expect(json.household.paper_only).toBe(false);
+    expect(json.household).not.toHaveProperty("auth_user_id");
+  });
+
+  it("clears the email, which marks the household paper-only", async () => {
+    const res = await patch({ contact_email: null });
+    expect(res.status).toBe(200);
+    expect(mockUpdateEmail).toHaveBeenCalledWith(adminClient, ID, null);
+    expect((await res.json()).household.paper_only).toBe(true);
+  });
+
+  it("returns 409 email_in_use naming no other household's data", async () => {
+    mockUpdateEmail.mockResolvedValue({ ok: false, code: "email_in_use" });
+    const res = await patch({ contact_email: "taken@example.com" });
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.error.code).toBe("email_in_use");
+    expect(JSON.stringify(json)).not.toContain("@");
+  });
+
+  it("returns 404 for an unknown or malformed id", async () => {
+    mockUpdateEmail.mockResolvedValue({ ok: false, code: "not_found" });
+    expect((await patch({ contact_email: null })).status).toBe(404);
+    expect((await patch({ contact_email: null }, "not-a-uuid")).status).toBe(
+      404,
+    );
+  });
+
+  it("returns 422 for an empty body or unknown fields", async () => {
+    expect((await patch({})).status).toBe(422);
+    expect((await patch({ auth_user_id: "x" })).status).toBe(422);
+  });
+
+  it("updates other fields without touching the sign-in account", async () => {
+    const { update } = fakeOtherFieldsUpdate({
+      data: { ...household, display_name: "Renamed" },
+      error: null,
+    });
+    const res = await patch({ display_name: "Renamed" });
+    expect(res.status).toBe(200);
+    expect(update).toHaveBeenCalledWith({ display_name: "Renamed" });
+    expect(mockUpdateEmail).not.toHaveBeenCalled();
+    expect((await res.json()).household.display_name).toBe("Renamed");
+  });
+});
+
+describe("DELETE /api/admin/households/[id]", () => {
+  it("returns 401 without a session and 403 for a guest", async () => {
+    mockRequireStaff.mockRejectedValueOnce(
+      new AuthError(401, "unauthenticated"),
+    );
+    expect((await del()).status).toBe(401);
+    mockRequireStaff.mockRejectedValueOnce(new AuthError(403, "forbidden"));
+    expect((await del()).status).toBe(403);
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it("deletes the household, its guests and the Auth user, returning 204", async () => {
+    const res = await del();
+    expect(res.status).toBe(204);
+    expect(mockDelete).toHaveBeenCalledWith(adminClient, ID);
+  });
+
+  it("returns 404 for an unknown household", async () => {
+    mockDelete.mockResolvedValue({ ok: false, code: "not_found" });
+    expect((await del()).status).toBe(404);
+  });
+});
