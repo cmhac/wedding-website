@@ -72,14 +72,14 @@ The welcome party and the rehearsal (and dinner) are sub-events of the wedding w
 
 **Why this priority**: Both events go to different, smaller groups than the main events and have their own headcounts and meals, so the model must support them from the start.
 
-**Independent Test**: With a seeded list where only some guests are invited to the welcome party and only a different subset to the rehearsal, each guest sees only their own optional events, and headcounts and reminders for each are correct and separate.
+**Independent Test**: With a seeded list where only some guests are invited to the welcome party and only a different subset to the rehearsal, each guest sees only their own optional events, and headcounts for each are correct and separate (reminder targeting is covered in User Story 5).
 
 **Acceptance Scenarios**:
 
 1. **Given** a guest invited to the ceremony and the welcome party but not the rehearsal, **When** they open their RSVP, **Then** they see the ceremony and the welcome party, with the welcome party labeled optional, and no mention of the rehearsal.
 2. **Given** a household that answered every required event but not the optional welcome party, **When** the couple send an RSVP reminder to non-responders, **Then** the household is not included, and a separate "optional events" reminder can target it.
 3. **Given** the rehearsal has its own dinner, **When** an invited guest attends, **Then** they choose a dish from the rehearsal menu, not the wedding menu.
-4. **Given** the couple choose to invite one more household to the rehearsal after invitations were sent, **When** they add the invitation, **Then** only that household is sent the rehearsal invitation.
+4. **Given** the couple choose to invite one more household to the rehearsal after invitations were sent, **When** they add the invitation and send the rehearsal invitation to that household alone, **Then** only that household is emailed.
 5. **Given** the couple view the dashboard, **When** they open the welcome party, **Then** they see its own invited, attending, declining, and no-response counts, separate from the other events.
 
 ---
@@ -98,7 +98,7 @@ The couple create sends of invitation, reminder, and update emails (the email co
 2. **Given** a message already sent to a household, **When** the same send is triggered again (for example, a retry), **Then** the household is not emailed a second time.
 3. **Given** a delivery failure for one address, **When** the status is updated, **Then** the household is flagged for follow-up and the failure is visible to the couple.
 4. **Given** a household with no email address, **When** the couple selects "everyone", **Then** that household is skipped and listed as needing a paper invitation.
-5. **Given** a guest who unsubscribed from reminders, **When** the couple sends a reminder, **Then** that guest is excluded, but essential logistics updates can still be sent.
+5. **Given** a household that opted out of reminders, **When** the couple sends a reminder, **Then** that household is excluded, but essential logistics updates can still be sent.
 
 ---
 
@@ -224,10 +224,10 @@ Every screen is out of scope: the public website (home, details, schedule, trave
 
 - **FR-016**: The system MUST store a fixed set of message types (for example, save-the-date, invitation, RSVP reminder, update, thank-you), each tied to a template key. The template content (subject, body, design) is out of scope and supplied separately; the system MUST refuse to send a message type that has no registered template.
 - **FR-017**: The couple MUST be able to create a send (campaign) specifying message type, recipient selection, and send time (immediate or scheduled), and to cancel or edit it before it goes out.
-- **FR-018**: Recipient selection MUST support at least: all households, one household, households that have not responded, households invited to a given event (required or optional), households that have not answered a given optional event, households that have not yet chosen meals, and households with a delivery problem. Selections MUST exclude households without a deliverable email and list them separately.
+- **FR-018**: Recipient selection MUST support at least: all households, one household, households that have not responded, households invited to a given event (required or optional), households that have not answered a given optional event, households that have not yet chosen meals, households that have not yet been sent a given message type, and households with a delivery problem. Selections MUST exclude households without a deliverable email and list them separately.
 - **FR-019**: The system MUST record each message sent as its own record: household, address used at the time, message type, send, timestamp, and delivery status (queued, sent, delivered, bounced, complained, failed).
-- **FR-020**: The system MUST be idempotent: re-running a send MUST NOT email a household that already received that send.
-- **FR-021**: The system MUST track per-guest or per-household opt-out of non-essential messages (reminders, marketing-style updates) and honor it on every send, while still allowing essential logistics updates.
+- **FR-020**: The system MUST be idempotent: re-running a send MUST NOT email a household that already received that send. To avoid repeating a message across different sends, a recipient selection MUST also be able to exclude households that have already been sent a given message type.
+- **FR-021**: The system MUST track per-household opt-out of non-essential messages (reminders, marketing-style updates) and honor it on every send, while still allowing essential logistics updates.
 - **FR-022**: The system MUST update delivery status from provider notifications, tolerating duplicate or out-of-order notifications.
 
 **Dashboard and exports**
@@ -246,8 +246,8 @@ Every screen is out of scope: the public website (home, details, schedule, trave
 
 ### Key Entities
 
-- **Household (Party)**: The unit that is invited and written to, with one responder. Has a display name, postal address, shared contact email, plus-one allowance, RSVP deadline override, and notes. Contains one or more guests.
-- **Guest**: A person in exactly one household. Name, optional email, placeholder-or-named status (for plus-ones), opt-out status, couple-only notes. Dietary restrictions and meal selections attach to the guest.
+- **Household (Party)**: The unit that is invited and written to, with one responder. Has a display name, postal address, shared contact email, plus-one allowance, RSVP deadline override, reminder opt-out, and notes. Contains one or more guests.
+- **Guest**: A person in exactly one household. Name, optional email, placeholder-or-named status (for plus-ones), couple-only notes. Dietary restrictions and meal selections attach to the guest.
 - **Event**: A wedding-weekend occasion. Name, start time, venue name, optional RSVP deadline, display order, required or optional, and an optional group (for example, "wedding weekend") that ties sub-events together.
 - **Invitation**: Links one guest to one event they are invited to, including optional events such as the welcome party and rehearsal. Presence means invited.
 - **RSVP Response**: A guest's answer for one event (attending, declining, no response), with who answered and when. Linked to the Invitation.
@@ -270,7 +270,7 @@ Every screen is out of scope: the public website (home, details, schedule, trave
 - **SC-001**: A 150-person guest list import file, with households and per-event invitations, is processed in under 1 minute, with every invalid row reported by number and reason and no partial households created.
 - **SC-002**: A client can complete an RSVP for a four-person household across all events with one read request and one save request, and every validation failure comes back with enough detail to show the guest what to fix.
 - **SC-003**: In acceptance testing, no guest can read or change another household's data (zero leaks across all tested access paths).
-- **SC-004**: A reminder to all non-responders reaches 100% of reachable non-responders exactly once, and 0 responders or opted-out guests, even when the send is retried.
+- **SC-004**: A reminder to all non-responders reaches 100% of reachable non-responders exactly once, and 0 responders or opted-out households, even when the send is retried.
 - **SC-005**: Reported counts match a manual count of the underlying answers in 100% of tested scenarios.
 - **SC-006**: Every guest-facing change and every email sent can be traced afterward (who, what, when), answering any "what did we tell them or what did they tell us" question in under 1 minute.
 - **SC-007**: A developer who has only the published guest and admin interface documentation can build a working guest RSVP flow and the admin functions without asking the backend authors a question, and automated checks confirm each document matches its interface.
@@ -289,7 +289,7 @@ Every screen is out of scope: the public website (home, details, schedule, trave
 - Data is kept indefinitely; the couple delete it manually when they choose.
 - Dietary restrictions are asked once per guest and apply to all events, with a free-text note for event-specific cases.
 - A standard set of dietary categories and tags is provided; the couple can add more.
-- The household is the unit of invitation and communication; per-person addressing exists only for personal email and opt-out.
+- The household is the unit of invitation and communication: all email goes to the household's contact email, and opt-out is per household. A guest's own email, if recorded, is for the couple's reference only.
 - Per-event invitations are tracked per guest, not per household, to support cases such as a guest invited to the ceremony but not the reception.
 - Plus-ones are modeled as an allowance of unnamed seats on a household, not a separate concept; extra seats beyond the allowance require the couple's approval.
 - The designer, or whoever builds the screens, builds all public pages, guest-facing screens, and admin screens, with their own hard-coded content. Event name, time, and venue are in the data model only because invitations, RSVPs, and emails need them, so the designer's schedule must be kept consistent with them by hand.

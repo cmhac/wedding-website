@@ -35,7 +35,7 @@ Campaign props are the only data a template receives. They contain no email addr
 ```ts
 type CampaignProps = {
   household: { display_name: string };
-  rsvp_url: string; // where the guest frontend serves the RSVP
+  rsvp_url: string; // `NEXT_PUBLIC_SITE_URL` plus `GUEST_RSVP_PATH` (default `/rsvp`), where the guest frontend serves the RSVP
   respond_by: string | null; // earliest open deadline, ISO
   events: {
     slug: string;

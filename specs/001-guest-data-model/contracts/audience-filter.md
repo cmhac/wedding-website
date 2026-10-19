@@ -11,6 +11,7 @@ A campaign's `audience` is stored as JSON and validated with zod before saving (
     "required_events_unanswered": true,
     "optional_event_unanswered": "event slug",
     "meals_not_chosen": true,
+    "not_yet_sent_message_type": "invitation",
     "delivery_problem": true
   }
 }
@@ -20,6 +21,7 @@ A campaign's `audience` is stored as JSON and validated with zod before saving (
 - `required_events_unanswered`: at least one guest in the household has `pending` on a **required** event. Optional events never count (FR-029).
 - `optional_event_unanswered`: at least one guest invited to that optional event is `pending`.
 - `meals_not_chosen`: at least one attending guest has a required course with no selection.
+- `not_yet_sent_message_type`: the household has no message of that type with status `sent` or `delivered` in any campaign, so a later send never repeats a message type the household already received. A late addition to one event (for example, one more household invited to the rehearsal) is best targeted with `scope: household`, because message types do not carry event context.
 - `delivery_problem`: the household has `delivery_problem = true`.
 
 ## Resolution output

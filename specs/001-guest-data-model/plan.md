@@ -26,7 +26,7 @@ The approach: one Postgres schema in Supabase, with row-level security as the ac
 
 **Performance Goals**: Not performance-bound. ~150 guests, ~50 households, ~6 events. The user-facing targets are the spec's success criteria (SC-001, SC-002, SC-008).
 
-**Constraints**: Guest data never logged. Secrets server-only. Sends are idempotent. Resend webhooks are at-least-once and may arrive out of order. The auth email rate limit applies unless custom SMTP or the auth email hook is configured.
+**Constraints**: Pull requests are gated by CI, including `supabase test db` (pgTAP) and the Next.js build whenever route handlers exist (this feature creates no pages). Guest data never logged. Secrets server-only. Sends are idempotent. Resend webhooks are at-least-once and may arrive out of order. The auth email rate limit applies unless custom SMTP or the auth email hook is configured.
 
 **Scale/Scope**: ~10 tables of core data, ~6 supporting tables, ~8 RPCs, ~13 route handlers (admin, internal, and webhook), 7 guest API endpoints, a template interface and registry (no templates). No screens and no email content.
 
@@ -96,6 +96,7 @@ src/
 
 emails/index.ts                 # template registry, created empty; content supplied separately (contracts/email-templates.md)
 scripts/                        # import-guests, create-staff-user, guest-api-smoke
+.github/workflows/ci.yml        # build when route handlers exist; pgTAP job (supabase test db)
 docs/decisions/                 # 0002–0008 for the decisions in research.md
 ```
 

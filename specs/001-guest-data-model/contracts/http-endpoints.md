@@ -31,7 +31,7 @@ Admin sign-in, household, and staff-access endpoints are specified in [admin-api
 
 1. Require a staff session; load the campaign (must be `draft` or `scheduled`; otherwise 409).
 2. Resolve the template for the campaign's message type; if none is registered, return `409 template_missing` before creating any message row (see [email-templates.md](./email-templates.md)). Call `resolve_audience`, insert one `messages` row per household (`queued`, or `skipped` with a reason for households with no email, opted-out for non-essential types, or filtered out), using the unique constraint to make a retry a no-op.
-3. Set the campaign `sending`; claim messages in batches with `claim_campaign_messages`; send each through Resend with `Idempotency-Key = message.id`; record `sent` and `provider_message_id`, or `failed` with an error code.
+3. Set the campaign `sending`; claim messages in batches with `claim_campaign_messages`, which resolves each household's current `contact_email` into `messages.to_email` (a household whose email was cleared meanwhile becomes `skipped` with `no_email`); send each through Resend with `Idempotency-Key = message.id`; record `sent` and `provider_message_id`, or `failed` with an error code.
 4. When no `queued` messages remain, set `done` and `completed_at`.
 5. Response: `{ campaign_id, queued, sent, skipped: { no_email, opted_out, other }, failed }`. The skipped-with-no-email count lets the admin interface list households needing a paper invitation (spec User Story 5, scenario 4).
 

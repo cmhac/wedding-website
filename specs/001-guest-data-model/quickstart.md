@@ -10,6 +10,7 @@ A validation guide, not an implementation guide. No screens or email content are
   - `SEND_EMAIL_HOOK_SECRET` (Supabase auth hook)
   - `RESEND_WEBHOOK_SECRET` (Resend webhook)
   - `CRON_SECRET` (bearer for the scheduled dispatch route)
+  - `GUEST_RSVP_PATH` (non-secret; default `/rsvp`, where the guest frontend serves the RSVP)
 - Manual, outside the repo (record the final state in `docs/`):
   - Verify the sending domain in Resend (DNS records) before any production send
   - Create the Resend webhook pointing at `/api/webhooks/resend` for sent, delivered, bounced, and complained events
