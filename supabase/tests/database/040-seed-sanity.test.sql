@@ -3,7 +3,7 @@ begin;
 \set helpers_included 1
 \ir ../support/helpers.sql
 
-select plan(16);
+select plan(26);
 
 -- Fake data only: every seeded email is on example.test.
 select is(
@@ -70,6 +70,44 @@ select is(
   (select count(*) from public.invitations where status <> 'pending'), 0::bigint,
   'every seeded invitation is pending'
 );
+
+-- Menus (the standard dietary categories come from the migration, not the seed).
+select cmp_ok(
+  (select count(*) from public.dietary_categories), '>=', 18::bigint, 'the standard dietary categories exist'
+);
+select results_eq(
+  $$select key, kind::text from public.dietary_categories where key in ('vegetarian', 'nuts') order by key$$,
+  $$values ('nuts'::text, 'allergen'::text), ('vegetarian', 'diet')$$,
+  'vegetarian is a diet and nuts an allergen'
+);
+select results_eq(
+  $$select e.slug, m.status::text from public.menus m join public.events e on e.id = m.event_id order by e.slug$$,
+  $$values ('reception'::text, 'published'::text), ('rehearsal', 'published')$$,
+  'the ceremony dinner (reception) and the rehearsal dinner each have a published menu'
+);
+select results_eq(
+  $$select c.name, c.requires_choice from public.courses c join public.menus m on m.id = c.menu_id
+     join public.events e on e.id = m.event_id where e.slug = 'reception' order by c.display_order$$,
+  $$values ('Starter'::text, true), ('Entrée', true)$$,
+  'the ceremony dinner has a starter and an entrée'
+);
+select is(
+  (select count(*) from public.dishes d join public.courses c on c.id = d.course_id where c.name = 'Entrée'),
+  3::bigint, 'the entrée has three dishes'
+);
+select is(
+  (select count(*) from public.dish_tags t join public.dishes d on d.id = t.dish_id join public.courses c on c.id = d.course_id
+    where c.name = 'Entrée' and t.category_key = 'nuts'),
+  1::bigint, 'one entrée contains nuts'
+);
+select is(
+  (select count(*) from public.dish_tags t join public.dishes d on d.id = t.dish_id join public.courses c on c.id = d.course_id
+    where c.name = 'Entrée' and t.category_key = 'vegetarian'),
+  1::bigint, 'one entrée is vegetarian'
+);
+select is((select count(*) from public.dishes), 8::bigint, 'eight dishes in total');
+select is((select count(*) from public.dishes where archived_at is not null), 0::bigint, 'no dish is archived');
+select is((select count(*) from public.meal_selections), 0::bigint, 'no meal has been chosen yet');
 
 select * from finish();
 rollback;

@@ -94,3 +94,45 @@ where g.household_id in (
   '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002',
   '30000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000006'
 );
+
+-- Menus. The reception is the dinner; the rehearsal has its own dinner. Both
+-- are published so the guest API has something to return. Dish names are
+-- invented, and the tags are what the conflict view checks against.
+insert into public.menus (id, event_id, status, notes)
+select v.id, e.id, 'published', v.notes
+from (values
+  ('40000000-0000-0000-0000-000000000001'::uuid, 'reception', 'Seed ceremony-dinner menu'),
+  ('40000000-0000-0000-0000-000000000002'::uuid, 'rehearsal', 'Seed rehearsal-dinner menu')
+) as v (id, slug, notes)
+join public.events e on e.slug = v.slug;
+
+insert into public.courses (id, menu_id, name, display_order, requires_choice) values
+  ('41000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 'Starter', 1, true),
+  ('41000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000001', 'Entrée', 2, true),
+  ('41000000-0000-0000-0000-000000000003', '40000000-0000-0000-0000-000000000002', 'Main', 1, true),
+  ('41000000-0000-0000-0000-000000000004', '40000000-0000-0000-0000-000000000002', 'Dessert', 2, false);
+
+insert into public.dishes (id, course_id, name, description) values
+  ('42000000-0000-0000-0000-000000000001', '41000000-0000-0000-0000-000000000001', 'Seed Tomato Soup', 'Roasted tomato soup'),
+  ('42000000-0000-0000-0000-000000000002', '41000000-0000-0000-0000-000000000001', 'Seed Prawn Cocktail', 'Prawns in a light sauce'),
+  ('42000000-0000-0000-0000-000000000003', '41000000-0000-0000-0000-000000000002', 'Seed Pistachio Lamb', 'Lamb with a pistachio crust'),
+  ('42000000-0000-0000-0000-000000000004', '41000000-0000-0000-0000-000000000002', 'Seed Garden Risotto', 'Seasonal vegetable risotto'),
+  ('42000000-0000-0000-0000-000000000005', '41000000-0000-0000-0000-000000000002', 'Seed Roast Chicken', 'Roast chicken with herbs'),
+  ('42000000-0000-0000-0000-000000000006', '41000000-0000-0000-0000-000000000003', 'Seed Lasagne', 'Baked pasta'),
+  ('42000000-0000-0000-0000-000000000007', '41000000-0000-0000-0000-000000000003', 'Seed Vegetable Curry', 'Mild curry with rice'),
+  ('42000000-0000-0000-0000-000000000008', '41000000-0000-0000-0000-000000000004', 'Seed Sponge Cake', 'Vanilla sponge');
+
+-- diet tags mean "suitable for"; allergen tags mean "contains".
+insert into public.dish_tags (dish_id, category_key) values
+  ('42000000-0000-0000-0000-000000000001', 'vegetarian'),
+  ('42000000-0000-0000-0000-000000000001', 'vegan'),
+  ('42000000-0000-0000-0000-000000000002', 'shellfish'),
+  ('42000000-0000-0000-0000-000000000003', 'nuts'),
+  ('42000000-0000-0000-0000-000000000004', 'vegetarian'),
+  ('42000000-0000-0000-0000-000000000004', 'gluten-free'),
+  ('42000000-0000-0000-0000-000000000006', 'eggs'),
+  ('42000000-0000-0000-0000-000000000006', 'wheat'),
+  ('42000000-0000-0000-0000-000000000007', 'vegetarian'),
+  ('42000000-0000-0000-0000-000000000007', 'vegan'),
+  ('42000000-0000-0000-0000-000000000008', 'eggs'),
+  ('42000000-0000-0000-0000-000000000008', 'milk');

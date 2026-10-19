@@ -69,15 +69,16 @@ There are no anonymous reads of any table. Guests reach their data only through 
 
 ### guests
 
-| Column                    | Type                                | Notes                                         |
-| ------------------------- | ----------------------------------- | --------------------------------------------- |
-| `id`                      | uuid PK                             |                                               |
-| `household_id`            | uuid not null → households, cascade |                                               |
-| `first_name`, `last_name` | text                                | null for unnamed plus-one placeholders        |
-| `email`                   | citext null                         | reference only; never used to sign in or send |
-| `is_placeholder`          | boolean default false               | true for an unnamed plus-one seat             |
-| `dietary_notes`           | text null                           | free-text restrictions                        |
-| `notes`                   | text null                           | staff only                                    |
+| Column                    | Type                                | Notes                                                                                                                           |
+| ------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                      | uuid PK                             |                                                                                                                                 |
+| `household_id`            | uuid not null → households, cascade |                                                                                                                                 |
+| `first_name`, `last_name` | text                                | null for unnamed plus-one placeholders                                                                                          |
+| `email`                   | citext null                         | reference only; never used to sign in or send                                                                                   |
+| `is_placeholder`          | boolean default false               | true for an unnamed plus-one seat                                                                                               |
+| `is_plus_one`             | boolean default false               | counts toward the household's `plus_one_allowance`; stays true after the plus-one is named (a placeholder is always a plus-one) |
+| `dietary_notes`           | text null                           | free-text restrictions                                                                                                          |
+| `notes`                   | text null                           | staff only                                                                                                                      |
 
 - Check: when `is_placeholder` is false, `first_name` and `last_name` are not null.
 - Trigger: placeholder count per household cannot exceed `plus_one_allowance`; reducing the allowance below the number of named plus-ones is refused with a message (spec edge case) and unnamed placeholders above the new limit are removed.
