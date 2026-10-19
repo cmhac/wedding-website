@@ -477,14 +477,14 @@ isOneToOne: false
                   ]
                 },"messages": {
                   Row: {
-                    "campaign_id": string,"error_code": string | null,"household_id": string | null,"id": string,"last_event_at": string | null,"provider_message_id": string | null,"queued_at": string,"sent_at": string | null,"skip_reason": string | null,"status": Database["public"]['Enums']["message_status"],"to_email": string | null
+                    "campaign_id": string,"claimed_at": string | null,"error_code": string | null,"household_id": string | null,"id": string,"last_event_at": string | null,"provider_message_id": string | null,"queued_at": string,"sent_at": string | null,"skip_reason": string | null,"status": Database["public"]['Enums']["message_status"],"to_email": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "campaign_id": string,"error_code"?: string | null,"household_id"?: string | null,"id"?: string,"last_event_at"?: string | null,"provider_message_id"?: string | null,"queued_at"?: string,"sent_at"?: string | null,"skip_reason"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"to_email"?: string | null
+                    "campaign_id": string,"claimed_at"?: string | null,"error_code"?: string | null,"household_id"?: string | null,"id"?: string,"last_event_at"?: string | null,"provider_message_id"?: string | null,"queued_at"?: string,"sent_at"?: string | null,"skip_reason"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"to_email"?: string | null
                   }
                   Update: {
-                    "campaign_id"?: string,"error_code"?: string | null,"household_id"?: string | null,"id"?: string,"last_event_at"?: string | null,"provider_message_id"?: string | null,"queued_at"?: string,"sent_at"?: string | null,"skip_reason"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"to_email"?: string | null
+                    "campaign_id"?: string,"claimed_at"?: string | null,"error_code"?: string | null,"household_id"?: string | null,"id"?: string,"last_event_at"?: string | null,"provider_message_id"?: string | null,"queued_at"?: string,"sent_at"?: string | null,"skip_reason"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"to_email"?: string | null
                   }
                   Relationships: [
                     {
@@ -584,7 +584,7 @@ isOneToOne: false
           Views: {
             "dietary_list": {
                   Row: {
-                    "category_key": string | null,"category_label": string | null,"details": string | null,"dietary_notes": string | null,"event_id": string | null,"event_slug": string | null,"first_name": string | null,"guest_id": string | null,"household_id": string | null,"household_name": string | null,"last_name": string | null,"severity": string | null
+                    "category_key": string | null,"category_label": string | null,"details": string | null,"dietary_notes": string | null,"event_id": string | null,"event_name": string | null,"event_slug": string | null,"first_name": string | null,"guest_id": string | null,"guest_name": string | null,"household_id": string | null,"household_name": string | null,"last_name": string | null,"severity": string | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -628,7 +628,7 @@ isOneToOne: false
                   ]
                 },"dish_totals": {
                   Row: {
-                    "chosen_count": number | null,"course_display_order": number | null,"course_id": string | null,"course_name": string | null,"dish_id": string | null,"dish_name": string | null,"event_id": string | null,"event_slug": string | null,"not_yet_chosen": boolean | null
+                    "chosen_count": number | null,"course_display_order": number | null,"course_id": string | null,"course_name": string | null,"dish_id": string | null,"dish_name": string | null,"event_id": string | null,"event_name": string | null,"event_slug": string | null,"not_yet_chosen": boolean | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -652,7 +652,7 @@ isOneToOne: false
                   ]
                 },"meal_conflicts": {
                   Row: {
-                    "category_key": string | null,"course_id": string | null,"course_name": string | null,"dish_id": string | null,"dish_name": string | null,"event_id": string | null,"event_slug": string | null,"first_name": string | null,"guest_id": string | null,"household_id": string | null,"kind": Database["public"]['Enums']["dietary_kind"] | null,"last_name": string | null,"severity": string | null
+                    "category_key": string | null,"course_id": string | null,"course_name": string | null,"dish_id": string | null,"dish_name": string | null,"event_id": string | null,"event_name": string | null,"event_slug": string | null,"first_name": string | null,"guest_id": string | null,"guest_name": string | null,"household_id": string | null,"household_name": string | null,"kind": Database["public"]['Enums']["dietary_kind"] | null,"last_name": string | null,"severity": string | null
                   }
                   ComputedFields: never
                   Relationships: [

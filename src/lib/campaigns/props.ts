@@ -19,8 +19,8 @@ export type LooseDb = {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 type ProgressRow = {
-  pending_required_events: number | null;
-  pending_optional_events: number | null;
+  pending_required: number | null;
+  pending_optional: number | null;
   pending_meals: number | null;
 };
 
@@ -71,9 +71,7 @@ export async function loadCampaignProps(
     await Promise.all([
       db
         .from("household_rsvp_progress")
-        .select(
-          "pending_required_events, pending_optional_events, pending_meals",
-        )
+        .select("pending_required, pending_optional, pending_meals")
         .eq("household_id", householdId)
         .maybeSingle() as Promise<{ data: ProgressRow | null }>,
       db
@@ -152,8 +150,8 @@ export async function loadCampaignProps(
     })),
     respond_by: open[0]?.toISOString() ?? null,
     pending: {
-      required_events: progress?.pending_required_events ?? 0,
-      optional_events: progress?.pending_optional_events ?? 0,
+      required_events: progress?.pending_required ?? 0,
+      optional_events: progress?.pending_optional ?? 0,
       meals: progress?.pending_meals ?? 0,
     },
     siteUrl: options.siteUrl,

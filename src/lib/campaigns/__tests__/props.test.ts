@@ -68,8 +68,8 @@ function seed(overrides: Record<string, Record<string, unknown>[]> = {}) {
     household_rsvp_progress: [
       {
         household_id: HOUSEHOLD,
-        pending_required_events: 1,
-        pending_optional_events: 0,
+        pending_required: 1,
+        pending_optional: 0,
         pending_meals: 2,
       },
     ],

@@ -61,6 +61,14 @@ const TABLES: Rows = {
       course_name: "Main",
       dish_name: "Fake Pie",
       chosen_count: 3,
+      not_yet_chosen: false,
+    },
+    {
+      event_name: "Ceremony",
+      course_name: "Main",
+      dish_name: null,
+      chosen_count: 2,
+      not_yet_chosen: true,
     },
   ],
   dietary_list: [
@@ -70,7 +78,8 @@ const TABLES: Rows = {
       guest_name: "Ada Fake",
       severity: "allergy",
       category_key: "nuts",
-      notes: null,
+      details: "Tree nuts only",
+      dietary_notes: "Carries an auto-injector",
     },
   ],
   meal_conflicts: [
@@ -172,6 +181,8 @@ describe("GET /api/admin/exports/[kind]", () => {
   it("caterer: dish totals, restrictions, and conflicts", async () => {
     const text = await (await get("caterer")).text();
     expect(text).toContain("dish_total,Ceremony,Main,Fake Pie,3");
+    expect(text).toContain("not_yet_chosen,Ceremony,Main,,2");
+    expect(text).toContain("Tree nuts only; Carries an auto-injector");
     expect(text).toContain("restriction,Ceremony");
     expect(text).toContain("meal_conflict,Ceremony,Main,Fake Pie");
   });

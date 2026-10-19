@@ -5,8 +5,11 @@
 Source for Chris and Hannah's wedding website: the public site, RSVP management,
 guest communications, and the email designs. One repo for all of it.
 
-> Status: bootstrapped. Tooling and project structure are in place; no
-> application code yet. See [docs/architecture.md](docs/architecture.md).
+> Status: the backend is built (database, guest API, admin API, email sending).
+> No screens are provided; the designer builds them against
+> [docs/guest-api.md](docs/guest-api.md) and [docs/admin-api.md](docs/admin-api.md).
+> See [docs/architecture.md](docs/architecture.md) and
+> [docs/manual-setup.md](docs/manual-setup.md) for the dashboard settings.
 
 ## Stack
 
@@ -41,6 +44,7 @@ Preview email templates with `npm run email:dev`.
 | `npm run email:dev` / `email:export`        | React Email preview / HTML export       |
 | `npm run db:start` / `stop` / `reset`       | Local Supabase                          |
 | `npm run db:types`                          | Generate TypeScript types from local DB |
+| `npm run test:db`                           | pgTAP database tests (local Supabase)   |
 
 ### Create a staff sign-in (the couple or the planner)
 

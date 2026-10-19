@@ -44,6 +44,16 @@ function pick(row: Row, ...keys: string[]) {
   return null;
 }
 
+/** Joins the per-restriction details and the guest's free-text note, skipping blanks and repeats. */
+function joinNotes(...parts: unknown[]): string | null {
+  const seen: string[] = [];
+  for (const p of parts) {
+    const text = typeof p === "string" ? p.trim() : "";
+    if (text && !seen.includes(text)) seen.push(text);
+  }
+  return seen.length ? seen.join("; ") : null;
+}
+
 async function loadGuestRows(db: SupabaseClient) {
   const guests = await read(
     db
@@ -132,11 +142,12 @@ async function catererCsv(db: SupabaseClient) {
     const event = String(pick(t, "event_name", "event") ?? "");
     const course = String(pick(t, "course_name", "course") ?? "");
     const dish = pick(t, "dish_name", "dish");
-    if (dish === null) {
+    // `not_yet_chosen` is a flag on the row; the count is in `chosen_count`.
+    if (t.not_yet_chosen === true || dish === null) {
       data.notYetChosen.push({
         event,
         course,
-        count: Number(pick(t, "not_yet_chosen", "chosen_count", "count") ?? 0),
+        count: Number(pick(t, "chosen_count", "count") ?? 0),
       });
     } else {
       data.dishTotals.push({
@@ -154,7 +165,7 @@ async function catererCsv(db: SupabaseClient) {
       guest: String(pick(r, "guest_name", "guest") ?? ""),
       severity: String(r.severity ?? ""),
       category: pick(r, "category_key", "category"),
-      notes: pick(r, "notes", "details", "dietary_notes"),
+      notes: joinNotes(r.details, r.dietary_notes),
     });
   }
   for (const c of conflicts) {

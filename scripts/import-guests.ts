@@ -70,9 +70,9 @@ async function main() {
     const admin = createClient<Database>(url, key, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    console.log(await importGuestsFromFile(admin, path));
+    process.stdout.write(`${await importGuestsFromFile(admin, path)}\n`);
   } catch (e) {
-    console.error((e as Error).message);
+    process.stderr.write(`${(e as Error).message}\n`);
     process.exitCode = 1;
   }
 }

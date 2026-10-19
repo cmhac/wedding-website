@@ -220,13 +220,13 @@ async function main() {
 }
 
 function finish(results: StepResult[]) {
-  console.log(summarise(results));
+  process.stdout.write(`${summarise(results)}\n`);
   if (results.some((r) => !r.pass)) process.exitCode = 1;
 }
 
 if (process.argv[1]?.endsWith("guest-api-smoke.ts")) {
   main().catch((e) => {
-    console.error((e as Error).message);
+    process.stderr.write(`${(e as Error).message}\n`);
     process.exitCode = 1;
   });
 }

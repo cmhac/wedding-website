@@ -82,9 +82,9 @@ async function main() {
     const admin = createClient(url, key, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    console.log(await createStaffUser(admin, input));
+    process.stdout.write(`${await createStaffUser(admin, input)}\n`);
   } catch (e) {
-    console.error((e as Error).message);
+    process.stderr.write(`${(e as Error).message}\n`);
     process.exitCode = 1;
   }
 }
