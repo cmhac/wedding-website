@@ -79,4 +79,5 @@ npm run email:dev    # React Email preview server (for templates supplied by oth
 npm run db:start     # local Supabase (needs Docker)
 npm run db:reset     # re-apply migrations and seed.sql
 npm run db:types     # regenerate src/types/database.ts
+npm run test:db      # pgTAP database tests (needs local Supabase running)
 ```
