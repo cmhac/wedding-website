@@ -69,6 +69,10 @@ select throws_ok(
   $$select public.invite(array['aaaaaaaa-0000-0000-0000-0000000000a1']::uuid[], '99999999-0000-0000-0000-000000000009')$$,
   'P0001', 'not_found', 'an unknown event is refused'
 );
+select throws_ok(
+  $$select public.invite(null, 'eeeeeeee-0000-0000-0000-000000000002')$$,
+  'P0001', 'invalid_payload', 'a null guest list is refused'
+);
 select tests.clear_auth();
 
 select is((select count(*) from public.invitations), 3::bigint, 'exactly one invitation was added overall');
@@ -102,10 +106,6 @@ select results_eq(
 select is(
   (select count(*) from public.audit_log where entity = 'households' and actor_user_id is not null),
   0::bigint, 'inviting changes nothing else'
-);
-select throws_ok(
-  $$select public.invite(null, 'eeeeeeee-0000-0000-0000-000000000002')$$,
-  'P0001', 'invalid_payload', 'a null guest list is refused'
 );
 
 select * from finish();

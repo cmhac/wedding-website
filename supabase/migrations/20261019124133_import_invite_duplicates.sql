@@ -117,7 +117,7 @@ declare
   errors jsonb := '[]'::jsonb;
   guests_in jsonb;
   g jsonb;
-  slug jsonb;
+  v_slug jsonb;
   hrow integer;
   grow integer;
   v_name text;
@@ -225,9 +225,9 @@ begin
       if jsonb_typeof(g -> 'events') <> 'array' then
         errors := errors || private.import_error(grow, 'events', 'must be a list of event slugs');
       else
-        for slug in select * from jsonb_array_elements(g -> 'events') loop
-          if jsonb_typeof(slug) <> 'string'
-             or not exists (select 1 from public.events where events.slug = slug #>> '{}') then
+        for v_slug in select * from jsonb_array_elements(g -> 'events') loop
+          if jsonb_typeof(v_slug) <> 'string'
+             or not exists (select 1 from public.events e where e.slug = v_slug #>> '{}') then
             errors := errors || private.import_error(grow, 'events', 'names an event that does not exist');
           end if;
         end loop;
