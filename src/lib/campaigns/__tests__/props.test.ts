@@ -178,6 +178,16 @@ describe("loadCampaignProps", () => {
     });
   });
 
+  it("passes a missing start time or venue through as null", async () => {
+    const db = seed();
+    db.tables.events[0].starts_at = null;
+    db.tables.events[0].venue_name = null;
+    const props = await loadCampaignProps(db, HOUSEHOLD, options);
+    const ceremony = props!.events.find((e) => e.slug === "ceremony")!;
+    expect(ceremony.starts_at).toBeNull();
+    expect(ceremony.venue_name).toBeNull();
+  });
+
   it("returns null for an unknown household", async () => {
     expect(await loadCampaignProps(seed(), "missing", options)).toBeNull();
   });

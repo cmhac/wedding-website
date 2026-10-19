@@ -144,10 +144,9 @@ export async function loadCampaignProps(
     events: mapped.map(({ event, status }) => ({
       slug: event.slug,
       name: event.name,
-      // The contract types these as strings; an unscheduled event or unnamed
-      // venue arrives as an empty string.
-      starts_at: event.starts_at ?? "",
-      venue_name: event.venue_name ?? "",
+      // Null when the event has no date or venue yet; templates must cope.
+      starts_at: event.starts_at,
+      venue_name: event.venue_name,
       is_required: event.is_required,
       status,
     })),

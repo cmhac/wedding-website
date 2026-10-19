@@ -99,6 +99,27 @@ describe("templates", () => {
     expect(json).not.toContain("test@example.com");
   });
 
+  it("passes a missing start time or venue as null", async () => {
+    const props = buildCampaignProps({
+      household: { display_name: "Test Household" },
+      respond_by: null,
+      pending: { required_events: 0, optional_events: 0, meals: 0 },
+      siteUrl: "https://site.example",
+      events: [
+        {
+          slug: "ceremony",
+          name: "Ceremony",
+          starts_at: null,
+          venue_name: null,
+          is_required: true,
+          status: "pending",
+        },
+      ],
+    });
+    expect(props.events[0].starts_at).toBeNull();
+    expect(props.events[0].venue_name).toBeNull();
+  });
+
   it("uses a custom RSVP path", () => {
     const props = buildCampaignProps({
       household: { display_name: "H" },

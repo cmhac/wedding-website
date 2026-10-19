@@ -29,7 +29,7 @@ Admin sign-in, household, and staff-access endpoints are specified in [admin-api
 
 ## `POST /api/admin/campaigns/[id]/send`
 
-1. Require a staff session; load the campaign (must be `draft` or `scheduled`; otherwise 409).
+1. Require a staff session; load the campaign (must be `draft`, `scheduled`, or `sending`; otherwise 409. A campaign left `sending` by a crash is resumed: claiming and idempotency keys make that safe).
 2. Resolve the template for the campaign's message type; if none is registered, return `409 template_missing` before creating any message row (see [email-templates.md](./email-templates.md)). Call `resolve_audience`, insert one `messages` row per household (`queued`, or `skipped` with a reason for households with no email, opted-out for non-essential types, or filtered out), using the unique constraint to make a retry a no-op.
 3. Set the campaign `sending`; claim messages in batches with `claim_campaign_messages`, which resolves each household's current `contact_email` into `messages.to_email` (a household whose email was cleared meanwhile becomes `skipped` with `no_email`); send each through Resend with `Idempotency-Key = message.id`; record `sent` and `provider_message_id`, or `failed` with an error code.
 4. When no `queued` messages remain, set `done` and `completed_at`.
@@ -40,7 +40,7 @@ Retrying the same request is safe at every step. Non-essential message types exc
 ## `POST /api/internal/dispatch-scheduled`
 
 - Constant-time compare of the bearer token with `CRON_SECRET`; 401 otherwise.
-- Runs the same send procedure for each campaign from `due_scheduled_campaigns()`, then updates `settings.last_dispatch_at`. A campaign whose template is missing stays `scheduled` with `campaigns.last_error_code = 'template_missing'`, and the others still run.
+- Runs the same send procedure for each campaign from `due_scheduled_campaigns()` and for any campaign left in `sending` by a crash, then updates `settings.last_dispatch_at`. A campaign whose template is missing stays `scheduled` with `campaigns.last_error_code = 'template_missing'`, and the others still run.
 - Called every 5 minutes by `pg_cron`; a missed run delays a send by at most one interval and a repeated run changes nothing.
 
 ## `POST /api/admin/guests/import`

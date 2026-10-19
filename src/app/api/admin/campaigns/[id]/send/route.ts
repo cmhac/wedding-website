@@ -37,7 +37,7 @@ export async function POST(_request: Request, { params }: Context) {
           return errorResponse(
             409,
             "campaign_not_sendable",
-            "Only a draft or scheduled campaign can be sent.",
+            "Only a draft, scheduled or interrupted campaign can be sent.",
           );
         case "template_missing":
           return errorResponse(

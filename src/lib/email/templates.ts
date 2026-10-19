@@ -23,8 +23,8 @@ export type CampaignProps = {
   events: {
     slug: string;
     name: string;
-    starts_at: string;
-    venue_name: string;
+    starts_at: string | null;
+    venue_name: string | null;
     is_required: boolean;
     status: "pending" | "attending" | "declined";
   }[];
