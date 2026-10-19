@@ -13,7 +13,7 @@ export const grantStaffRequestSchema = z.object({
 export type GrantStaffRequest = z.infer<typeof grantStaffRequestSchema>;
 
 export const staffMemberSchema = z.object({
-  user_id: z.uuid(),
+  user_id: z.guid(),
   role: z.enum(["couple", "planner"]),
   display_name: z.string(),
 });
@@ -22,4 +22,4 @@ export type StaffMember = z.infer<typeof staffMemberSchema>;
 export const grantStaffResponseSchema = z.object({ staff: staffMemberSchema });
 export type GrantStaffResponse = z.infer<typeof grantStaffResponseSchema>;
 
-export const staffUserIdSchema = z.uuid();
+export const staffUserIdSchema = z.guid();

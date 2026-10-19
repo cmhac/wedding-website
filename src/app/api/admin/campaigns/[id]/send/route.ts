@@ -8,7 +8,7 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 
 type Context = { params: Promise<{ id: string }> };
 
-const idSchema = z.uuid();
+const idSchema = z.guid();
 
 /** POST /api/admin/campaigns/[id]/send: send a draft or scheduled campaign now. */
 export async function POST(_request: Request, { params }: Context) {

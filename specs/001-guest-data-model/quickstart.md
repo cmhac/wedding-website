@@ -57,3 +57,43 @@ npx supabase test db     # pgTAP: schema, RLS, RPC, views
 ```
 
 The pgTAP suite must prove, per table, what **anon**, **guest**, and **staff** can and cannot do (Constitution II), including the cross-household cases in scenario 4 and the planner restrictions in scenario 12.
+
+## Validation run (local stack)
+
+All fifteen scenarios were run end to end against the local stack: `npm run dev`, the scripts in `scripts/`, Mailpit at `127.0.0.1:54324`, signed webhook payloads, and `curl`/`psql`. The server environment came from `npx supabase status -o env` plus the server-only variables in a file kept outside the repository.
+
+| #   | Result | Notes                                                                                                                                                                                                                                                                                                                                   |
+| --- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Pass   | The shipped sample file has no bad row, so a copy with three extra households was used (invalid email, a guest with no name, one good). Bad rows reported with row, field, reason; no partial household. Importing the sample twice creates a second paper-only household (no email to match on); `find_duplicate_households` flags it. |
+| 2   | Pass   | `invite` added two rehearsal invitations, left all other invitations unchanged, sent no messages, and reported existing ones on repeat.                                                                                                                                                                                                 |
+| 3   | Pass   | After the fixes below. Only the seeded address received a link.                                                                                                                                                                                                                                                                         |
+| 4   | Pass   | Direct table reads, update attempts, and RPC calls with another household's ids returned nothing or `forbidden`.                                                                                                                                                                                                                        |
+| 5   | Pass   | Answers, meals, allergy, and message persisted across sign-out and sign-in. The conflict view (staff only) listed the nut allergy against the nut-tagged dish.                                                                                                                                                                          |
+| 6   | Pass   | Guest change refused with `rsvp_closed`; resending an unchanged answer and adding a dietary note after the deadline allowed; staff change succeeded.                                                                                                                                                                                    |
+| 7   | Pass   | Required-events reminder excluded the household that still owed the welcome party; the optional-events reminder included it. Paper-only households were skipped with `no_email`.                                                                                                                                                        |
+| 8   | Pass   | One message per reachable household; the second call returned `409 campaign_not_sendable` and changed nothing; the scheduled-send route ran a due campaign once and did nothing on repeat.                                                                                                                                              |
+| 9   | Pass   | Bad signature `400`; delivered, then an earlier sent, then a duplicate and a repeat: status stayed `delivered`.                                                                                                                                                                                                                         |
+| 10  | Pass   | Bounce set the message `bounced` and the household `delivery_problem`, visible to staff and selectable as an audience; a later delivered event did not regress it.                                                                                                                                                                      |
+| 11  | Pass   | Both guests listed by `archive_dish`; selections moved to history with reason `dish_archived`; dish absent from totals; archiving twice returns nothing.                                                                                                                                                                                |
+| 12  | Pass   | Planner's RSVP edit and campaign creation attributed to the planner in the audit log; deleting or editing the couple row refused; staff-access endpoints `403`.                                                                                                                                                                         |
+| 13  | Pass   | After the couple revoked the planner, the planner's existing session got `403` on admin and guest endpoints, and direct reads and RPCs returned nothing or `forbidden`. The last couple member cannot be removed.                                                                                                                       |
+| 14  | Pass   | Event counts, the guests and responses exports, and the caterer export (dish totals, not-yet-chosen, restrictions, conflicts) matched a manual `psql` count. Formula-looking cells are prefixed with an apostrophe.                                                                                                                     |
+| 15  | Pass   | `scripts/guest-api-smoke.ts` passed every step (sign-in, read, save, plus-one, opt-out, deadline error, sign-out) with no screens present.                                                                                                                                                                                              |
+
+### How scenarios 7 to 10 were run without live sends
+
+No real templates exist, so the run registered a throwaway fixture template for the reminder types in `emails/index.ts` (reverted afterwards) and pointed the Resend SDK at a local stand-in with `RESEND_BASE_URL`, which also honoured the idempotency key. Nothing was sent through Resend.
+
+### Deviations found and fixed
+
+- **Redirect allow-list.** `.env.example` suggests `http://localhost:3000`, but `supabase/config.toml` only allowed `https://127.0.0.1:3000`, so the emailed link fell back to the site URL and sign-in failed. The local allow-list now lists the callback on both `localhost` and `127.0.0.1`.
+- **Smoke script cookies.** The unknown-address sign-in overwrote the known address's code-verifier cookie, so sign-in never completed. The unknown address now uses its own cookie jar.
+- **Smoke script deadline step.** It resent the stored answer, which the API allows after a deadline, so it reported a failure. It now asks for the opposite of the stored answer.
+- **Seed ids rejected.** Validation used strict UUID versions, so the readable seed ids (for example for courses, dishes, and staff) got `422` even though the database accepts them. API validation now accepts any uuid-shaped id.
+
+### Notes and deferred items
+
+- **Deferred: live Resend.** Sending with a real key, delivery of real webhooks, and domain verification need the real account and templates (see `docs/manual-setup.md`). The Send Email hook route was checked with a signed payload (`401` for a bad signature, `500 template_missing` with no template); the hook stays off locally.
+- **Campaign sends are logged as system.** Creating a campaign is attributed to the staff member, but the send itself runs with the service role, so its status changes appear in the audit log as `system`.
+- **Revoked staff keep a sign-in account.** A revoked planner can still request a link, but every staff request is refused.
+- **Sign-in rate limit.** Sign-in allows five requests a minute per client IP address, so scripted runs that sign in repeatedly need short pauses.

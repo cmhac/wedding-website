@@ -106,3 +106,13 @@ describe("response schemas", () => {
     ).toBe(true);
   });
 });
+
+describe("seed-shaped ids", () => {
+  it("accepts a uuid-shaped user id that is not an RFC version 1-8 uuid", async () => {
+    const { staffUserIdSchema } = await import("../staff-schemas");
+    expect(
+      staffUserIdSchema.safeParse("10000000-0000-0000-0000-000000000002")
+        .success,
+    ).toBe(true);
+  });
+});

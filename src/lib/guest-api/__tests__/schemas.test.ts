@@ -225,3 +225,22 @@ describe("guest API response schemas", () => {
     ).toBe(true);
   });
 });
+
+describe("ids the database generates or the seed uses", () => {
+  // Local seed data uses readable ids such as 41000000-0000-0000-0000-000000000001
+  // that are not RFC version 1-8 uuids; the database accepts them, so the API must.
+  const SEED = "41000000-0000-0000-0000-000000000001";
+  it("accepts any uuid-shaped id in an RSVP submission", () => {
+    expect(
+      rsvpSubmitSchema.safeParse({
+        guests: [
+          {
+            guest_id: SEED,
+            responses: [{ event_id: SEED, status: "attending" }],
+            meals: [{ course_id: SEED, dish_id: SEED }],
+          },
+        ],
+      }).success,
+    ).toBe(true);
+  });
+});

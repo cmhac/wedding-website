@@ -15,7 +15,7 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 
 type Context = { params: Promise<{ id: string }> };
 
-const idSchema = z.uuid();
+const idSchema = z.guid();
 const notFound = () => errorResponse(404, "not_found", "Household not found.");
 
 async function guard(): Promise<{ session: Session } | { denied: Response }> {

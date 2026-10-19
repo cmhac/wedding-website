@@ -31,7 +31,7 @@ const filtersSchema = z
 
 export const audienceSchema = z.discriminatedUnion("scope", [
   z.strictObject({ scope: z.literal("all") }),
-  z.strictObject({ scope: z.literal("household"), household_id: z.uuid() }),
+  z.strictObject({ scope: z.literal("household"), household_id: z.guid() }),
   z.strictObject({ scope: z.literal("filter"), filters: filtersSchema }),
 ]);
 

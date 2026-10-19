@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /** Response of POST /api/admin/campaigns/[id]/send (contracts/http-endpoints.md). */
 export const sendCampaignResponseSchema = z.object({
-  campaign_id: z.uuid(),
+  campaign_id: z.guid(),
   queued: z.number().int().nonnegative(),
   sent: z.number().int().nonnegative(),
   skipped: z.object({

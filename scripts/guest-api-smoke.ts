@@ -50,7 +50,7 @@ export function summarise(results: StepResult[]): string {
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-async function main() {
+export async function main() {
   const base = process.env.GUEST_SMOKE_BASE_URL ?? "http://localhost:3000";
   const mail = process.env.GUEST_SMOKE_MAIL_URL ?? "http://127.0.0.1:54324";
   const email = process.env.GUEST_SMOKE_EMAIL;
@@ -66,17 +66,22 @@ async function main() {
   };
   const jar = new CookieJar();
 
-  async function api(path: string, method: string, body?: unknown) {
+  async function api(
+    path: string,
+    method: string,
+    body?: unknown,
+    cookies: CookieJar = jar,
+  ) {
     const res = await fetch(`${base}${path}`, {
       method,
       headers: {
         ...(body === undefined ? {} : { "content-type": "application/json" }),
-        cookie: jar.header(),
+        cookie: cookies.header(),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
       redirect: "manual",
     });
-    jar.store(res.headers.getSetCookie());
+    cookies.store(res.headers.getSetCookie());
     const json: Json | null =
       res.status === 204 ? null : await res.json().catch(() => null);
     return { status: res.status, json };
@@ -103,9 +108,14 @@ async function main() {
 
   // 1. Sign-in answers identically for a known and an unknown address.
   const known = await api("/api/guest/sign-in", "POST", { email });
-  const unknown = await api("/api/guest/sign-in", "POST", {
-    email: "nobody-on-the-list@example.invalid",
-  });
+  // The unknown address gets its own cookie jar: every sign-in request sets a
+  // code-verifier cookie, and sharing one would overwrite the known address's.
+  const unknown = await api(
+    "/api/guest/sign-in",
+    "POST",
+    { email: "nobody-on-the-list@example.invalid" },
+    new CookieJar(),
+  );
   record(
     "sign-in gives the same neutral answer for known and unknown addresses",
     known.status === 202 &&
@@ -186,11 +196,21 @@ async function main() {
     const owner = guests.find((g) =>
       (g.invitations ?? []).some((i: Json) => i.event.id === closedEvent),
     );
+    // Resending the stored answer is allowed after a deadline, so ask for the
+    // opposite of what is stored.
+    const stored = (owner?.invitations ?? []).find(
+      (i: Json) => i.event.id === closedEvent,
+    )?.status;
     const closed = await api("/api/guest/rsvp", "PUT", {
       guests: [
         {
           guest_id: owner?.id ?? "00000000-0000-4000-8000-000000000000",
-          responses: [{ event_id: closedEvent, status: "attending" }],
+          responses: [
+            {
+              event_id: closedEvent,
+              status: stored === "attending" ? "declined" : "attending",
+            },
+          ],
         },
       ],
     });

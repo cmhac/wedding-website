@@ -18,17 +18,17 @@ export const dietaryEntrySchema = z.object({
 });
 
 export const mealChoiceSchema = z.object({
-  course_id: z.uuid(),
-  dish_id: z.uuid(),
+  course_id: z.guid(),
+  dish_id: z.guid(),
 });
 
 export const guestRsvpInputSchema = z.object({
-  guest_id: z.uuid(),
+  guest_id: z.guid(),
   dietary_notes: z.string().max(2000).nullish(),
   dietary: z.array(dietaryEntrySchema).max(50).optional(),
   meals: z.array(mealChoiceSchema).max(50).optional(),
   responses: z
-    .array(z.object({ event_id: z.uuid(), status: rsvpStatusSchema }))
+    .array(z.object({ event_id: z.guid(), status: rsvpStatusSchema }))
     .max(50),
 });
 
@@ -38,7 +38,7 @@ export const rsvpSubmitSchema = z.object({
 });
 
 export const plusOneRequestSchema = z.object({
-  guest_id: z.uuid(),
+  guest_id: z.guid(),
   first_name: z.string().trim().min(1).max(100),
   last_name: z.string().trim().min(1).max(100),
 });
@@ -47,7 +47,7 @@ export const optOutRequestSchema = z.object({ opt_out: z.boolean() });
 export const optOutResponseSchema = z.object({ opt_out: z.boolean() });
 
 const eventSchema = z.looseObject({
-  id: z.uuid(),
+  id: z.guid(),
   slug: z.string(),
   name: z.string(),
   starts_at: z.string(),
@@ -60,14 +60,14 @@ const eventSchema = z.looseObject({
 });
 
 const dishSchema = z.looseObject({
-  id: z.uuid(),
+  id: z.guid(),
   name: z.string(),
   description: z.string().nullable().optional(),
   tags: z.array(z.string()),
 });
 
 const courseSchema = z.looseObject({
-  id: z.uuid(),
+  id: z.guid(),
   name: z.string(),
   display_order: z.number().nullable().optional(),
   requires_choice: z.boolean(),
@@ -88,7 +88,7 @@ const invitationSchema = z.looseObject({
 });
 
 export const guestSchema = z.looseObject({
-  id: z.uuid(),
+  id: z.guid(),
   first_name: z.string().nullable(),
   last_name: z.string().nullable(),
   is_placeholder: z.boolean(),
