@@ -70,9 +70,8 @@ select is_empty(
   $$with u as (update public.households set display_name = 'Changed' returning 1) select * from u$$,
   'guest A cannot update households'
 );
-select is_empty(
-  $$with d as (delete from public.households returning 1) select * from d$$,
-  'guest A cannot delete households'
+select throws_ok(
+  $$delete from public.households$$, '42501', null, 'guest A cannot delete households'
 );
 select throws_ok(
   $$insert into public.guests (household_id, first_name, last_name)
