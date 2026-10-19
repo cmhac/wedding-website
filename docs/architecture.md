@@ -21,26 +21,26 @@ proposes answers to all seven open decisions below.
 | Email content and design | Supplied separately (React Email suggested)             | `emails/`                       |
 | Email delivery           | Resend                                                  | `src/lib/email`                 |
 
-## Open decisions
+## Decisions
 
-Record each as a file in `docs/decisions/` once settled. Proposed answers are in
-`docs/decisions/0002`–`0008` and become accepted when the couple confirm.
+Each is recorded as a file in `docs/decisions/`. The answers are in
+`docs/decisions/0002`–`0008`, accepted by the couple on 2026-10-19.
 
-1. **Hosting.** _(proposed: 0002)_ The portfolio site is a static export on GitHub Pages. This site
+1. **Hosting.** _(accepted: 0002)_ The portfolio site is a static export on GitHub Pages. This site
    uses server-side auth cookies, so it likely needs a host that runs Next.js
    server code. `next.config.ts` deliberately does not set `output: "export"`.
-2. **Guest identity model.** _(proposed: 0003)_ Guests sign in by magic link. Options: create a
+2. **Guest identity model.** _(accepted: 0003)_ Guests sign in by magic link. Options: create a
    Supabase user per invited guest ahead of time and call `signInWithOtp` with
    `shouldCreateUser: false`, or allow open sign-up and match by email. This
    affects the `[auth]` settings in `supabase/config.toml`, which are still the
    CLI defaults.
-3. **Auth emails through Resend.** _(proposed: 0004)_ Supabase sends magic-link emails itself. To
+3. **Auth emails through Resend.** _(accepted: 0004)_ Supabase sends magic-link emails itself. To
    send them (and their designs) through Resend, configure custom SMTP under
    `[auth.email.smtp]` or use an auth email hook.
-4. **Where email sends run.** _(proposed: 0005)_ Next.js route handlers vs. Supabase Edge Functions
+4. **Where email sends run.** _(accepted: 0005)_ Next.js route handlers vs. Supabase Edge Functions
    (the latter suit database-triggered sends).
-5. **Household/party model.** _(proposed: 0006)_ One invite per household vs. per person, plus-ones,
+5. **Household/party model.** _(accepted: 0006)_ One invite per household vs. per person, plus-ones,
    per-event invitations.
-6. **Sending domain.** _(proposed: 0007)_ Needs DNS verification in Resend before production sends.
-7. **Admin authorization.** _(proposed: 0008)_ How Chris and Hannah are distinguished from guests
+6. **Sending domain.** _(accepted: 0007)_ Needs DNS verification in Resend before production sends.
+7. **Admin authorization.** _(accepted: 0008)_ How Chris and Hannah are distinguished from guests
    (e.g. a roles table checked by row-level security policies).

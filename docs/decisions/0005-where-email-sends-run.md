@@ -1,6 +1,6 @@
 # 0005: Where email sends run
 
-Status: proposed (2026-10-18)
+Status: accepted (2026-10-19)
 
 Sends run in Next.js route handlers, not Supabase Edge Functions. "Send now" is a
 staff-only route; scheduled sends are picked up by `pg_cron` calling a

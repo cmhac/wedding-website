@@ -1,6 +1,6 @@
 # 0006: Household and party model
 
-Status: proposed (2026-10-18)
+Status: accepted (2026-10-19)
 
 The household is the unit that is invited and emailed, with exactly one
 responder (the contact email). Invitations are per guest per event. Plus-ones

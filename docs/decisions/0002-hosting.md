@@ -1,6 +1,6 @@
 # 0002: Hosting
 
-Status: proposed (2026-10-18). Needs the couple's confirmation.
+Status: accepted (2026-10-19)
 
 Run the Next.js app on a host that executes Next.js server code; Vercel is the
 default recommendation. Do not set `output: "export"`.

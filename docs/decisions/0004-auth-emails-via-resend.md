@@ -1,6 +1,6 @@
 # 0004: Auth emails through Resend
 
-Status: proposed (2026-10-18)
+Status: accepted (2026-10-19)
 
 Supabase's Send Email auth hook (HTTPS) calls `POST /api/auth/send-email`, which
 verifies the hook signature and sends the magic-link email through Resend using the

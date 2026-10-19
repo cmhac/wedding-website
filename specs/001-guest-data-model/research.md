@@ -1,6 +1,6 @@
 # Research: Guest, Invitation, and Communication Data Model
 
-Resolves every open decision in `docs/architecture.md` that this feature depends on. Each is also written up as a record in `docs/decisions/` with status "proposed" until the couple confirm. External claims were checked against the sources linked; where only secondary sources were found, that is stated.
+Resolves every open decision in `docs/architecture.md` that this feature depends on. Each is also written up as a record in `docs/decisions/` with status "accepted" (confirmed by the couple on 2026-10-19). External claims were checked against the sources linked; where only secondary sources were found, that is stated.
 
 ## R1. Hosting
 

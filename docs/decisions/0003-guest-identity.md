@@ -1,6 +1,6 @@
 # 0003: Guest identity model
 
-Status: proposed (2026-10-18)
+Status: accepted (2026-10-19)
 
 One Supabase Auth user is created per household (the responder) by server code
 using the service-role key, and linked as `households.auth_user_id`. Guests sign

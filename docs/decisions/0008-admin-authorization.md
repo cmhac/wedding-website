@@ -1,6 +1,6 @@
 # 0008: Admin authorization
 
-Status: proposed (2026-10-18)
+Status: accepted (2026-10-19)
 
 A `staff` table lists staff users with role `couple` or `planner`. Row-level
 security uses a security-definer `is_staff()` helper. Couple and planner have

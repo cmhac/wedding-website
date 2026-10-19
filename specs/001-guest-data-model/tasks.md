@@ -27,7 +27,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 
 **Purpose**: Tooling, configuration, and dependencies. Nothing here needs a database table.
 
-- [ ] T001 Gate: confirm the proposed decisions are accepted (the three GitHub sub-issues for confirming the hosting choice (#4), confirming the other proposed decision records (#5), and choosing the sending domain (#6) are closed, and the status line in `docs/decisions/0002` to `0008` is set to "accepted"); if not, stop and ask before starting Phase 2, because the Supabase sign-up setting and several later tasks depend on them
+- [x] T001 Gate: confirm the proposed decisions are accepted (the three GitHub sub-issues for confirming the hosting choice (#4), confirming the other proposed decision records (#5), and choosing the sending domain (#6) are closed, and the status line in `docs/decisions/0002` to `0008` is set to "accepted"); if not, stop and ask before starting Phase 2, because the Supabase sign-up setting and several later tasks depend on them
 - [ ] T002 Add the new server-only variable names with empty values to `.env.example`: `SEND_EMAIL_HOOK_SECRET`, `RESEND_WEBHOOK_SECRET`, `CRON_SECRET` (names only, per Constitution III), and the non-secret `GUEST_RSVP_PATH` (default `/rsvp`, the path where the guest frontend serves the RSVP, used to build links in emails)
 - [ ] T003 In `supabase/config.toml` set `enable_signup = false` under both `[auth]` and `[auth.email]` so guests and staff exist only when created by server code (decision 0003)
 - [ ] T004 [P] Add the `test:db` script (`supabase test db`) to `package.json` and list it under Commands in `CLAUDE.md`
@@ -288,7 +288,7 @@ Single Next.js project with `supabase/` beside it, as in `plan.md`: route handle
 - [ ] T108 [P] Search the repository for logging of guest data: confirm no `console.*` calls under `src/` and `scripts/` outside `src/lib/log.ts`, and add an ESLint `no-console` rule to `eslint.config.mjs` with an exception for `src/lib/log.ts`
 - [ ] T109 [P] Update `CLAUDE.md` (Commands: `test:db`; Layout: `src/app/api/admin`, `src/app/api/guest`, `src/lib/admin-api`, `src/lib/guest-api`, `src/lib/campaigns`, `src/lib/guests`, `src/lib/exports`, `supabase/tests`) and `README.md` in the same change as the behavior (Constitution workflow)
 - [ ] T110 [P] Document in `docs/` the final state of every manual setting from the manual-task issue (https://github.com/cmhac/wedding-website/issues/3): Resend domain and webhook, Supabase auth hook and sign-up setting, Vault secrets, hosting variables
-- [ ] T111 Once the couple confirm the proposals, change the status line in `docs/decisions/0002` through `0008` from "proposed" to "accepted" with the date, and update `docs/architecture.md`
+- [x] T111 Once the couple confirm the proposals, change the status line in `docs/decisions/0002` through `0008` from "proposed" to "accepted" with the date, and update `docs/architecture.md`
 - [ ] T112 Run every scenario in `specs/001-guest-data-model/quickstart.md` end to end against the local stack and record any deviation in `specs/001-guest-data-model/quickstart.md`
 - [ ] T113 Run the `/security-review` skill on the branch and fix any findings, paying particular attention to the guest sign-in neutral message, the webhook and cron endpoints, the service-role key boundary, and CSV formula injection
 - [ ] T114 Final gate: `npm run format:check && npm run lint && npm run type-check && npm test && npx supabase test db && npm run build` all pass
