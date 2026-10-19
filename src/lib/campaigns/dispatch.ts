@@ -63,7 +63,9 @@ type ClaimedMessage = {
 };
 
 const DEFAULT_BATCH = 50;
-const SENDABLE = ["draft", "scheduled"];
+// `sending` is included so a campaign interrupted by a crash can be resumed:
+// claiming and idempotency keys make a second pass safe.
+const SENDABLE = ["draft", "scheduled", "sending"];
 const SENT_STATUSES = ["sent", "delivered", "bounced", "complained"];
 
 function fail(): never {
@@ -111,11 +113,15 @@ export async function sendCampaign(
 
   const { error: startError } = await db
     .from("campaigns")
-    .update({
-      status: "sending",
-      started_at: now().toISOString(),
-      last_error_code: null,
-    })
+    .update(
+      campaign.status === "sending"
+        ? { last_error_code: null }
+        : {
+            status: "sending",
+            started_at: now().toISOString(),
+            last_error_code: null,
+          },
+    )
     .eq("id", campaignId)
     .in("status", SENDABLE);
   if (startError) fail();
@@ -297,7 +303,7 @@ export type DueOutcome =
   | { campaign_id: string; ok: false; code: DispatchErrorCode };
 
 /**
- * Runs every due scheduled campaign, then records the run time. A campaign that
+ * Runs every due scheduled campaign (and any left `sending`), then records the run time. A campaign that
  * cannot be sent stays `scheduled` with `last_error_code` set, and the others
  * still run.
  */
@@ -309,8 +315,22 @@ export async function dispatchDueCampaigns(
   const { data, error } = await db.rpc("due_scheduled_campaigns");
   if (error) fail();
 
+  // Also pick up campaigns a crash left in `sending`.
+  const { data: interrupted, error: interruptedError } = await db
+    .from("campaigns")
+    .select("id")
+    .eq("status", "sending");
+  if (interruptedError) fail();
+  const dueIds = new Set(
+    [
+      ...((data ?? []) as { id: string }[]),
+      ...((interrupted ?? []) as { id: string }[]),
+    ].map((c) => c.id),
+  );
+
   const outcomes: DueOutcome[] = [];
-  for (const due of (data ?? []) as { id: string }[]) {
+  for (const id of dueIds) {
+    const due = { id };
     try {
       const result = await sendCampaign(db, due.id, options);
       outcomes.push({ campaign_id: due.id, ok: true, result });

@@ -339,16 +339,33 @@ describe("sendCampaign", () => {
     expect(db.tables.campaigns[0].status).toBe("draft");
   });
 
-  it.each(["sending", "done", "cancelled"])(
-    "refuses a %s campaign",
-    async (status) => {
-      const { db, run } = setup({ campaign: { status } });
-      await expect(run()).rejects.toMatchObject({
-        code: "campaign_not_sendable",
-      });
-      expect(messages(db)).toHaveLength(0);
-    },
-  );
+  it.each(["done", "cancelled"])("refuses a %s campaign", async (status) => {
+    const { db, run } = setup({ campaign: { status } });
+    await expect(run()).rejects.toMatchObject({
+      code: "campaign_not_sendable",
+    });
+    expect(messages(db)).toHaveLength(0);
+  });
+
+  it("resumes a campaign left sending after a crash, without resending", async () => {
+    const { db, send, run } = setup({ campaign: { status: "sending" } });
+    // Two messages were already sent before the crash; one is still queued.
+    db.tables.messages.push(
+      { id: "m-1", campaign_id: CAMPAIGN, household_id: "h-1", status: "sent" },
+      { id: "m-2", campaign_id: CAMPAIGN, household_id: "h-2", status: "sent" },
+      {
+        id: "m-3",
+        campaign_id: CAMPAIGN,
+        household_id: "h-3",
+        status: "queued",
+      },
+    );
+    const result = await run();
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(messages(db)).toHaveLength(3);
+    expect(result.sent).toBe(3);
+    expect(db.tables.campaigns[0].status).toBe("done");
+  });
 
   it("accepts a scheduled campaign", async () => {
     const { run } = setup({ campaign: { status: "scheduled" } });
@@ -387,6 +404,15 @@ describe("dispatchDueCampaigns", () => {
     expect(out.campaigns).toEqual([]);
     expect(send).not.toHaveBeenCalled();
     expect(db.tables.settings[0].last_dispatch_at).toEqual(expect.any(String));
+  });
+
+  it("also resumes campaigns left sending", async () => {
+    const { db, send } = setup({ campaign: { status: "sending" } });
+    const out = await dispatchDueCampaigns(db, dueOptions(send));
+    expect(out.campaigns).toEqual([
+      expect.objectContaining({ campaign_id: CAMPAIGN, ok: true }),
+    ]);
+    expect(db.tables.campaigns[0].status).toBe("done");
   });
 
   it("leaves a campaign with no template scheduled and runs the others", async () => {

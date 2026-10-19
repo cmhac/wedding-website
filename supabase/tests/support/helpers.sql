@@ -56,6 +56,19 @@ begin
 end;
 $$;
 
+-- Acts as the server-side service role (no signed-in user), as route handlers
+-- using the service-role key do.
+create or replace function tests.authenticate_service_role()
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
+  perform set_config('request.jwt.claim.sub', '', true);
+  set local role service_role;
+end;
+$$;
+
 -- Acts as a visitor who is not signed in.
 create or replace function tests.authenticate_anon()
 returns void
