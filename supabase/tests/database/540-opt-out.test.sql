@@ -5,7 +5,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(14);
+select plan(13);
 
 select tests.create_user('household-a@example.test') as user_a \gset
 select tests.create_user('household-b@example.test') as user_b \gset

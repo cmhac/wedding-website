@@ -37,6 +37,26 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"campaigns": {
+                  Row: {
+                    "audience": NonNullable<Json>,"completed_at": string | null,"created_at": string,"created_by": string | null,"id": string,"last_error_code": string | null,"message_type_key": string,"name": string,"scheduled_for": string | null,"started_at": string | null,"status": Database["public"]['Enums']["campaign_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "audience": NonNullable<Json>,"completed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_error_code"?: string | null,"message_type_key": string,"name": string,"scheduled_for"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["campaign_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "audience"?: NonNullable<Json>,"completed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_error_code"?: string | null,"message_type_key"?: string,"name"?: string,"scheduled_for"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["campaign_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "campaigns_message_type_key_fkey"
+      columns: ["message_type_key"]
+isOneToOne: false
+      referencedRelation: "message_types"
+      referencedColumns: ["key"]
+    }
+                  ]
                 },"courses": {
                   Row: {
                     "display_order": number | null,"id": string,"menu_id": string,"name": string,"requires_choice": boolean
@@ -421,6 +441,72 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"message_events": {
+                  Row: {
+                    "id": number,"message_id": string,"occurred_at": string,"provider_event_id": string,"received_at": string,"type": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: never,"message_id": string,"occurred_at": string,"provider_event_id": string,"received_at"?: string,"type": string
+                  }
+                  Update: {
+                    "id"?: never,"message_id"?: string,"occurred_at"?: string,"provider_event_id"?: string,"received_at"?: string,"type"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "message_events_message_id_fkey"
+      columns: ["message_id"]
+isOneToOne: false
+      referencedRelation: "messages"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"message_types": {
+                  Row: {
+                    "is_essential": boolean,"key": string,"label": string,"template_key": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "is_essential"?: boolean,"key": string,"label": string,"template_key": string
+                  }
+                  Update: {
+                    "is_essential"?: boolean,"key"?: string,"label"?: string,"template_key"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"messages": {
+                  Row: {
+                    "campaign_id": string,"error_code": string | null,"household_id": string | null,"id": string,"last_event_at": string | null,"provider_message_id": string | null,"queued_at": string,"sent_at": string | null,"skip_reason": string | null,"status": Database["public"]['Enums']["message_status"],"to_email": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "campaign_id": string,"error_code"?: string | null,"household_id"?: string | null,"id"?: string,"last_event_at"?: string | null,"provider_message_id"?: string | null,"queued_at"?: string,"sent_at"?: string | null,"skip_reason"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"to_email"?: string | null
+                  }
+                  Update: {
+                    "campaign_id"?: string,"error_code"?: string | null,"household_id"?: string | null,"id"?: string,"last_event_at"?: string | null,"provider_message_id"?: string | null,"queued_at"?: string,"sent_at"?: string | null,"skip_reason"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"to_email"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "messages_campaign_id_fkey"
+      columns: ["campaign_id"]
+isOneToOne: false
+      referencedRelation: "campaigns"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "messages_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "household_rsvp_progress"
+      referencedColumns: ["household_id"]
+    },{
+      foreignKeyName: "messages_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"rsvp_history": {
                   Row: {
                     "actor_kind": string,"changed_at": string,"changed_by": string | null,"event_id": string | null,"guest_id": string | null,"id": number,"new_status": Database["public"]['Enums']["rsvp_status"],"old_status": Database["public"]['Enums']["rsvp_status"] | null
@@ -604,6 +690,11 @@ isOneToOne: true
               "guest_id": string,"household_id": string
             }[]
                            },
+"claim_campaign_messages":
+{ Args: { "campaign_id": string,"limit": number }; Returns: {
+              "household_id": string,"id": string,"to_email": string
+            }[]
+                           },
 "create_household_record":
 { Args: { "payload": Json }; Returns: Json
                            },
@@ -615,6 +706,11 @@ isOneToOne: true
                            },
 "delete_household_record":
 { Args: { "household_id": string }; Returns: Json
+                           },
+"due_scheduled_campaigns":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "id": string
+            }[]
                            },
 "effective_rsvp_deadline":
 { Args: { "p_event_id": string,"p_household_id": string }; Returns: string
@@ -639,11 +735,25 @@ isOneToOne: true
 "is_staff":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"is_valid_audience":
+{ Args: { "audience": Json }; Returns: boolean
+                           },
 "name_plus_one":
 { Args: { "first_name": string,"guest_id": string,"last_name": string }; Returns: Json
                            },
+"record_message_event":
+{ Args: { "occurred_at": string,"provider_event_id": string,"provider_message_id": string,"type": string }; Returns: string
+                           },
+"resolve_audience":
+{ Args: { "filter": Json,"message_type_key"?: string }; Returns: {
+              "deliverable": boolean,"display_name": string,"household_id": string,"skip_reason": string
+            }[]
+                           },
 "set_household_contact":
 { Args: { "auth_user_id": string,"contact_email": string,"household_id": string }; Returns: Json
+                           },
+"set_reminders_opt_out":
+{ Args: { "opt_out": boolean }; Returns: boolean
                            },
 "staff_set_meal":
 { Args: { "course_id": string,"dish_id": string,"guest_id": string }; Returns: Json

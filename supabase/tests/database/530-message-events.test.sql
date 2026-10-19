@@ -6,7 +6,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(70);
+select plan(60);
 
 select tests.create_user('couple@example.test') as couple_user \gset
 

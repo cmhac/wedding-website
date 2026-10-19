@@ -6,7 +6,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(63);
+select plan(60);
 
 select tests.create_user('couple@example.test') as couple_user \gset
 select tests.create_user('planner@example.test') as planner_user \gset
@@ -164,7 +164,7 @@ select throws_ok(
   'P0001', 'campaign_locked', 'a sending campaign cannot be edited'
 );
 select throws_ok(
-  $$update public.campaigns set audience = '{"scope":"all"}', status = 'sending' where id = 'cccccccc-0000-0000-0000-000000000010'$$,
+  $$update public.campaigns set audience = '{"scope":"filter","filters":{"delivery_problem":true}}', status = 'sending' where id = 'cccccccc-0000-0000-0000-000000000010'$$,
   'P0001', 'campaign_locked', 'a sending campaign keeps its audience'
 );
 select lives_ok(
@@ -213,6 +213,8 @@ select lives_ok(
 select tests.clear_auth();
 
 -- The audience check.
+insert into public.campaigns (id, message_type_key, name, audience) values
+  ('cccccccc-0000-0000-0000-000000000020', 'invitation', 'Audience edits', '{"scope":"all"}');
 select throws_ok(
   $$insert into public.campaigns (message_type_key, name, audience) values ('invitation', 'X', '{"scope":"everyone"}')$$,
   '23514', null, 'an unknown scope is rejected'
@@ -242,7 +244,7 @@ select throws_ok(
   '23514', null, 'true/false filters accept only true'
 );
 select throws_ok(
-  $$update public.campaigns set audience = '{"scope":"filter","extra":1,"filters":{"delivery_problem":true}}' where id = 'cccccccc-0000-0000-0000-000000000003'$$,
+  $$update public.campaigns set audience = '{"scope":"filter","extra":1,"filters":{"delivery_problem":true}}' where id = 'cccccccc-0000-0000-0000-000000000020'$$,
   '23514', null, 'an update to an invalid audience is rejected'
 );
 select lives_ok(
