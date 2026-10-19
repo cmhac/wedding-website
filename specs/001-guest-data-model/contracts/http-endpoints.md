@@ -52,5 +52,5 @@ Retrying the same request is safe at every step. Non-essential message types exc
 
 - `guests`: one row per guest per event: household, guest, event, status, dietary categories and notes.
 - `responses`: one row per guest per event with status, responded_at, and chosen dishes.
-- `caterer`: per event, per course, per dish totals, plus the restrictions list (attending guests only, with severity and notes) and any `meal_conflicts`.
+- `caterer`: per event, per course, per dish totals, plus the restrictions list (attending guests only, with severity and notes; the views carry `event_name`, `guest_name` and `household_name` so no joins are needed) and any `meal_conflicts`.
 - CSV with a header row, spreadsheet-safe quoting (cells starting with `=`, `+`, `-`, or `@` are prefixed to prevent formula injection). Staff only.

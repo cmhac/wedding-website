@@ -167,7 +167,7 @@ Rules enforced by trigger (FR-034):
 
 State transitions: `draft → scheduled → sending → done`; `draft | scheduled → cancelled`. Editing is allowed only in `draft` and `scheduled`; `sending` and later are immutable (FR-017).
 
-**messages**: `id`, `campaign_id → campaigns cascade`, `household_id → households` (`on delete set null`), `to_email citext null` (the address actually used: set when the message is claimed for sending from the household's current `contact_email`, null while queued, so an address changed after queueing is used), `status enum message_status` (`queued`, `sending`, `sent`, `delivered`, `bounced`, `complained`, `failed`, `skipped`), `skip_reason text null` (`no_email`, `opted_out`, `already_responded`...), `provider_message_id text unique null`, `error_code text null`, `queued_at`, `sent_at`, `last_event_at`. **Unique (`campaign_id`, `household_id`)** is the database guarantee behind FR-020. `to_email` is deleted (set null) when the household is deleted.
+**messages**: `id`, `campaign_id → campaigns cascade`, `household_id → households` (`on delete set null`), `to_email citext null` (the address actually used: set when the message is claimed for sending from the household's current `contact_email`, null while queued, so an address changed after queueing is used), `status enum message_status` (`queued`, `sending`, `sent`, `delivered`, `bounced`, `complained`, `failed`, `skipped`), `skip_reason text null` (`no_email`, `opted_out`, `already_responded`...), `provider_message_id text unique null`, `error_code text null`, `queued_at`, `claimed_at` (when it was last claimed for sending; a message stuck in `sending` for over 15 minutes with no `provider_message_id` is claimed again), `sent_at`, `last_event_at`. **Unique (`campaign_id`, `household_id`)** is the database guarantee behind FR-020. `to_email` is deleted (set null) when the household is deleted.
 
 **message_events**: `id bigint identity`, `provider_event_id text unique` (the Svix id; dedupes redeliveries), `message_id → messages cascade`, `type text`, `occurred_at timestamptz`. No payload body is stored (FR-026).
 
@@ -185,17 +185,17 @@ RLS: staff only, on all three tables. Guests never see sends.
 
 ## Views and functions
 
-| Name                            | Kind     | Purpose                                                                                       |
-| ------------------------------- | -------- | --------------------------------------------------------------------------------------------- |
-| `effective_rsvp_deadline(h, e)` | function | Deadline resolution above                                                                     |
-| `event_counts`                  | view     | Per event: invited, attending, declined, pending (FR-023). `security_invoker`, staff only     |
-| `dish_totals`                   | view     | Per event, course, dish: chosen count (attending guests only), plus "not yet chosen" (FR-039) |
-| `dietary_list`                  | view     | Attending guests with restrictions, per event, household, severity, notes (FR-039)            |
-| `meal_conflicts`                | view     | Chosen dishes that conflict with restrictions by the R9 rule (FR-037)                         |
-| `household_rsvp_progress`       | view     | Per household: pending required, pending optional, pending meal choices                       |
-| `resolve_audience(jsonb)`       | function | Households matching an audience filter, with skip reasons for the unreachable (FR-018)        |
-| `find_duplicate_households()`   | function | Possible duplicates (FR-005)                                                                  |
-| `import_households(jsonb)`      | function | All-or-nothing per household; returns per-row errors (FR-004)                                 |
+| Name                            | Kind     | Purpose                                                                                                                              |
+| ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `effective_rsvp_deadline(h, e)` | function | Deadline resolution above                                                                                                            |
+| `event_counts`                  | view     | Per event: invited, attending, declined, pending (FR-023). `security_invoker`, staff only                                            |
+| `dish_totals`                   | view     | Per event, course, dish: chosen count (attending guests only), plus "not yet chosen"; has `event_name` (FR-039)                      |
+| `dietary_list`                  | view     | Attending guests with restrictions, per event, household, severity, notes; has `event_name`, `guest_name`, `household_name` (FR-039) |
+| `meal_conflicts`                | view     | Chosen dishes that conflict with restrictions by the R9 rule; has `event_name`, `guest_name`, `household_name` (FR-037)              |
+| `household_rsvp_progress`       | view     | Per household: pending required, pending optional, pending meal choices                                                              |
+| `resolve_audience(jsonb)`       | function | Households matching an audience filter, with skip reasons for the unreachable (FR-018)                                               |
+| `find_duplicate_households()`   | function | Possible duplicates (FR-005)                                                                                                         |
+| `import_households(jsonb)`      | function | All-or-nothing per household; returns per-row errors (FR-004)                                                                        |
 
 All views use `security_invoker = true` so row-level security applies to the caller.
 

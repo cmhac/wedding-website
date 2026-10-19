@@ -6,7 +6,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(60);
+select plan(65);
 
 select tests.create_user('couple@example.test') as couple_user \gset
 
@@ -148,6 +148,42 @@ select tests.clear_auth();
 select is(
   (select status::text from public.messages where id = 'a0000008-0000-0000-0000-000000000000'), 'queued',
   'messages in a campaign that is not sending stay queued'
+);
+
+-- Stale claims: a message stuck in sending for over 15 minutes (a worker that
+-- died) is claimed again, unless the provider already accepted it.
+insert into public.households (id, display_name, contact_email) values
+  ('00000021-0000-0000-0000-000000000000', 'Household S1', 's1@example.test'),
+  ('00000022-0000-0000-0000-000000000000', 'Household S2', 's2@example.test'),
+  ('00000023-0000-0000-0000-000000000000', 'Household S3', 's3@example.test');
+insert into public.campaigns (id, message_type_key, name, audience, status) values
+  ('c0000006-0000-0000-0000-000000000000', 'rsvp_reminder', 'Stale', '{"scope":"all"}', 'sending');
+insert into public.messages (id, campaign_id, household_id, status, to_email, claimed_at, provider_message_id) values
+  ('a1000001-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000021-0000-0000-0000-000000000000', 'sending', 'old-address@example.test', now() - interval '20 minutes', null),
+  ('a1000002-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000022-0000-0000-0000-000000000000', 'sending', 's2@example.test', now() - interval '5 minutes', null),
+  ('a1000003-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000023-0000-0000-0000-000000000000', 'sending', 's3@example.test', now() - interval '20 minutes', 'prov-s3');
+select tests.authenticate_service_role();
+select results_eq(
+  $$select id::text, to_email::text from public.claim_campaign_messages('c0000006-0000-0000-0000-000000000000', 10)$$,
+  $$values ('a1000001-0000-0000-0000-000000000000'::text, 's1@example.test'::text)$$,
+  'a message stuck in sending for over 15 minutes is claimed again, with the current address'
+);
+select is(
+  (select count(*) from public.claim_campaign_messages('c0000006-0000-0000-0000-000000000000', 10)), 0::bigint,
+  'a re-claimed message is fresh again, so a second claim finds nothing'
+);
+select tests.clear_auth();
+select is(
+  (select status::text from public.messages where id = 'a1000002-0000-0000-0000-000000000000'), 'sending',
+  'a recent claim is left alone'
+);
+select ok(
+  (select claimed_at > now() - interval '1 minute' from public.messages where id = 'a1000001-0000-0000-0000-000000000000'),
+  'claiming records when the message was claimed'
+);
+select is(
+  (select claimed_at < now() - interval '15 minutes' from public.messages where id = 'a1000003-0000-0000-0000-000000000000'), true,
+  'a stale message the provider already accepted is not claimed again'
 );
 
 -- Events. Messages already sent by the provider.

@@ -5,7 +5,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(18);
+select plan(21);
 
 select tests.create_user('staff@example.test') as staff_user \gset
 select tests.create_user('household-a@example.test') as user_a \gset
@@ -152,6 +152,23 @@ select results_eq(
 select is(
   (select count(*) from public.dietary_list where event_slug = 'brunch'), 1::bigint,
   'the list is per event'
+);
+
+-- Display columns, so a report needs no joins.
+select results_eq(
+  $$select distinct event_name from public.dish_totals where event_slug = 'dinner'$$,
+  $$values ('Dinner'::text)$$,
+  'dish_totals carries the event name'
+);
+select results_eq(
+  $$select event_name, guest_name, household_name from public.dietary_list where first_name = 'Nell'$$,
+  $$values ('Dinner'::text, 'Nell Nuts'::text, 'Household B'::text)$$,
+  'dietary_list carries the event name, the guest''s full name and the household name'
+);
+select results_eq(
+  $$select event_name, guest_name, household_name from public.meal_conflicts where first_name = 'Nell'$$,
+  $$values ('Dinner'::text, 'Nell Nuts'::text, 'Household B'::text)$$,
+  'meal_conflicts carries the event name, the guest''s full name and the household name'
 );
 
 -- Declining removes a guest from totals and the list straight away.
