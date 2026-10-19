@@ -3,7 +3,7 @@ begin;
 \set helpers_included 1
 \ir ../support/helpers.sql
 
-select plan(66);
+select plan(62);
 
 -- People (all fake): two signed-in households, one staff member.
 select tests.create_user('household-a@example.test') as user_a \gset
