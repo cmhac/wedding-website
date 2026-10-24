@@ -42,9 +42,26 @@ jobs:
 
       # `next build` needs at least one route; skip until the app has pages.
       - name: Build
-        if: hashFiles('src/app/**/page.tsx') != ''
+        if: hashFiles('src/app/**/page.tsx', 'src/app/**/route.ts') != ''
         run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+
+  db-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Run database tests
+        run: supabase test db
