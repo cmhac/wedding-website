@@ -15,7 +15,9 @@ recorded decisions.
 
 ## Scope
 
-This repository's work is **backend only**. Do not build any screen or visual component: not the public site, not guest-facing screens (including RSVP), and not admin screens. The couple's designer owns visual design, and the screens are built separately against two documented interfaces: the guest API (`src/app/api/guest`, contract in `specs/001-guest-data-model/contracts/guest-api.md`) and the admin API (direct data access under row-level security plus `src/app/api/admin`, contract in `specs/001-guest-data-model/contracts/admin-api.md`). Email content is out of scope too: write no subject lines, copy, or email designs, and no templates (the template interface is `specs/001-guest-data-model/contracts/email-templates.md`). Do not add a design system, theming, or UI components. If a task seems to need a screen or visual design, stop and ask.
+This repository's work is the backend plus a **minimal, temporary v0 admin console** (see `specs/002-admin-console-v0` and `docs/decisions/0009-admin-console-v0.md`). Admin screens live under `src/app/(admin)` and `src/components/admin`. They are deliberately plain, use one stylesheet (`src/app/(admin)/admin.css`) rather than a design system, and are separate from the designer's work: the creative director's version replaces them, so keep behavior in tested code and presentation in the stylesheet.
+
+Still out of scope: **guest-facing screens** (the public site and the RSVP) and **email content**. Do not build any guest-facing screen or visual component. The couple's designer owns that visual design, and those screens are built separately against the guest API (`src/app/api/guest`, contract in `specs/001-guest-data-model/contracts/guest-api.md`). The admin API (direct data access under row-level security plus `src/app/api/admin`, contract in `specs/001-guest-data-model/contracts/admin-api.md`) is used by the admin console and by any later admin frontend. Email content is out of scope too: write no subject lines, copy, or email designs, and no templates (the template interface is `specs/001-guest-data-model/contracts/email-templates.md`). Do not add a design system, theming, or a component library, even for the admin console. If a task seems to need a guest-facing screen or visual design, stop and ask.
 
 The two interfaces are published for the designer as [docs/guest-api.md](docs/guest-api.md) and [docs/admin-api.md](docs/admin-api.md). Manual dashboard settings are recorded in [docs/manual-setup.md](docs/manual-setup.md).
 
@@ -27,7 +29,10 @@ The two interfaces are published for the designer as [docs/guest-api.md](docs/gu
 | `src/app/api/admin`                        | Admin API route handlers (households, import, exports, send, staff)             |
 | `src/app/api/auth`, `webhooks`, `internal` | Auth email hook, Resend webhook, scheduled dispatch                             |
 | `src/app/auth`                             | Sign-in callback route (redirects only, no screens)                             |
-| `src/components`                           | Not used by this feature (no UI is built here)                                  |
+| `src/app/(admin)`                          | Admin console pages, its root layout and `admin.css` (temporary, admin only)    |
+| `src/components/admin`                     | Admin console components (presentational, tested with Jest)                     |
+| `src/lib/admin`                            | Admin console data functions, Server Actions and helpers (session guard, time)  |
+| `specs/*/design`                           | Wireframes and design notes for a feature's screens                             |
 | `src/lib/guest-api`, `src/lib/admin-api`   | Request and response schemas and typed fetch wrappers                           |
 | `src/lib/campaigns`                        | Audience, send, scheduled dispatch and template props                           |
 | `src/lib/guests`                           | Guest-list import and household access helpers                                  |

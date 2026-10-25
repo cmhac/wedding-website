@@ -6,7 +6,9 @@ Source for Chris and Hannah's wedding website: the public site, RSVP management,
 guest communications, and the email designs. One repo for all of it.
 
 > Status: the backend is built (database, guest API, admin API, email sending).
-> No screens are provided; the designer builds them against
+> A minimal, temporary v0 admin console exists
+> ([specs/002-admin-console-v0](specs/002-admin-console-v0/plan.md)). Guest-facing
+> screens and the public site are not provided; the designer builds them against
 > [docs/guest-api.md](docs/guest-api.md) and [docs/admin-api.md](docs/admin-api.md).
 > See [docs/architecture.md](docs/architecture.md) and
 > [docs/manual-setup.md](docs/manual-setup.md) for the dashboard settings.

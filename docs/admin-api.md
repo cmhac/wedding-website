@@ -1,6 +1,6 @@
 # Admin API
 
-> **No user interface is provided.** This repository builds no screens, forms, or visual components: no public site, no guest screens (including the RSVP), and no admin screens. The couple's designer builds those against this document. Until admin screens exist, the couple can use the command-line scripts (`scripts/import-guests.ts`, `scripts/create-staff-user.ts`) and the database dashboard.
+> **A minimal v0 admin console exists.** It is temporary, and it uses these same interfaces (direct data access under row-level security plus the route handlers below); it adds no other back door. Guest-facing screens, including the RSVP, and the public site are still not provided here; the designer builds those against [guest-api.md](./guest-api.md). The couple can also use the command-line scripts (`scripts/import-guests.ts`, `scripts/create-staff-user.ts`) and the database dashboard.
 
 This document is published from `specs/001-guest-data-model/contracts/admin-api.md`. A contract test (`src/lib/admin-api/__tests__/contract.test.ts`) fails if the route table below stops matching the route handlers under `src/app/api/admin/`.
 

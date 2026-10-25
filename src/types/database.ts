@@ -299,14 +299,14 @@ isOneToOne: false
                   ]
                 },"meal_selection_history": {
                   Row: {
-                    "changed_at": string,"changed_by": string | null,"course_id": string | null,"guest_id": string | null,"id": number,"new_dish_id": string | null,"old_dish_id": string | null,"reason": string
+                    "actor_kind": string | null,"changed_at": string,"changed_by": string | null,"course_id": string | null,"guest_id": string | null,"id": number,"new_dish_id": string | null,"old_dish_id": string | null,"reason": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "changed_at"?: string,"changed_by"?: string | null,"course_id"?: string | null,"guest_id"?: string | null,"id"?: never,"new_dish_id"?: string | null,"old_dish_id"?: string | null,"reason": string
+                    "actor_kind"?: string | null,"changed_at"?: string,"changed_by"?: string | null,"course_id"?: string | null,"guest_id"?: string | null,"id"?: never,"new_dish_id"?: string | null,"old_dish_id"?: string | null,"reason": string
                   }
                   Update: {
-                    "changed_at"?: string,"changed_by"?: string | null,"course_id"?: string | null,"guest_id"?: string | null,"id"?: never,"new_dish_id"?: string | null,"old_dish_id"?: string | null,"reason"?: string
+                    "actor_kind"?: string | null,"changed_at"?: string,"changed_by"?: string | null,"course_id"?: string | null,"guest_id"?: string | null,"id"?: never,"new_dish_id"?: string | null,"old_dish_id"?: string | null,"reason"?: string
                   }
                   Relationships: [
                     {
