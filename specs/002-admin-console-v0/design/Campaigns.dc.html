@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Campaigns</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html" aria-current="page">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">Campaigns</h1>
+<p class="page-sub">Emails to households. All times are Pacific time (PT).</p>
+</div>
+<button type="button" class="btn btn-primary" onClick="{{ showEdit }}">New campaign</button>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Campaign sections">
+<button type="button" role="tab" class="tab" aria-selected="{{ isList }}" onClick="{{ showList }}">All campaigns (3)</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isEdit }}" onClick="{{ showEdit }}">Edit campaign</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isDelivery }}" onClick="{{ showDelivery }}">Delivery status</button>
+</div>
+
+<sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+<section class="card">
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Campaign</th><th scope="col">Audience</th><th scope="col">Status</th><th scope="col">Sends</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+<tbody>
+<tr><td><strong>Save the date</strong><div class="table-sub">Save the date</div></td><td>All households</td><td><span class="badge badge-ok">Done</span></td><td>Aug 2, 9:00 AM PT</td><td class="right"><button type="button" class="btn btn-sm" onClick="{{ showDelivery }}">View delivery</button></td></tr>
+<tr><td><strong>Required RSVP reminder</strong><div class="table-sub">RSVP reminder</div></td><td>Required answers outstanding</td><td><span class="badge">Draft</span></td><td><span class="muted">Not scheduled</span></td><td class="right"><button type="button" class="btn btn-sm" onClick="{{ showEdit }}">Edit</button></td></tr>
+<tr><td><strong>Rehearsal invitations</strong><div class="table-sub">Invitation</div></td><td>Invited to Rehearsal</td><td><span class="badge badge-warn">Scheduled</span></td><td>Oct 30, 10:00 AM PT</td><td class="right"><button type="button" class="btn btn-sm" onClick="{{ showEdit }}">Edit</button> <button type="button" class="btn btn-sm btn-quiet">Cancel</button></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isEdit }}" hint-placeholder-val="{{ false }}">
+<div class="row" style="align-items: flex-start; gap: 20px">
+<form class="card" style="flex: 3 1 460px">
+<div class="card-h"><h2 class="card-t">Required RSVP reminder</h2><span class="badge">Draft</span></div>
+<div class="card-b stack">
+<p class="alert alert-error" role="alert">Example error: choose at least one filter, or send to everyone or one household. Nothing was saved.</p>
+<div class="field"><label for="nm">Campaign name</label><input id="nm" type="text" value="Required RSVP reminder"></div>
+<div class="field"><label for="mt">Message type</label><select id="mt"><option>RSVP reminder (non-essential)</option><option>Save the date</option><option>Invitation (essential)</option><option>Optional events reminder (non-essential)</option><option>Update (non-essential)</option></select><span class="hint">Households that turned off reminders are skipped for non-essential types.</span></div>
+<div class="field"><label for="sc">Who receives it</label><select id="sc"><option>Everyone</option><option>One household</option><option selected>Households matching filters</option></select></div>
+<fieldset class="group">
+<legend>Filters (all must match)</legend>
+<label class="check"><input type="checkbox" checked> <span>Has unanswered required events</span></label>
+<label class="check"><input type="checkbox"> <span>Has an unanswered optional event</span></label>
+<label class="check"><input type="checkbox"> <span>Invited to a specific event</span></label>
+<label class="check"><input type="checkbox"> <span>Attending guests with meals not chosen</span></label>
+<label class="check"><input type="checkbox" checked> <span>Has not already received this message type</span></label>
+<label class="check"><input type="checkbox"> <span>Delivery problem only</span></label>
+</fieldset>
+<div class="field"><label for="sf">Send at (Pacific time)</label><input id="sf" type="text" placeholder="2026-11-01 09:00" class="w-md"><span class="hint">Leave empty to keep as a draft or send now.</span></div>
+</div>
+<div class="card-f" style="justify-content: space-between">
+<button type="button" class="btn btn-quiet">Cancel campaign</button>
+<div class="row"><button type="button" class="btn">Save draft</button><button type="button" class="btn">Schedule</button><button type="button" class="btn btn-primary" onClick="{{ askSend }}">Send now</button></div>
+</div>
+</form>
+
+<div class="stack" style="flex: 2 1 320px">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Audience preview</h2></div>
+<div class="card-b stack-sm">
+<p><strong>21 households</strong> will be emailed.</p>
+<p class="muted">3 are skipped: 2 with no email (need a paper invite), 1 opted out of reminders.</p>
+</div>
+<div class="table-wrap">
+<table class="table">
+<tbody>
+<tr><td><a href="HouseholdDetail.dc.html">The Examples</a></td><td><span class="badge badge-ok">Will send</span></td></tr>
+<tr><td><a href="HouseholdDetail.dc.html">Sample Family</a></td><td><span class="badge badge-ok">Will send</span></td></tr>
+<tr><td><a href="HouseholdDetail.dc.html">Exampleton family</a></td><td><span class="badge badge-warn">No email</span></td></tr>
+<tr><td><a href="HouseholdDetail.dc.html">Test, Pat and Lee</a></td><td><span class="badge">Opted out</span></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<sc-if value="{{ sendAsk }}" hint-placeholder-val="{{ false }}">
+<section class="alert alert-error stack-sm" role="alertdialog" aria-label="Confirm send">
+<strong>Send to 21 households now?</strong>
+<span>Emails go out straight away and cannot be unsent. A sent campaign can no longer be edited.</span>
+<div class="row"><button type="button" class="btn btn-danger" onClick="{{ sendFail }}">Send to 21 households</button><button type="button" class="btn" onClick="{{ sendCancel }}">Go back</button></div>
+</section>
+</sc-if>
+<sc-if value="{{ sendError }}" hint-placeholder-val="{{ false }}">
+<p class="alert alert-error" role="alert">Example error: no email template is registered for this message type, so nothing was sent.</p>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDelivery }}" hint-placeholder-val="{{ false }}">
+<div class="stack">
+<div class="row spread"><div><h2 class="card-t">Save the date</h2><span class="muted small">Read only. Sent Aug 2, 9:00 AM PT.</span></div></div>
+<div class="stats">
+<div class="stat"><span class="stat-n">104</span><span class="stat-l">Delivered</span></div>
+<div class="stat"><span class="stat-n">3</span><span class="stat-l">Bounced</span></div>
+<div class="stat"><span class="stat-n">1</span><span class="stat-l">Failed</span></div>
+<div class="stat"><span class="stat-n">10</span><span class="stat-l">Skipped or still sending</span></div>
+</div>
+<section class="card">
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Household</th><th scope="col">Status</th><th scope="col">Detail</th><th scope="col">Last update (PT)</th></tr></thead>
+<tbody>
+<tr><td><a href="HouseholdDetail.dc.html">The Examples</a></td><td><span class="badge badge-ok">Delivered</span></td><td></td><td>Aug 2, 9:01 AM</td></tr>
+<tr><td><a href="HouseholdDetail.dc.html">Example, Jordan</a></td><td><span class="badge badge-bad">Bounced</span></td><td>Household flagged with a delivery problem</td><td>Aug 2, 9:02 AM</td></tr>
+<tr><td><a href="HouseholdDetail.dc.html">Exampleton family</a></td><td><span class="badge badge-warn">Skipped</span></td><td>No email on file</td><td></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'list', send: 'none' };
+}
+renderVals() {
+const t = this.state.tab;
+const s = this.state.send;
+return {
+isList: t === 'list',
+isEdit: t === 'edit',
+isDelivery: t === 'delivery',
+sendAsk: s === 'ask',
+sendError: s === 'error',
+showList: () => this.setState({ tab: 'list' }),
+showEdit: () => this.setState({ tab: 'edit', send: 'none' }),
+showDelivery: () => this.setState({ tab: 'delivery' }),
+askSend: () => this.setState({ send: 'ask' }),
+sendCancel: () => this.setState({ send: 'none' }),
+sendFail: () => this.setState({ send: 'error' }),
+};
+}
+}
+</script>
+</body>
+</html>

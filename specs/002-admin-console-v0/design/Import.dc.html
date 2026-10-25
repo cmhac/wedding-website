@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Import guest list</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html">Households</a>
+<a href="Import.dc.html" aria-current="page">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">Import guest list</h1>
+<p class="page-sub">Upload a CSV or Excel file with one row per guest.</p>
+</div>
+</div>
+
+<section class="card">
+<div class="card-h"><h2 class="card-t">1. Choose a file</h2></div>
+<form class="card-b row-end">
+<div class="field" style="flex: 1 1 320px">
+<label for="f">File (.csv or .xlsx)</label>
+<input id="f" type="file" accept=".csv,.xlsx">
+<span class="hint">CSV and Excel use the same columns. Excel files: the first sheet is read, and the result says which. A household with any bad row is skipped whole; the rest are still created.</span>
+</div>
+<button type="button" class="btn btn-primary" onClick="{{ showResult }}">Import file</button>
+</form>
+</section>
+
+<div class="tabs" role="tablist" aria-label="Preview result state">
+<button type="button" role="tab" class="tab" aria-selected="{{ isResult }}" onClick="{{ showResult }}">Result with errors</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isClean }}" onClick="{{ showClean }}">Clean import</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isFileError }}" onClick="{{ showFileError }}">Unreadable file</button>
+</div>
+
+<sc-if value="{{ isResult }}" hint-placeholder-val="{{ true }}">
+<div class="stack">
+<p class="alert alert-info" role="status">Read sheet <strong>"Guest list"</strong> from <strong>guests-sample.xlsx</strong> (the first of 2 sheets).</p>
+<div class="stats">
+<div class="stat"><span class="stat-n">41</span><span class="stat-l">Households created</span></div>
+<div class="stat"><span class="stat-n">87</span><span class="stat-l">Guests created</span></div>
+<div class="stat"><span class="stat-n">203</span><span class="stat-l">Invitations created</span></div>
+<div class="stat"><span class="stat-n">3</span><span class="stat-l">Rows need fixing</span></div>
+</div>
+<section class="card">
+<div class="card-h"><h2 class="card-t">Rows that need fixing</h2><span class="muted small">Fix these in your file and import again</span></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col" class="num">Row</th><th scope="col">Field</th><th scope="col">Problem</th></tr></thead>
+<tbody>
+<tr><td class="num">14</td><td>contact_email</td><td>Not a valid email address.</td></tr>
+<tr><td class="num">22</td><td>contact_email</td><td>This email already belongs to another household.</td></tr>
+<tr><td class="num">37</td><td>events</td><td>No event called "after-party". Check the short keys on the Events screen.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="card-f"><a href="Households.dc.html" class="btn">View households</a></div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isClean }}" hint-placeholder-val="{{ false }}">
+<div class="stack">
+<p class="alert alert-ok" role="status">All rows imported.</p>
+<div class="stats">
+<div class="stat"><span class="stat-n">44</span><span class="stat-l">Households created</span></div>
+<div class="stat"><span class="stat-n">92</span><span class="stat-l">Guests created</span></div>
+<div class="stat"><span class="stat-n">215</span><span class="stat-l">Invitations created</span></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isFileError }}" hint-placeholder-val="{{ false }}">
+<p class="alert alert-error" role="alert">This file could not be read. Upload a .csv or .xlsx file with a header row. Nothing was imported.</p>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { view: 'result' };
+}
+renderVals() {
+const v = this.state.view;
+return {
+isResult: v === 'result',
+isClean: v === 'clean',
+isFileError: v === 'error',
+showResult: () => this.setState({ view: 'result' }),
+showClean: () => this.setState({ view: 'clean' }),
+showFileError: () => this.setState({ view: 'error' }),
+};
+}
+}
+</script>
+</body>
+</html>

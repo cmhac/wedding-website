@@ -1,0 +1,80 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-25T18:30:00Z" },
+  "title": "Admin Console v0",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "title": "Sign in", "x": 0, "y": 0, "w": 1280, "h": 700, "expand": "fill", "is_interactive": true },
+    "Overview.dc.html": { "title": "Overview", "x": 1360, "y": 0, "w": 1280, "h": 900, "expand": "fill" },
+    "Households.dc.html": { "title": "Households", "x": 2720, "y": 0, "w": 1280, "h": 820, "expand": "fill", "is_interactive": true },
+    "HouseholdDetail.dc.html": { "title": "Household detail", "x": 0, "y": 1020, "w": 1280, "h": 950, "expand": "fill", "is_interactive": true },
+    "Import.dc.html": { "title": "Import guest list", "x": 1360, "y": 1020, "w": 1280, "h": 820, "expand": "fill", "is_interactive": true },
+    "Events.dc.html": { "title": "Events and invitations", "x": 2720, "y": 1020, "w": 1280, "h": 820, "expand": "fill", "is_interactive": true },
+    "Menus.dc.html": { "title": "Menus and dietary", "x": 0, "y": 2090, "w": 1280, "h": 900, "expand": "fill", "is_interactive": true },
+    "Campaigns.dc.html": { "title": "Campaigns", "x": 1360, "y": 2090, "w": 1280, "h": 1100, "expand": "fill", "is_interactive": true },
+    "Reports.dc.html": { "title": "Reports and exports", "x": 2720, "y": 2090, "w": 1280, "h": 820, "expand": "fill", "is_interactive": true },
+    "History.dc.html": { "title": "History", "x": 0, "y": 3310, "w": 1280, "h": 820, "expand": "fill", "is_interactive": true },
+    "Settings.dc.html": { "title": "Settings and staff", "x": 1360, "y": 3310, "w": 1280, "h": 820, "expand": "fill", "is_interactive": true },
+    "Mobile-SignIn.dc.html": { "title": "Mobile: Sign in", "x": 0, "y": 4600, "w": 390, "h": 844, "expand": "fill", "is_interactive": true },
+    "Mobile-Overview.dc.html": { "title": "Mobile: Overview", "x": 470, "y": 4600, "w": 390, "h": 1250, "expand": "fill", "is_interactive": true },
+    "Mobile-Households.dc.html": { "title": "Mobile: Households", "x": 940, "y": 4600, "w": 390, "h": 1100, "expand": "fill", "is_interactive": true },
+    "Mobile-HouseholdDetail.dc.html": { "title": "Mobile: Household detail", "x": 1410, "y": 4600, "w": 390, "h": 1300, "expand": "fill", "is_interactive": true },
+    "Mobile-Import.dc.html": { "title": "Mobile: Import", "x": 1880, "y": 4600, "w": 390, "h": 1000, "expand": "fill", "is_interactive": true },
+    "Mobile-Events.dc.html": { "title": "Mobile: Events", "x": 2350, "y": 4600, "w": 390, "h": 1100, "expand": "fill", "is_interactive": true },
+    "Mobile-Menus.dc.html": { "title": "Mobile: Menus", "x": 0, "y": 6020, "w": 390, "h": 1100, "expand": "fill", "is_interactive": true },
+    "Mobile-Campaigns.dc.html": { "title": "Mobile: Campaigns", "x": 470, "y": 6020, "w": 390, "h": 1200, "expand": "fill", "is_interactive": true },
+    "Mobile-Reports.dc.html": { "title": "Mobile: Reports", "x": 940, "y": 6020, "w": 390, "h": 1000, "expand": "fill", "is_interactive": true },
+    "Mobile-History.dc.html": { "title": "Mobile: History", "x": 1410, "y": 6020, "w": 390, "h": 1000, "expand": "fill", "is_interactive": true },
+    "Mobile-Settings.dc.html": { "title": "Mobile: Settings", "x": 1880, "y": 6020, "w": 390, "h": 1000, "expand": "fill", "is_interactive": true }
+  },
+  "order": [
+    "Main.dc.html",
+    "Overview.dc.html",
+    "Households.dc.html",
+    "HouseholdDetail.dc.html",
+    "Import.dc.html",
+    "Events.dc.html",
+    "Menus.dc.html",
+    "Campaigns.dc.html",
+    "Reports.dc.html",
+    "History.dc.html",
+    "Settings.dc.html",
+    "Mobile-SignIn.dc.html",
+    "Mobile-Overview.dc.html",
+    "Mobile-Households.dc.html",
+    "Mobile-HouseholdDetail.dc.html",
+    "Mobile-Import.dc.html",
+    "Mobile-Events.dc.html",
+    "Mobile-Menus.dc.html",
+    "Mobile-Campaigns.dc.html",
+    "Mobile-Reports.dc.html",
+    "Mobile-History.dc.html",
+    "Mobile-Settings.dc.html"
+  ],
+  "notes": {
+    "title": {
+      "x": 0,
+      "y": -300,
+      "text": "Admin console v0: neutral test screens",
+      "kind": "title1",
+      "maxW": 4000
+    },
+    "about": {
+      "x": 0,
+      "y": -150,
+      "w": 620,
+      "size": "m",
+      "fill": "gray",
+      "text": "Neutral and replaceable. All colors, sizes and spacing live in admin.css, so v1 can swap that one file. Tabs, buttons and confirmations work in Play. Sample names are fake. All times are Pacific."
+    },
+    "mobiletitle": {
+      "x": 0,
+      "y": 4300,
+      "text": "Mobile: 390 px wide",
+      "kind": "title1",
+      "maxW": 2740
+    }
+  },
+  "designSystems": []
+}

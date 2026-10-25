@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>History (phone)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="m">
+<header class="m-top">
+<div class="brand"><span class="brand-mark">W</span><span class="m-title">History</span></div>
+<button type="button" class="btn" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}">Menu</button>
+</header>
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<nav class="m-drawer" aria-label="Main">
+<a href="Mobile-Overview.dc.html">Overview</a>
+<a href="Mobile-Households.dc.html">Households</a>
+<a href="Mobile-Import.dc.html">Import</a>
+<a href="Mobile-Events.dc.html">Events</a>
+<a href="Mobile-Menus.dc.html">Menus</a>
+<a href="Mobile-Campaigns.dc.html">Campaigns</a>
+<a href="Mobile-Reports.dc.html">Reports</a>
+<a href="Mobile-History.dc.html" aria-current="page">History</a>
+<a href="Mobile-Settings.dc.html">Settings</a>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Mobile-SignIn.dc.html">Sign out</a></div>
+</nav>
+</sc-if>
+
+<main class="m-body">
+<div class="m-head">
+<h1 class="page-title">History</h1>
+<p class="page-sub">Read only. Times are Pacific (PT). Names are never stored in history.</p>
+</div>
+
+<div class="tabs" role="tablist" aria-label="History">
+<button type="button" role="tab" class="tab" aria-selected="{{ isLog }}" onClick="{{ showLog }}">Change log</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isRsvp }}" onClick="{{ showRsvp }}">RSVPs</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isMeals }}" onClick="{{ showMeals }}">Meals</button>
+</div>
+
+<form class="card">
+<div class="card-b stack">
+<div class="field"><label for="from">From (PT)</label><input id="from" type="text" placeholder="2026-10-01"></div>
+<div class="field"><label for="to">To (PT)</label><input id="to" type="text" placeholder="2026-10-25"></div>
+<div class="field"><label for="who">Changed by</label><select id="who"><option>Anyone</option><option>Chris</option><option>Hannah</option><option>Planner</option><option>Guest</option><option>System</option></select></div>
+<button type="button" class="btn">Apply</button>
+</div>
+</form>
+
+<sc-if value="{{ isLog }}" hint-placeholder-val="{{ true }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Change log</h2><span class="muted small">Fields only, never values</span></div>
+<div class="m-list">
+<div class="m-item"><div class="m-line"><span class="m-name">Household</span><span class="badge">Update</span></div><span>staff notes, plus-one allowance</span><span class="m-sub">Hannah (couple) · Oct 25, 10:41 AM</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Campaign</span><span class="badge">Update</span></div><span>audience</span><span class="m-sub">Chris (couple) · Oct 25, 10:12 AM</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Invitation</span><span class="badge">Update</span></div><span>status, responded at</span><span class="m-sub">Guest · Oct 24, 4:55 PM</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Household</span><span class="badge">Update</span></div><span>delivery problem</span><span class="m-sub">System · Oct 24, 9:00 AM</span></div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isRsvp }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">RSVP history</h2></div>
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><span class="m-name">Sam Example</span><span class="m-sub">Oct 3, 2:14 PM</span></div>
+<span class="m-sub">Ceremony and reception</span>
+<span>Pending to Attending</span>
+<div class="m-badges"><span class="badge badge-staff">Recorded by staff</span><span class="m-sub">Hannah</span></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Alex Example</span><span class="m-sub">Sep 28, 9:03 AM</span></div>
+<span class="m-sub">Welcome party</span>
+<span>Pending to Declined</span>
+<span class="m-sub">Changed by Guest</span>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name muted">Removed guest</span><span class="m-sub">Sep 20, 6:30 PM</span></div>
+<span class="m-sub">Rehearsal</span>
+<span>Attending to Declined</span>
+<span class="m-sub">Changed by Guest</span>
+</div>
+</div>
+<div class="card-f" style="justify-content: flex-start"><span class="muted small">Guests deleted from the list show as "Removed guest".</span></div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isMeals }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Meal choice history</h2></div>
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><span class="m-name">Sam Example</span><span class="m-sub">Oct 3, 2:15 PM</span></div>
+<span class="m-sub">Dessert</span>
+<span>None to Lemon tart</span>
+<div class="m-badges"><span class="badge">Changed</span><span class="badge badge-staff">Recorded by staff</span><span class="m-sub">Hannah</span></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Alex Example</span><span class="m-sub">Oct 1, 8:00 AM</span></div>
+<span class="m-sub">Main</span>
+<span>Beef short rib to None</span>
+<div class="m-badges"><span class="badge badge-warn">Dish archived</span><span class="m-sub">Chris (couple)</span></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Alex Example</span><span class="m-sub">Sep 30, 1:12 PM</span></div>
+<span class="m-sub">Main</span>
+<span>Grilled salmon to None</span>
+<div class="m-badges"><span class="badge">Declined</span><span class="m-sub">Guest</span></div>
+</div>
+</div>
+</section>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'log', menu: false };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+menuOpen: this.state.menu,
+toggleMenu: () => this.setState({ menu: !this.state.menu }),
+isLog: t === 'log',
+isRsvp: t === 'rsvp',
+isMeals: t === 'meals',
+showLog: () => this.setState({ tab: 'log' }),
+showRsvp: () => this.setState({ tab: 'rsvp' }),
+showMeals: () => this.setState({ tab: 'meals' }),
+};
+}
+}
+</script>
+</body>
+</html>

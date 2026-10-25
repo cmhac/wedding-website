@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Events (phone)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="m">
+<header class="m-top">
+<div class="brand"><span class="brand-mark">W</span><span class="m-title">Events</span></div>
+<button type="button" class="btn" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}">Menu</button>
+</header>
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<nav class="m-drawer" aria-label="Main">
+<a href="Mobile-Overview.dc.html">Overview</a>
+<a href="Mobile-Households.dc.html">Households</a>
+<a href="Mobile-Import.dc.html">Import</a>
+<a href="Mobile-Events.dc.html" aria-current="page">Events</a>
+<a href="Mobile-Menus.dc.html">Menus</a>
+<a href="Mobile-Campaigns.dc.html">Campaigns</a>
+<a href="Mobile-Reports.dc.html">Reports</a>
+<a href="Mobile-History.dc.html">History</a>
+<a href="Mobile-Settings.dc.html">Settings</a>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Mobile-SignIn.dc.html">Sign out</a></div>
+</nav>
+</sc-if>
+
+<main class="m-body">
+<div class="m-head">
+<h1 class="page-title">Events</h1>
+<p class="page-sub">All times are Pacific time (PT).</p>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Event sections">
+<button type="button" role="tab" class="tab" aria-selected="{{ isList }}" onClick="{{ showList }}">All events</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isForm }}" onClick="{{ showForm }}">Add or edit</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isInvite }}" onClick="{{ showInvite }}">Invite guests</button>
+</div>
+
+<sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+<div class="stack">
+<button type="button" class="btn btn-primary" onClick="{{ showForm }}">New event</button>
+<section class="card">
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><span class="m-name">Welcome party</span><span class="badge">Optional</span></div>
+<span class="m-sub">Fri, 6:00 PM PT · [Venue name]</span>
+<div class="m-kv"><span>Invited</span><span>96</span></div>
+<div class="m-actions"><button type="button" class="btn btn-sm" onClick="{{ showForm }}">Edit</button><a href="Mobile-Menus.dc.html" class="btn btn-sm">Menu</a></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Rehearsal</span><span class="badge">Optional</span></div>
+<span class="m-sub">Fri, 4:00 PM PT · [Venue name]</span>
+<div class="m-kv"><span>Invited</span><span>34</span></div>
+<div class="m-actions"><button type="button" class="btn btn-sm" onClick="{{ showForm }}">Edit</button><a href="Mobile-Menus.dc.html" class="btn btn-sm">Menu</a></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Ceremony and reception</span><span class="badge badge-staff">Required</span></div>
+<span class="m-sub">Sat, 4:00 PM PT · [Venue name]</span>
+<div class="m-kv"><span>Invited</span><span>142</span></div>
+<div class="m-actions"><button type="button" class="btn btn-sm" onClick="{{ showForm }}">Edit</button><a href="Mobile-Menus.dc.html" class="btn btn-sm">Menu</a></div>
+</div>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isForm }}" hint-placeholder-val="{{ false }}">
+<form class="card">
+<div class="card-h"><h2 class="card-t">New event</h2></div>
+<div class="card-b stack">
+<div class="field"><label for="n">Name</label><input id="n" type="text"></div>
+<div class="field"><label for="s">Short key</label><input id="s" type="text" placeholder="after-party"><span class="hint">Used by the site and imports. Cannot change later.</span></div>
+<div class="field"><label for="d">Starts (Pacific time)</label><input id="d" type="text" placeholder="2027-06-12 16:00"></div>
+<div class="field"><label for="v">Venue</label><input id="v" type="text"></div>
+<div class="field"><label for="g">Group</label><input id="g" type="text" placeholder="wedding-weekend"></div>
+<div class="field"><label for="o">Display order</label><input id="o" type="number" value="4" class="w-sm"></div>
+<div class="field"><label for="dl">Own RSVP deadline (Pacific time)</label><input id="dl" type="text" placeholder="Optional"></div>
+<label class="check"><input type="checkbox"> <span>Required event</span></label>
+</div>
+<div class="card-f"><button type="button" class="btn" onClick="{{ showList }}">Cancel</button><button type="button" class="btn btn-primary">Save event</button></div>
+</form>
+</sc-if>
+
+<sc-if value="{{ isInvite }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-b stack">
+<p class="alert alert-info">Adds invitations only. Nothing is emailed.</p>
+<div class="field"><label for="ie">Event</label><select id="ie"><option>Rehearsal</option><option>Welcome party</option><option>Ceremony and reception</option></select></div>
+<div class="field"><label for="gs">Find guests</label><input id="gs" type="search" placeholder="Search by name"></div>
+<fieldset class="group">
+<legend>Guests (3 selected)</legend>
+<label class="check"><input type="checkbox" checked> <span>Sam Example</span></label>
+<label class="check"><input type="checkbox" checked> <span>Alex Example</span></label>
+<label class="check"><input type="checkbox" checked> <span>Jordan Example</span></label>
+<label class="check"><input type="checkbox"> <span>Casey Exampleton</span></label>
+</fieldset>
+<p class="alert alert-ok" role="status">Example result: 2 added, 1 already invited, 0 not found.</p>
+</div>
+<div class="card-f"><button type="button" class="btn btn-primary">Invite 3 guests</button></div>
+</section>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1100}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'list', menu: false };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+menuOpen: this.state.menu,
+toggleMenu: () => this.setState({ menu: !this.state.menu }),
+isList: t === 'list',
+isForm: t === 'form',
+isInvite: t === 'invite',
+showList: () => this.setState({ tab: 'list' }),
+showForm: () => this.setState({ tab: 'form' }),
+showInvite: () => this.setState({ tab: 'invite' }),
+};
+}
+}
+</script>
+</body>
+</html>

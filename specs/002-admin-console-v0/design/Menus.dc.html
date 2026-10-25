@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Menus and dietary categories</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html" aria-current="page">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">Menus</h1>
+<p class="page-sub">Courses, dishes and dietary tags for each event.</p>
+</div>
+<div class="row-end">
+<div class="field"><label for="ev">Event</label><select id="ev" style="width: 240px"><option>Ceremony and reception</option><option>Welcome party</option><option>Rehearsal</option></select></div>
+<div class="field"><label for="st">Menu status</label><select id="st" style="width: 240px"><option>Draft (staff only)</option><option selected>Published (guests can choose)</option><option>Closed (guests can view only)</option></select></div>
+</div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Menu sections">
+<button type="button" role="tab" class="tab" aria-selected="{{ isMenu }}" onClick="{{ showMenu }}">Menu</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isAdd }}" onClick="{{ showAdd }}">Add course or dish</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isCats }}" onClick="{{ showCats }}">Dietary categories</button>
+</div>
+
+<sc-if value="{{ isMenu }}" hint-placeholder-val="{{ true }}">
+<div class="stack">
+<sc-if value="{{ archiveAsk }}" hint-placeholder-val="{{ false }}">
+<div class="alert alert-error stack-sm" role="alertdialog" aria-label="Confirm archive">
+<strong>Archive Herb-crusted chicken?</strong>
+<span>It leaves the menu and clears 24 guests' choices (kept in history). Those guests will need to choose again.</span>
+<div class="row"><button type="button" class="btn btn-danger" onClick="{{ archiveDo }}">Archive dish</button><button type="button" class="btn" onClick="{{ archiveCancel }}">Cancel</button></div>
+</div>
+</sc-if>
+<sc-if value="{{ archiveDone }}" hint-placeholder-val="{{ false }}">
+<p class="alert alert-ok" role="status">Archived. 24 guests in 15 households need to choose again. <a href="Households.dc.html">Open those households</a></p>
+</sc-if>
+
+<section class="card">
+<div class="card-h"><div><h2 class="card-t">Main</h2><span class="muted small">Guests must choose one</span></div></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Dish</th><th scope="col">Dietary tags</th><th scope="col" class="num">Chosen by</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+<tbody>
+<tr><td><strong>Grilled salmon</strong><div class="table-sub">Seasonal greens, lemon butter</div></td><td><span class="badge badge-bad">Contains fish</span></td><td class="num">41</td><td class="right"><button type="button" class="btn btn-sm">Edit</button> <button type="button" class="btn btn-sm btn-quiet">Archive</button></td></tr>
+<tr><td><strong>Mushroom risotto</strong><div class="table-sub">Parmesan, herbs</div></td><td><span class="badge badge-ok">Vegetarian</span> <span class="badge badge-bad">Contains dairy</span></td><td class="num">29</td><td class="right"><button type="button" class="btn btn-sm">Edit</button> <button type="button" class="btn btn-sm btn-quiet">Archive</button></td></tr>
+<tr><td><strong>Herb-crusted chicken</strong><div class="table-sub">Roasted vegetables</div></td><td><span class="badge badge-bad">Contains tree nuts</span></td><td class="num">24</td><td class="right"><button type="button" class="btn btn-sm">Edit</button> <button type="button" class="btn btn-sm btn-quiet" onClick="{{ archiveAskNow }}">Archive</button></td></tr>
+<tr><td><span class="muted"><s>Beef short rib</s></span> <span class="badge">Archived</span></td><td></td><td class="num">0</td><td class="right"><button type="button" class="btn btn-sm btn-quiet">Restore</button></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="card">
+<div class="card-h"><div><h2 class="card-t">Dessert</h2><span class="muted small">Choice is optional</span></div></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Dish</th><th scope="col">Dietary tags</th><th scope="col" class="num">Chosen by</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+<tbody>
+<tr><td><strong>Lemon tart</strong><div class="table-sub">Fresh berries</div></td><td><span class="badge badge-bad">Contains dairy</span> <span class="badge badge-bad">Contains gluten</span></td><td class="num">52</td><td class="right"><button type="button" class="btn btn-sm">Edit</button> <button type="button" class="btn btn-sm btn-quiet">Archive</button></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAdd }}" hint-placeholder-val="{{ false }}">
+<div class="grid2">
+<form class="card">
+<div class="card-h"><h2 class="card-t">Add a course</h2></div>
+<div class="card-b stack">
+<div class="field"><label for="cn">Course name</label><input id="cn" type="text"></div>
+<div class="field"><label for="co">Order</label><input id="co" type="number" value="3" class="w-sm"></div>
+<label class="check"><input type="checkbox" checked> <span>Guests must choose a dish</span></label>
+</div>
+<div class="card-f"><button type="button" class="btn btn-primary">Add course</button></div>
+</form>
+<form class="card">
+<div class="card-h"><h2 class="card-t">Add a dish</h2></div>
+<div class="card-b stack">
+<div class="field"><label for="dc">Course</label><select id="dc"><option>Main</option><option>Dessert</option></select></div>
+<div class="field"><label for="dn">Dish name</label><input id="dn" type="text"></div>
+<div class="field"><label for="dd">Description</label><textarea id="dd" rows="2"></textarea></div>
+<fieldset class="group"><legend>Dietary tags</legend>
+<label class="check"><input type="checkbox"> <span>Vegetarian <span class="muted">(suitable for)</span></span></label>
+<label class="check"><input type="checkbox"> <span>Tree nuts <span class="muted">(contains)</span></span></label>
+<label class="check"><input type="checkbox"> <span>Dairy <span class="muted">(contains)</span></span></label>
+</fieldset>
+</div>
+<div class="card-f"><button type="button" class="btn btn-primary">Add dish</button></div>
+</form>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCats }}" hint-placeholder-val="{{ false }}">
+<div class="stack">
+<section class="card">
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col" class="num">Order</th><th scope="col">Label</th><th scope="col">Kind</th><th scope="col">When tagged on a dish it means</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td><strong>Vegetarian</strong></td><td><span class="badge badge-ok">Diet</span></td><td>Suitable for</td></tr>
+<tr><td class="num">2</td><td><strong>Vegan</strong></td><td><span class="badge badge-ok">Diet</span></td><td>Suitable for</td></tr>
+<tr><td class="num">3</td><td><strong>Tree nuts</strong></td><td><span class="badge badge-bad">Allergen</span></td><td>Contains</td></tr>
+<tr><td class="num">4</td><td><strong>Shellfish</strong></td><td><span class="badge badge-bad">Allergen</span></td><td>Contains</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<form class="card">
+<div class="card-h"><h2 class="card-t">Add a category</h2></div>
+<div class="card-b row-end">
+<div class="field" style="flex: 1 1 240px"><label for="ln">Label</label><input id="ln" type="text"></div>
+<div class="field" style="flex: 0 1 200px"><label for="lk">Kind</label><select id="lk"><option>Diet</option><option>Allergen</option></select></div>
+<button type="button" class="btn btn-primary">Add category</button>
+</div>
+</form>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'menu', archive: 'none' };
+}
+renderVals() {
+const t = this.state.tab;
+const a = this.state.archive;
+return {
+isMenu: t === 'menu',
+isAdd: t === 'add',
+isCats: t === 'cats',
+archiveAsk: a === 'ask',
+archiveDone: a === 'done',
+showMenu: () => this.setState({ tab: 'menu' }),
+showAdd: () => this.setState({ tab: 'add' }),
+showCats: () => this.setState({ tab: 'cats' }),
+archiveAskNow: () => this.setState({ archive: 'ask' }),
+archiveDo: () => this.setState({ archive: 'done' }),
+archiveCancel: () => this.setState({ archive: 'none' }),
+};
+}
+}
+</script>
+</body>
+</html>

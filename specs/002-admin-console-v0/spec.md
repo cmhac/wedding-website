@@ -16,6 +16,8 @@ The console is a **throwaway test interface**. It carries no branding, no themin
 
 This feature deliberately supersedes the repository's current "backend only, build no screens" scope for admin screens only. Guest-facing screens (public site, RSVP) stay out of scope, as does email content. The repository rules that state the old scope (the Scope and Layout sections of `CLAUDE.md`, and the "no user interface" notices in the admin handoff document) must be updated as part of this feature, not left stale (FR-033).
 
+Wireframes for every screen, at desktop and phone width, are in [design/](./design/README.md). They show layout and behavior only; the styling is a placeholder.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Sign in and see where things stand (Priority: P1)

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Overview (phone)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="m">
+<header class="m-top">
+<div class="brand"><span class="brand-mark">W</span><span class="m-title">Overview</span></div>
+<button type="button" class="btn" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}">Menu</button>
+</header>
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<nav class="m-drawer" aria-label="Main">
+<a href="Mobile-Overview.dc.html" aria-current="page">Overview</a>
+<a href="Mobile-Households.dc.html">Households</a>
+<a href="Mobile-Import.dc.html">Import</a>
+<a href="Mobile-Events.dc.html">Events</a>
+<a href="Mobile-Menus.dc.html">Menus</a>
+<a href="Mobile-Campaigns.dc.html">Campaigns</a>
+<a href="Mobile-Reports.dc.html">Reports</a>
+<a href="Mobile-History.dc.html">History</a>
+<a href="Mobile-Settings.dc.html">Settings</a>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Mobile-SignIn.dc.html">Sign out</a></div>
+</nav>
+</sc-if>
+
+<main class="m-body">
+<div class="m-head">
+<h1 class="page-title">Overview</h1>
+<p class="page-sub">RSVPs are open. Default deadline Sep 1, 11:59 PM PT.</p>
+</div>
+
+<div class="m-stats">
+<div class="stat"><span class="stat-n">118</span><span class="stat-l">Households</span></div>
+<div class="stat"><span class="stat-n">98</span><span class="stat-l">Attending the ceremony, of 142</span></div>
+<div class="stat"><span class="stat-n">21</span><span class="stat-l">Owe a required answer</span></div>
+<div class="stat"><span class="stat-n">3</span><span class="stat-l">Delivery problems</span></div>
+</div>
+
+<div class="m-actions">
+<a href="Mobile-Campaigns.dc.html" class="btn btn-primary">Send a reminder</a>
+<a href="Mobile-Settings.dc.html" class="btn">RSVP settings</a>
+</div>
+
+<section class="card">
+<div class="card-h"><h2 class="card-t">Answers by event</h2></div>
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><span class="m-name">Welcome party</span><span class="badge">Optional</span></div>
+<div class="m-kv"><span>Attending</span><span>61 of 96</span></div>
+<div class="m-kv"><span>Declined / pending</span><span>9 / 26</span></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Rehearsal</span><span class="badge">Optional</span></div>
+<div class="m-kv"><span>Attending</span><span>22 of 34</span></div>
+<div class="m-kv"><span>Declined / pending</span><span>2 / 10</span></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Ceremony and reception</span><span class="badge badge-staff">Required</span></div>
+<div class="m-kv"><span>Attending</span><span>98 of 142</span></div>
+<div class="m-kv"><span>Declined / pending</span><span>14 / 30</span></div>
+</div>
+</div>
+</section>
+
+<section class="card">
+<div class="card-h"><h2 class="card-t">Needs follow-up</h2></div>
+<div class="m-list">
+<a href="Mobile-Campaigns.dc.html" class="m-item" style="text-decoration: none"><div class="m-line"><span>Required answers outstanding</span><strong>21</strong></div></a>
+<a href="Mobile-Campaigns.dc.html" class="m-item" style="text-decoration: none"><div class="m-line"><span>Optional answers outstanding</span><strong>33</strong></div></a>
+<a href="Mobile-Households.dc.html" class="m-item" style="text-decoration: none"><div class="m-line"><span>Meal choices outstanding</span><strong>17</strong></div></a>
+<a href="Mobile-Households.dc.html" class="m-item" style="text-decoration: none"><div class="m-line"><span>Paper only (no email)</span><strong>8</strong></div></a>
+<a href="Mobile-Households.dc.html" class="m-item" style="text-decoration: none"><div class="m-line"><span>Possible duplicates</span><strong>2</strong></div></a>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1250}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { menu: false };
+}
+renderVals() {
+return {
+menuOpen: this.state.menu,
+toggleMenu: () => this.setState({ menu: !this.state.menu }),
+};
+}
+}
+</script>
+</body>
+</html>

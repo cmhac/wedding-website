@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Overview</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html" aria-current="page">Overview</a>
+<a href="Households.dc.html">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">Overview</h1>
+<p class="page-sub">RSVPs are open. Default deadline Sep 1, 11:59 PM PT.</p>
+</div>
+<div class="row">
+<a href="Settings.dc.html" class="btn">RSVP settings</a>
+<a href="Campaigns.dc.html" class="btn btn-primary">Send a reminder</a>
+</div>
+</div>
+
+<div class="stats">
+<div class="stat"><span class="stat-n">118</span><span class="stat-l">Households</span></div>
+<div class="stat"><span class="stat-n">98 <span class="muted" style="font-size: 16px; font-weight: 400">of 142</span></span><span class="stat-l">Attending the ceremony</span></div>
+<div class="stat"><span class="stat-n">21</span><span class="stat-l">Households owing a required answer</span></div>
+<div class="stat"><span class="stat-n">3</span><span class="stat-l">Households with a delivery problem</span></div>
+</div>
+
+<section class="card">
+<div class="card-h"><h2 class="card-t">Answers by event</h2><a href="Events.dc.html" class="btn btn-quiet btn-sm">Manage events</a></div>
+<div class="table-wrap">
+<table class="table">
+<thead>
+<tr><th scope="col">Event</th><th scope="col">Type</th><th scope="col" class="num">Invited</th><th scope="col" class="num">Attending</th><th scope="col" class="num">Declined</th><th scope="col" class="num">Pending</th></tr>
+</thead>
+<tbody>
+<tr><td class="strong">Welcome party</td><td><span class="badge">Optional</span></td><td class="num">96</td><td class="num">61</td><td class="num">9</td><td class="num">26</td></tr>
+<tr><td class="strong">Rehearsal</td><td><span class="badge">Optional</span></td><td class="num">34</td><td class="num">22</td><td class="num">2</td><td class="num">10</td></tr>
+<tr><td class="strong">Ceremony and reception</td><td><span class="badge badge-staff">Required</span></td><td class="num">142</td><td class="num">98</td><td class="num">14</td><td class="num">30</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<div class="grid2" style="grid-template-columns: repeat(auto-fit, minmax(380px, 1fr))">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Needs follow-up</h2></div>
+<div class="table-wrap">
+<table class="table">
+<tbody>
+<tr><td>Required answers outstanding</td><td class="num strong">21</td><td class="right"><a href="Campaigns.dc.html" class="btn btn-sm">Remind</a></td></tr>
+<tr><td>Optional answers outstanding</td><td class="num strong">33</td><td class="right"><a href="Campaigns.dc.html" class="btn btn-sm">Remind</a></td></tr>
+<tr><td>Meal choices outstanding</td><td class="num strong">17</td><td class="right"><a href="Households.dc.html" class="btn btn-sm">View</a></td></tr>
+<tr><td>Delivery problems</td><td class="num strong">3</td><td class="right"><a href="Households.dc.html" class="btn btn-sm">View</a></td></tr>
+<tr><td>Paper only (no email)</td><td class="num strong">8</td><td class="right"><a href="Households.dc.html" class="btn btn-sm">View</a></td></tr>
+<tr><td>Possible duplicates</td><td class="num strong">2</td><td class="right"><a href="Households.dc.html" class="btn btn-sm">Review</a></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="card">
+<div class="card-h"><h2 class="card-t">Most outstanding</h2><a href="Households.dc.html" class="btn btn-quiet btn-sm">All households</a></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Household</th><th scope="col" class="num">Required</th><th scope="col" class="num">Optional</th><th scope="col" class="num">Meals</th></tr></thead>
+<tbody>
+<tr><td><a href="HouseholdDetail.dc.html">The Examples</a></td><td class="num">2</td><td class="num">2</td><td class="num">2</td></tr>
+<tr><td><a href="HouseholdDetail.dc.html">Sample Family</a></td><td class="num">0</td><td class="num">1</td><td class="num">3</td></tr>
+<tr><td><a href="HouseholdDetail.dc.html">Exampleton family</a></td><td class="num">3</td><td class="num">0</td><td class="num">0</td></tr>
+</tbody>
+</table>
+</div>
+<div class="card-f"><span class="muted small">Showing 3 of 118. Most outstanding first.</span></div>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

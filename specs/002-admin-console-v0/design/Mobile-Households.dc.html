@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Households (phone)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="m">
+<header class="m-top">
+<div class="brand"><span class="brand-mark">W</span><span class="m-title">Households</span></div>
+<button type="button" class="btn" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}">Menu</button>
+</header>
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<nav class="m-drawer" aria-label="Main">
+<a href="Mobile-Overview.dc.html">Overview</a>
+<a href="Mobile-Households.dc.html" aria-current="page">Households</a>
+<a href="Mobile-Import.dc.html">Import</a>
+<a href="Mobile-Events.dc.html">Events</a>
+<a href="Mobile-Menus.dc.html">Menus</a>
+<a href="Mobile-Campaigns.dc.html">Campaigns</a>
+<a href="Mobile-Reports.dc.html">Reports</a>
+<a href="Mobile-History.dc.html">History</a>
+<a href="Mobile-Settings.dc.html">Settings</a>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Mobile-SignIn.dc.html">Sign out</a></div>
+</nav>
+</sc-if>
+
+<main class="m-body">
+<div class="m-head">
+<h1 class="page-title">Households</h1>
+<p class="page-sub">118 households, 231 guests</p>
+</div>
+<div class="m-actions">
+<button type="button" class="btn btn-primary">New household</button>
+<a href="Mobile-Import.dc.html" class="btn">Import</a>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Household views">
+<button type="button" role="tab" class="tab" aria-selected="{{ isAll }}" onClick="{{ showAll }}">All</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isDupes }}" onClick="{{ showDupes }}">Possible duplicates (2)</button>
+</div>
+
+<sc-if value="{{ isAll }}" hint-placeholder-val="{{ true }}">
+<div class="stack">
+<form class="stack-sm">
+<div class="field"><label for="q">Search</label><input id="q" type="search" placeholder="Household or guest name" value="exam"></div>
+<div class="field"><label for="pg">Show</label><select id="pg"><option>Everyone</option><option>Required answers outstanding</option><option>Optional answers outstanding</option><option>Meals outstanding</option><option>Delivery problem</option><option>Paper only (no email)</option></select></div>
+</form>
+<section class="card">
+<div class="m-list">
+<a href="Mobile-HouseholdDetail.dc.html" class="m-item" style="text-decoration: none; color: inherit">
+<div class="m-line"><span class="m-name">The Examples</span><span class="m-sub">2 guests</span></div>
+<span class="m-sub">household@example.com</span>
+<div class="m-badges"><span class="badge badge-warn">2 required outstanding</span></div>
+</a>
+<a href="Mobile-HouseholdDetail.dc.html" class="m-item" style="text-decoration: none; color: inherit">
+<div class="m-line"><span class="m-name">Example, Jordan</span><span class="m-sub">1 guest</span></div>
+<span class="m-sub">jordan@example.com</span>
+<div class="m-badges"><span class="badge badge-bad">Delivery problem</span></div>
+</a>
+<a href="Mobile-HouseholdDetail.dc.html" class="m-item" style="text-decoration: none; color: inherit">
+<div class="m-line"><span class="m-name">Exampleton family</span><span class="m-sub">3 guests</span></div>
+<span class="m-sub">No email on file</span>
+<div class="m-badges"><span class="badge badge-warn">Paper only</span><span class="badge">Possible duplicate</span><span class="badge badge-warn">3 required outstanding</span></div>
+</a>
+</div>
+<div class="card-f" style="justify-content: space-between"><span class="muted small">3 of 118 match</span></div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDupes }}" hint-placeholder-val="{{ false }}">
+<div class="stack">
+<p class="alert alert-info">Flagged only. Nothing is merged automatically. Open each and edit or delete one by hand.</p>
+<section class="card">
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><a href="Mobile-HouseholdDetail.dc.html" class="m-name">Exampleton family</a></div>
+<div class="m-line"><a href="Mobile-HouseholdDetail.dc.html" class="m-name">The Exampletons</a></div>
+<span class="m-sub">Same name once spacing and capitals are ignored</span>
+</div>
+<div class="m-item">
+<div class="m-line"><a href="Mobile-HouseholdDetail.dc.html" class="m-name">Sample Family</a></div>
+<div class="m-line"><a href="Mobile-HouseholdDetail.dc.html" class="m-name">Sample, Pat</a></div>
+<span class="m-sub">Same address</span>
+</div>
+</div>
+</section>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1100}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'all', menu: false };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+menuOpen: this.state.menu,
+toggleMenu: () => this.setState({ menu: !this.state.menu }),
+isAll: t === 'all',
+isDupes: t === 'dupes',
+showAll: () => this.setState({ tab: 'all' }),
+showDupes: () => this.setState({ tab: 'dupes' }),
+};
+}
+}
+</script>
+</body>
+</html>
