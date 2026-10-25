@@ -14,7 +14,7 @@ The guest data model and the admin API already exist, but nobody can use them wi
 
 The console is a **throwaway test interface**. It carries no branding, no theming and no design system. Presentation is plain, standard page elements only, kept separate from behavior so the later design can replace it without redoing the behavior.
 
-This feature deliberately supersedes the repository's current "backend only, build no screens" scope for admin screens only. Guest-facing screens (public site, RSVP) stay out of scope, as does email content.
+This feature deliberately supersedes the repository's current "backend only, build no screens" scope for admin screens only. Guest-facing screens (public site, RSVP) stay out of scope, as does email content. The repository rules that state the old scope (the Scope and Layout sections of `CLAUDE.md`, and the "no user interface" notices in the admin handoff document) must be updated as part of this feature, not left stale (FR-033).
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -55,19 +55,20 @@ Staff browse and search households, open one to see its guests, invitations, RSV
 
 ---
 
-### User Story 3 - Import the guest list from CSV (Priority: P1)
+### User Story 3 - Import the guest list from a CSV or Excel file (Priority: P1)
 
-Staff upload a CSV and see how many households were created and, for any row that failed, the row number, field and message, without the good rows being lost.
+Staff upload a guest list as a CSV or Excel file and see how many households were created and, for any row that failed, the row number, field and message, without the good rows being lost.
 
-**Why this priority**: Importing is how the real guest list will arrive; it must be testable before real data is loaded.
+**Why this priority**: Importing is how the real guest list will arrive, and it will most likely start life as a spreadsheet; it must be testable before real data is loaded.
 
-**Independent Test**: Upload a CSV with valid rows and some deliberately bad rows and confirm created counts and per-row errors are shown.
+**Independent Test**: Upload a CSV and an Excel file, each with valid rows and some deliberately bad rows, and confirm created counts and per-row errors are the same for both.
 
 **Acceptance Scenarios**:
 
-1. **Given** a valid CSV, **When** staff upload it, **Then** the created count is shown and the households appear in the list.
-2. **Given** a CSV with bad rows, **When** staff upload it, **Then** each error shows row, field and message, and valid rows are still imported.
-3. **Given** a file that is not a usable CSV, **When** staff upload it, **Then** a clear whole-file error is shown.
+1. **Given** a valid CSV or Excel file, **When** staff upload it, **Then** the created count is shown and the households appear in the list.
+2. **Given** a file with bad rows, **When** staff upload it, **Then** each error shows row, field and message, and valid rows are still imported.
+3. **Given** a file that is not a usable CSV or Excel file, **When** staff upload it, **Then** a clear whole-file error is shown.
+4. **Given** an Excel file with more than one sheet, **When** staff upload it, **Then** the console states which sheet was read.
 
 ---
 
@@ -77,7 +78,7 @@ Staff create and edit events (name, date, venue, required or optional, group, de
 
 **Why this priority**: RSVP tracking is the point of the site, but it needs households (above) first.
 
-**Independent Test**: Create an optional event, invite two guests, then record one attending with a meal choice and one declined on their behalf, and confirm the overview counts change.
+**Independent Test**: Create an optional event, invite two guests, then record one attending with a meal choice and one declined on their behalf, and confirm the overview counts change and each answer is labelled as recorded by staff, not by the guest.
 
 **Acceptance Scenarios**:
 
@@ -85,6 +86,8 @@ Staff create and edit events (name, date, venue, required or optional, group, de
 2. **Given** a set of guests, **When** staff invite them to an event, **Then** each shows a pending invitation.
 3. **Given** a pending invitation, **When** staff record attending or declined on the household's behalf, **Then** the status updates, and declining clears that guest's meal selections for the event.
 4. **Given** staff act after the RSVP deadline or with RSVPs closed, **When** they record an answer, **Then** it is accepted (staff are not bound by the deadline).
+5. **Given** an RSVP or meal choice that staff recorded for a household, **When** anyone views the invitation, the household, or the history pages, **Then** it is clearly marked as recorded by staff, naming which staff member and when, and is distinguishable from an answer the guest gave themselves.
+6. **Given** an answer first recorded by staff and later changed by the guest (or the reverse), **When** staff open the history, **Then** each step shows who made it (guest or named staff member), so the source of the current answer is never ambiguous.
 
 ---
 
@@ -189,13 +192,14 @@ Staff change the default RSVP deadline and whether RSVPs are open. The couple (n
 - **FR-007**: The console MUST show the data layer's refusals (duplicate contact email, allowance below named plus-ones, linked staff account, duplicate guest name) as clear messages without losing the user's input.
 - **FR-008**: Staff MUST be able to see the delivery-problem flag on households and filter the list by it.
 - **FR-009**: Staff MUST be able to view possible duplicate households, with links to each; the console MUST NOT merge automatically.
-- **FR-010**: Staff MUST be able to import a CSV and see created counts and per-row errors (row, field, message), with whole-file errors shown separately.
+- **FR-010**: Staff MUST be able to import a guest list from a CSV or Excel (.xlsx) file and see created counts and per-row errors (row, field, message), with whole-file errors shown separately. Both formats MUST use the same columns and give the same results for the same data. For an Excel file with several sheets, the console MUST say which sheet was read.
 
 **Events, invitations, RSVPs**
 
 - **FR-011**: Staff MUST be able to create, edit and delete events with name, date and time, venue, required/optional, group, deadline and display order.
 - **FR-012**: Staff MUST be able to invite selected guests to an event, including after initial invitations, and remove an invitation.
 - **FR-013**: Staff MUST be able to record or change a household's RSVP and meal choices on its behalf, regardless of deadline or the RSVPs-open setting.
+- **FR-013a**: Every RSVP and meal choice MUST record who gave it: the guest or a named staff member. The console MUST show this wherever an answer is shown (household detail, invitation lists, reports where practical, and all history pages), so an answer a staff member recorded can never be mistaken for one the guest gave. The console MUST NOT offer any way to record an answer on a household's behalf that bypasses this record.
 
 **Menus and dietary**
 
@@ -227,17 +231,17 @@ Staff change the default RSVP deadline and whether RSVPs are open. The couple (n
 
 - **FR-028**: Every create, update, delete, send and import action MUST show a success or failure result, and destructive actions MUST require confirmation.
 - **FR-029**: The console MUST use only plain, unstyled page elements: no branding, theming, design system or imagery. Presentation MUST be separable from behavior so a later design can replace it without changing what each page does.
-- **FR-030**: The console MUST build on the existing admin API and staff data access only; it MUST NOT add data-layer capabilities, and any gap it finds MUST be recorded as a note rather than worked around by weakening access rules.
+- **FR-030**: The console MUST build on the existing admin API and staff data access, and MUST NOT weaken access rules to work around a gap. Gaps it finds MUST be recorded as notes. The one planned exception is reading Excel files in the guest-list import (FR-010), because the existing import accepts CSV only; the plan must say where that conversion happens and keep the same validation and per-row errors as CSV.
 - **FR-031**: The console MUST NOT log or display guest personal data beyond what staff need on the page, and MUST use fake data in all tests and fixtures.
 - **FR-032**: The console MUST be usable on a laptop-width screen with keyboard only; mobile layout is not required.
-- **FR-033**: The repository's scope note and admin handoff documents MUST be updated in the same change to say that a minimal v0 admin console exists, is temporary, and is separate from the designer's work.
+- **FR-033**: The repository rules and handoff documents MUST be updated in the same change so they no longer contradict this feature: the Scope and Layout sections of `CLAUDE.md` (which currently forbid any screen and mark `src/components` unused), the "no user interface" notices in the admin API handoff document, and any matching statement in the architecture document. They MUST say that a minimal v0 admin console exists, is temporary, is separate from the designer's work, and that guest-facing screens and email content remain out of scope.
 
 ### Key Entities
 
 - **Household**: the unit of invitation and email; has contact email (optional), address, plus-one allowance, deadline override, reminders opt-out, delivery-problem flag, staff notes and a message to the couple.
 - **Guest**: a person in a household (or an unnamed plus-one seat) with dietary notes and staff notes.
 - **Event**: a named occasion, required or optional, with date, venue, group, deadline and order.
-- **Invitation / RSVP**: one guest's invitation to one event, with status pending, attending or declined.
+- **Invitation / RSVP**: one guest's invitation to one event, with status pending, attending or declined, and a record of who answered (the guest or a named staff member) and when.
 - **Menu, Course, Dish, Dietary category, Dish tag**: what is served at an event and what each dish suits or contains.
 - **Guest dietary entry and Meal selection**: a guest's restrictions and chosen dish per course.
 - **Campaign, Message**: a planned send to an audience, and the per-household outcome of it.
@@ -252,7 +256,8 @@ Staff change the default RSVP deadline and whether RSVPs are open. The couple (n
 - **SC-001**: Every capability in the admin API handoff document can be exercised from the console without scripts or the database dashboard, verified by a checklist walk-through with zero capabilities missing.
 - **SC-002**: A staff member can sign in and reach the overview in under 1 minute from requesting the link, excluding email delivery time.
 - **SC-003**: A staff member can create a household with two guests in under 2 minutes on first use.
-- **SC-004**: A CSV of 200 households imports with all valid rows created and each bad row reported with row, field and message.
+- **SC-004**: A CSV file and an Excel file of 200 households each import with all valid rows created and each bad row reported with row, field and message, with identical results for identical data.
+- **SC-010**: For every RSVP and meal choice in a test set mixing guest-given and staff-recorded answers, the console shows the correct source (guest or named staff member) on 100% of them.
 - **SC-005**: A staff member can build a campaign, preview its audience and send it in under 3 minutes on first use.
 - **SC-006**: 100% of API or data-layer error cases listed in the admin API handoff document appear in the console as a readable message, with no raw or internal text.
 - **SC-007**: 0 pages are viewable by a signed-out visitor or a guest account.
@@ -261,7 +266,7 @@ Staff change the default RSVP deadline and whether RSVPs are open. The couple (n
 
 ## Assumptions
 
-- The two admin interfaces described in the admin API handoff document are used as they are; this feature adds no new data-layer capability. Gaps found are recorded for a follow-up change.
+- The two admin interfaces described in the admin API handoff document are used as they are; this feature adds no new data-layer capability beyond reading Excel files in the import (FR-010, FR-030). Gaps found are recorded for a follow-up change.
 - Staff are the couple (Chris, Hannah) and one planner; the console is for desktop use and does not need a mobile layout.
 - The console lives at the `/admin` path, served from the same site as the API, as the handoff document assumes.
 - Email content stays out of scope: campaign sending is exercised using whatever templates are registered, and a missing template is shown as an error.
