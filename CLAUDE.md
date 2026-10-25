@@ -90,11 +90,10 @@ the diff.
 ## Commands
 
 ```bash
-npm run dev          # Next.js dev server
+npm run dev          # Next.js dev server (admin console at /admin)
 npm run email:dev    # React Email preview server (for templates supplied by others)
 npm run db:start     # local Supabase (needs Docker)
 npm run db:reset     # re-apply migrations and seed.sql
 npm run db:types     # regenerate src/types/database.ts
 npm run test:db      # pgTAP database tests (needs the local Supabase running)
-npm run test:db      # pgTAP database tests (needs local Supabase running)
 ```

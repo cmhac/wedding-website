@@ -1,6 +1,6 @@
 # Guest API
 
-> **No user interface is provided.** This repository builds no screens, forms, or visual components: no public site, no guest screens (including the RSVP), and no admin screens. The couple's designer builds those against this document. The guest API is the only interface between this backend and the guest-facing screens.
+> **No guest-facing user interface is provided.** This repository builds no public site and no guest screens (including the RSVP), forms, or visual components for guests. (A minimal, temporary v0 admin console exists for staff; it does not use this API.) The couple's designer builds the guest-facing screens against this document. The guest API is the only interface between this backend and the guest-facing screens.
 
 This document is published from `specs/001-guest-data-model/contracts/guest-api.md`. A contract test (`src/lib/guest-api/__tests__/contract.test.ts`) fails if the endpoint table below stops matching the route handlers under `src/app/api/guest/`.
 

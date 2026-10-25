@@ -58,6 +58,18 @@ endpoint never creates users. It needs `NEXT_PUBLIC_SUPABASE_URL` and
 node --env-file=.env.local scripts/create-staff-user.ts <email> "<display name>" <couple|planner>
 ```
 
+### Admin console (temporary v0)
+
+With `npm run dev` running, staff sign in at `/admin` (a magic link, for accounts
+made with the script above). The console lives in `src/app/(admin)`,
+`src/components/admin` and `src/lib/admin`, styled by one plain stylesheet,
+`src/app/(admin)/admin.css`. It is separate from the designer's work and uses
+the same admin API and row-level security as any later admin frontend. See
+[specs/002-admin-console-v0](specs/002-admin-console-v0/plan.md).
+
 ## Repository layout
 
-See [CLAUDE.md](CLAUDE.md) for the directory map and conventions.
+See [CLAUDE.md](CLAUDE.md) for the directory map and conventions. In short:
+`src/app/api` holds the guest and admin APIs, `src/app/(admin)` the v0 admin
+console, `src/lib` the shared logic, `supabase` the migrations and database
+tests, and `docs` the API handoff documents and decision records.
