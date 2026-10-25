@@ -93,12 +93,18 @@ Decisions made while planning, with the reasons and the alternatives. External f
 1. **RSVP, current answer:** take the latest `rsvp_history` row for that guest and event whose new status equals the current status. It stores `actor_kind` (`couple`, `planner`, `guest`, `system`) and `changed_by` permanently. If the staff member's account is later removed, the row still says staff.
 2. **RSVP history page:** show `actor_kind` straight from the row.
 3. **Staff name:** look up `changed_by` in `staff` (readable by staff). If the person is no longer in `staff`, show "Staff (former member)".
-4. **Meal choices:** `meal_selections.chosen_by` is compared with the household's sign-in account (guest) and the `staff` table (staff). If it matches neither, show "Unknown" rather than guessing. If the same account is both (a staff member who is also a household responder), show "Staff or household (same account)".
-5. **Meal history page:** the same rule, because `meal_selection_history` stores `changed_by` but no kind.
+4. **Meal choices, current choice:** take the newest `meal_selection_history` row for that guest and course whose `new_dish_id` is the current dish (the database writes a history row for a first choice and for every change). Its new `actor_kind` column (see below) gives the source; `changed_by` gives the staff name.
+5. **Meal history page:** show `actor_kind` straight from the row, as for RSVPs.
+6. **Rows written before the migration** have an empty `actor_kind`. For those only, compare `changed_by` with the household's sign-in account (guest) and the `staff` table (staff). If it matches neither, show "Unknown" rather than guessing. If the same account is both (a staff member who is also a household responder), show "Staff or household (same account)".
 
-**Gap recorded (not fixed in v0).** Rules 4 and 5 can show "Unknown" for old rows after a staff member is removed, because meal history, unlike RSVP history, does not store the kind. The clean fix is a small additive migration adding an `actor_kind` column to `meal_selection_history` (filled by the same helper RSVP history uses) with a database test. It is out of scope for v0 (requirement FR-030) and listed as an open decision in the plan. The couple decides whether to do it before launch.
+**Decision: add a small migration (gap G2 closed).** `meal_selection_history` stored `changed_by` but no kind, unlike `rsvp_history`. The migration adds `actor_kind text` to it, nullable, with the same four allowed values (`couple`, `planner`, `guest`, `system`) and the same default helper RSVP history uses (`public.current_actor_kind()`). Existing writes name their columns explicitly, so none of the seven functions that write meal history changes.
 
-**Why.** Success criterion SC-010 needs the source to be right on every row. Rule 1 achieves that for RSVPs with data that already exists.
+- **The default is set after the column is added**, not in the same statement. Adding a column with a changing default would fill every existing row with the migration's own value (`system`, because nobody is signed in during a migration), which would label old rows wrongly. Adding it empty and then setting the default leaves old rows empty and fills new ones.
+- **The stored type describes the account, not the screen.** A planner who answers through the guest screen is stored as `planner`, exactly as RSVP history already behaves.
+- **The couple confirmed they want this** (2026-10-25).
+- **How it reaches the hosted database:** by merging to `main`, which applies new migration files (AGENTS.md, "How migrations reach the hosted database"). It is never pushed by hand.
+
+**Why.** Success criterion SC-010 needs the source to be right on every row. Rule 1 achieves that for RSVPs with data that already exists, and rules 4 to 6 do the same for meals once the migration is in.
 
 ## R9. Search, filters and paging
 

@@ -13,7 +13,7 @@ A walkthrough that proves the console works end to end against a local database.
 
 ```bash
 npm run format:check && npm run lint && npm run type-check && npm test
-npm run test:db     # unchanged; the console adds no migrations
+npm run test:db     # includes the new meal-history column test
 npm run build       # the app now has pages, so CI builds it
 ```
 
@@ -76,7 +76,7 @@ Open each report and compare with the data. Download the three CSV files. Make a
 
 1. Change the default deadline and the RSVPs-open switch. Expect them to persist.
 2. As a planner: expect staff shown but no grant or remove controls.
-3. As a couple member: grant planner access, sign in as the planner, then revoke access. Expect: the planner's next request is refused.
+3. As a couple member: grant planner access, sign in as the planner, record a meal choice for a household as the planner, then revoke the planner's access. Expect: the planner's next request is refused, and the household's Answers tab and the meal history still say "Recorded by staff" with the planner's role (and "Staff (former member)" where the name is gone), not "Unknown".
 4. Try to remove the last couple member. Expect: the plain "last couple member" message.
 
 ### 10. Times (FR-032 and the time-zone assumption)

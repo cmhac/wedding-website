@@ -1,6 +1,6 @@
 # Data Model: Admin Console v0
 
-**No new tables, columns, views, functions or migrations.** The console reads and writes the data described in [`specs/001-guest-data-model/data-model.md`](../001-guest-data-model/data-model.md), under row-level security, as the signed-in staff member. This document lists what is new: the screen-shaped objects the console builds from that data, the rules for combining it, and the gaps found.
+**No new tables, views or functions, and one small additive column** (`meal_selection_history.actor_kind`, see "Attributing answers" and gap G2). The console reads and writes the data described in [`specs/001-guest-data-model/data-model.md`](../001-guest-data-model/data-model.md), under row-level security, as the signed-in staff member. This document lists what is new: the screen-shaped objects the console builds from that data, the rules for combining it, and the gaps found.
 
 ## Screen objects
 
@@ -34,8 +34,9 @@ Plain objects returned by the functions in `src/lib/admin/`. They hold only what
 
 1. For an RSVP, find the newest `rsvp_history` row for the guest and event whose `new_status` equals the current status. `actor_kind` `guest` gives `guest`; `couple` or `planner` gives `staff` with the name from `staff` where `staff.user_id = changed_by`, or `former_staff` if that person is gone; `system` shows as "System".
 2. If there is no history row (an invitation still at its default), the answer is "Not answered".
-3. For a meal choice, compare `meal_selections.chosen_by` with the household's `auth_user_id` and with `staff.user_id`: only the household account gives `guest`; only a staff match gives `staff`; both gives `shared_account`; neither gives `unknown`.
-4. The history pages use the stored `actor_kind` for RSVPs and the same comparison as rule 3 for meal history.
+3. For a meal choice, find the newest `meal_selection_history` row for the guest and course whose `new_dish_id` is the current dish, and read its `actor_kind` exactly as in rule 1 (staff name from `staff` where `staff.user_id = changed_by`).
+4. If that row's `actor_kind` is empty (written before the migration), compare `changed_by` with the household's `auth_user_id` and with `staff.user_id`: only the household account gives `guest`; only a staff match gives `staff`; both gives `shared_account`; neither gives `unknown`.
+5. The history pages use the stored `actor_kind` for both RSVPs and meals, and rule 4 for empty ones.
 
 Every screen that shows an RSVP or a meal choice shows `AnsweredBy` next to it (requirement FR-013a).
 
@@ -51,15 +52,15 @@ Staff can update the staff-only household columns (`notes`, `address`, `rsvp_dea
 
 ## Gaps found (requirement FR-030: recorded, not worked around)
 
-| #   | Gap                                                                                                        | Effect in v0                                                                                                   | Proposed follow-up                                                                                            |
-| --- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| G1  | The import accepts CSV only.                                                                               | **Closed by this feature:** the planned exception in [contracts/import-excel.md](./contracts/import-excel.md). | None.                                                                                                         |
-| G2  | `meal_selection_history` and `meal_selections` store who acted but not whether they were a guest or staff. | Meal attribution can show "Unknown" for old rows after a staff member is removed.                              | Additive migration: an `actor_kind` column on `meal_selection_history`, with a database test. Couple decides. |
-| G3  | `staff_households()` has no guest names.                                                                   | Joined in the app (small scale).                                                                               | A search function only if the list ever grows past a few thousand.                                            |
-| G4  | `audit_log` stores `actor_user_id` and kind, not a name.                                                   | Names come from `staff`; a removed staff member shows as "Staff (former member)".                              | None needed.                                                                                                  |
-| G5  | `staff` holds names and roles but not email addresses (those are in the auth system).                      | The staff list shows names only.                                                                               | None needed for v0.                                                                                           |
-| G6  | `meal_conflicts` does not say who made the choice.                                                         | Joined with `meal_selections`.                                                                                 | None needed.                                                                                                  |
-| G7  | `/auth/error` is redirected to by the callback but nothing serves it.                                      | **Closed by this feature** with a minimal page (research R11).                                                 | The designer replaces the page.                                                                               |
+| #   | Gap                                                                                   | Effect in v0                                                                                                                                       | Proposed follow-up                                                 |
+| --- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| G1  | The import accepts CSV only.                                                          | **Closed by this feature:** the planned exception in [contracts/import-excel.md](./contracts/import-excel.md).                                     | None.                                                              |
+| G2  | `meal_selection_history` stored who acted but not whether they were a guest or staff. | **Closed by this feature** with an additive migration (research R8). Rows from before it show "Unknown" only if the account comparison also fails. | None.                                                              |
+| G3  | `staff_households()` has no guest names.                                              | Joined in the app (small scale).                                                                                                                   | A search function only if the list ever grows past a few thousand. |
+| G4  | `audit_log` stores `actor_user_id` and kind, not a name.                              | Names come from `staff`; a removed staff member shows as "Staff (former member)".                                                                  | None needed.                                                       |
+| G5  | `staff` holds names and roles but not email addresses (those are in the auth system). | The staff list shows names only.                                                                                                                   | None needed for v0.                                                |
+| G6  | `meal_conflicts` does not say who made the choice.                                    | Joined with `meal_selections`.                                                                                                                     | None needed.                                                       |
+| G7  | `/auth/error` is redirected to by the callback but nothing serves it.                 | **Closed by this feature** with a minimal page (research R11).                                                                                     | The designer replaces the page.                                    |
 
 ## Validation in the console
 

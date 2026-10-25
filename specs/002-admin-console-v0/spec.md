@@ -233,7 +233,7 @@ Staff change the default RSVP deadline and whether RSVPs are open. The couple (n
 
 - **FR-028**: Every create, update, delete, send and import action MUST show a success or failure result, and destructive actions MUST require confirmation.
 - **FR-029**: The console MUST use only plain, unstyled page elements: no branding, theming, design system or imagery. Presentation MUST be separable from behavior so a later design can replace it without changing what each page does.
-- **FR-030**: The console MUST build on the existing admin API and staff data access, and MUST NOT weaken access rules to work around a gap. Gaps it finds MUST be recorded as notes. The one planned exception is reading Excel files in the guest-list import (FR-010), because the existing import accepts CSV only; the plan must say where that conversion happens and keep the same validation and per-row errors as CSV.
+- **FR-030**: The console MUST build on the existing admin API and staff data access, and MUST NOT weaken access rules to work around a gap. Gaps it finds MUST be recorded as notes. There are two planned exceptions. One is reading Excel files in the guest-list import (FR-010), because the existing import accepts CSV only; the plan must say where that conversion happens and keep the same validation and per-row errors as CSV. The other is one additive database column that records whether each meal choice was made by a guest or by staff, so FR-013a holds for meals as it does for RSVPs; it must not change any existing behavior, and it must have its own database test.
 - **FR-031**: The console MUST NOT log or display guest personal data beyond what staff need on the page, and MUST use fake data in all tests and fixtures.
 - **FR-032**: The console MUST be usable on a laptop-width screen with keyboard only; mobile layout is not required.
 - **FR-033**: The repository rules and handoff documents MUST be updated in the same change so they no longer contradict this feature: the Scope and Layout sections of `CLAUDE.md` (which currently forbid any screen and mark `src/components` unused), the "no user interface" notices in the admin API handoff document, and any matching statement in the architecture document. They MUST say that a minimal v0 admin console exists, is temporary, is separate from the designer's work, and that guest-facing screens and email content remain out of scope.
@@ -268,7 +268,7 @@ Staff change the default RSVP deadline and whether RSVPs are open. The couple (n
 
 ## Assumptions
 
-- The two admin interfaces described in the admin API handoff document are used as they are; this feature adds no new data-layer capability beyond reading Excel files in the import (FR-010, FR-030). Gaps found are recorded for a follow-up change.
+- The two admin interfaces described in the admin API handoff document are used as they are; this feature adds no new data-layer capability beyond reading Excel files in the import (FR-010) and one additive column recording who made a meal choice (FR-013a, FR-030). Gaps found are recorded for a follow-up change.
 - Staff are the couple (Chris, Hannah) and one planner; the console is for desktop use and does not need a mobile layout.
 - The console lives at the `/admin` path, served from the same site as the API, as the handoff document assumes.
 - Email content stays out of scope: campaign sending is exercised using whatever templates are registered, and a missing template is shown as an error.
