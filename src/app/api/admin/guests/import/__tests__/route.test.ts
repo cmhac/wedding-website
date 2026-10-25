@@ -14,7 +14,11 @@ jest.mock("@/lib/guests/household-access", () => ({
 }));
 
 import { AuthError } from "@/lib/auth/guards";
+import { makeXlsx } from "@/lib/guests/__tests__/fixtures/make-xlsx";
 import { POST } from "../route";
+
+const XLSX_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 const HEADER =
   "household_ref,household_name,contact_email,first_name,last_name,event:ceremony";
@@ -32,6 +36,13 @@ const request = (csv: string) =>
     method: "POST",
     headers: { "content-type": "text/csv" },
     body: csv,
+  });
+
+const xlsxRequest = (bytes: Uint8Array, type: string | null = XLSX_TYPE) =>
+  new Request("http://localhost:3000/api/admin/guests/import", {
+    method: "POST",
+    headers: type ? { "content-type": type } : {},
+    body: bytes as unknown as BodyInit,
   });
 
 const valid = [
@@ -75,6 +86,7 @@ describe("POST /api/admin/guests/import", () => {
     expect(await res.json()).toEqual({
       created: { households: 1, guests: 2, invitations: 1 },
       errors: [],
+      source: { format: "csv" },
     });
     expect(rpc).toHaveBeenCalledWith(
       "import_households",
@@ -115,5 +127,149 @@ describe("POST /api/admin/guests/import", () => {
   it("returns 500 when the database call fails", async () => {
     rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
     expect((await POST(request(valid))).status).toBe(500);
+  });
+});
+
+const HEADER_CELLS = [
+  "household_ref",
+  "household_name",
+  "contact_email",
+  "first_name",
+  "last_name",
+  "event:ceremony",
+];
+const ROWS = [
+  HEADER_CELLS,
+  ["h1", "Test Household", "test@example.com", "Ann", "Example", "yes"],
+  ["h1", "Test Household", "test@example.com", "Bob", "Example", null],
+  ["h2", "Other Household", "not-an-email", "Cy", "Example", null],
+];
+const csvOf = (rows: (string | null)[][]) =>
+  rows.map((r) => r.map((c) => c ?? "").join(",")).join("\n");
+
+describe("POST /api/admin/guests/import with an .xlsx file", () => {
+  const twoSheets = (rows = ROWS, blank = 0) =>
+    makeXlsx({
+      sheets: [
+        { name: "Guest list", rows },
+        { name: "Notes", rows: [["ignored"]] },
+      ],
+      blankRowsBeforeHeader: blank,
+    });
+
+  it("returns the same created counts and errors as the equivalent CSV", async () => {
+    const fromCsv = await (await POST(request(csvOf(ROWS)))).json();
+    const res = await POST(xlsxRequest(twoSheets()));
+    expect(res.status).toBe(200);
+    const fromXlsx = await res.json();
+    expect(fromXlsx.created).toEqual(fromCsv.created);
+    expect(fromXlsx.errors).toEqual(fromCsv.errors);
+    expect(fromXlsx.errors).toEqual([
+      expect.objectContaining({ row: 4, field: "contact_email" }),
+    ]);
+  });
+
+  it("reports the sheet that was read, and always reports source", async () => {
+    const xlsx = await (await POST(xlsxRequest(twoSheets()))).json();
+    expect(xlsx.source).toEqual({
+      format: "xlsx",
+      sheet: { name: "Guest list", index: 1, count: 2 },
+    });
+    const csv = await (await POST(request(valid))).json();
+    expect(csv.source).toEqual({ format: "csv" });
+  });
+
+  it("reports Excel's own row numbers when blank rows come before the header", async () => {
+    const res = await POST(xlsxRequest(twoSheets(ROWS, 3)));
+    const json = await res.json();
+    expect(json.created.households).toBe(1);
+    expect(json.errors).toEqual([
+      expect.objectContaining({ row: 7, field: "contact_email" }),
+    ]);
+  });
+
+  it("treats an unknown or missing content type as CSV", async () => {
+    const csv = new TextEncoder().encode(valid);
+    for (const type of ["application/octet-stream", null]) {
+      const res = await POST(xlsxRequest(csv, type));
+      expect(res.status).toBe(200);
+      expect((await res.json()).source).toEqual({ format: "csv" });
+    }
+  });
+
+  const cases: [string, Uint8Array, string][] = [
+    [
+      "corrupt bytes",
+      new Uint8Array([1, 2, 3, 4]),
+      "This file could not be read. Upload a .csv or .xlsx file.",
+    ],
+    [
+      "an old .xls file",
+      new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0]),
+      "This file could not be read. Upload a .csv or .xlsx file.",
+    ],
+    [
+      "an empty first sheet",
+      makeXlsx({ sheets: [{ name: "Guest list", rows: [] }] }),
+      "The file is empty.",
+    ],
+    [
+      "more than 5,000 rows",
+      makeXlsx({
+        sheets: [
+          {
+            name: "Guest list",
+            rows: [
+              HEADER_CELLS,
+              ...Array.from({ length: 5000 }, () => [
+                "h",
+                "Test",
+                null,
+                "A",
+                "B",
+                null,
+              ]),
+            ],
+          },
+        ],
+      }),
+      "The file has too many rows.",
+    ],
+  ];
+  it.each(cases)(
+    "returns 422 invalid_file for %s",
+    async (_name, bytes, message) => {
+      const res = await POST(xlsxRequest(bytes));
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body.error.code).toBe("invalid_file");
+      expect(body.error.message).toBe(message);
+      expect(rpc).not.toHaveBeenCalled();
+    },
+  );
+
+  it("never repeats cell values in an error", async () => {
+    const rows = [
+      ["household_name", "first_name"],
+      ["Secret Family", "Hidden"],
+    ];
+    const res = await POST(
+      xlsxRequest(makeXlsx({ sheets: [{ name: "S", rows }] })),
+    );
+    expect(res.status).toBe(422);
+    const text = JSON.stringify(await res.json());
+    expect(text).not.toContain("Secret");
+    expect(text).not.toContain("Hidden");
+  });
+
+  it("still enforces the 2 MiB limit on bytes, for both formats", async () => {
+    const big = new Uint8Array(2 * 1024 * 1024 + 1).fill(97);
+    for (const type of [XLSX_TYPE, "text/csv"]) {
+      const res = await POST(xlsxRequest(big, type));
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body.error.code).toBe("invalid_file");
+      expect(body.error.message).toBe("The file is too large.");
+    }
   });
 });

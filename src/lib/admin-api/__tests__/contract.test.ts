@@ -179,6 +179,7 @@ describe("admin API responses parse against the exported schemas", () => {
       importResponseSchema.safeParse({
         created: { households: 1, guests: 2, invitations: 3 },
         errors: [{ row: 4, field: "email", message: "Not valid" }],
+        source: { format: "csv" },
       }).success,
     ).toBe(true);
     expect(

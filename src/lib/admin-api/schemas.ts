@@ -104,5 +104,15 @@ export const importResponseSchema = z.object({
     invitations: z.number().int(),
   }),
   errors: z.array(importErrorSchema),
+  source: z.object({
+    format: z.enum(["csv", "xlsx"]),
+    sheet: z
+      .object({
+        name: z.string(),
+        index: z.number().int(),
+        count: z.number().int(),
+      })
+      .optional(),
+  }),
 });
 export type ImportResponse = z.infer<typeof importResponseSchema>;

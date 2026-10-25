@@ -8,7 +8,7 @@ All handlers run on the server, read secrets only from server environment variab
 | `POST /api/webhooks/resend`             | Resend                            | Svix signature (`RESEND_WEBHOOK_SECRET`)               | Records delivery events                                              |
 | `POST /api/admin/campaigns/[id]/send`   | Admin frontend                    | Signed-in staff session                                | Send a draft campaign now                                            |
 | `POST /api/internal/dispatch-scheduled` | `pg_cron` via `pg_net`            | `Authorization: Bearer CRON_SECRET`                    | Send campaigns that are due                                          |
-| `POST /api/admin/guests/import`         | Admin frontend                    | Signed-in staff session                                | CSV import with per-row errors                                       |
+| `POST /api/admin/guests/import`         | Admin frontend                    | Signed-in staff session                                | CSV or Excel (.xlsx) import with per-row errors                      |
 | `GET /api/admin/exports/[kind]`         | Admin frontend                    | Signed-in staff session                                | `guests`, `responses`, `caterer` as CSV                              |
 
 Admin sign-in, household, and staff-access endpoints are specified in [admin-api.md](./admin-api.md). Guest-facing endpoints (sign-in, RSVP, plus-one, opt-out) are specified in [guest-api.md](./guest-api.md) and use the RPCs in [database-rpc.md](./database-rpc.md).
@@ -45,8 +45,8 @@ Retrying the same request is safe at every step. Non-essential message types exc
 
 ## `POST /api/admin/guests/import`
 
-- Accepts a CSV (one row per guest; household columns repeated per row or keyed by a `household_ref`), plus optional event-slug columns for invitations.
-- Parses and validates (zod), then calls `import_households`. Response: `{ created: { households, guests, invitations }, errors: [{ row, field, message }] }`. A household with any invalid row is not created (no partial households).
+- Accepts a CSV (`Content-Type` `text/csv`, or any type not listed below) or an `.xlsx` file as raw bytes (`Content-Type` `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`; the first sheet is read, limits 2 MiB and 5,000 rows). The sheet is converted to the same CSV text, so validation and errors are identical; see [`specs/002-admin-console-v0/contracts/import-excel.md`](../../002-admin-console-v0/contracts/import-excel.md). The columns: one row per guest, household columns repeated per row or keyed by a `household_ref`, plus optional event-slug columns for invitations.
+- Parses and validates (zod), then calls `import_households`. Response: `{ created: { households, guests, invitations }, errors: [{ row, field, message }], source }`, where `source` is `{ format: "csv" }` or `{ format: "xlsx", sheet: { name, index, count } }`. For Excel, error rows are the sheet's own row numbers. Unreadable, empty, or oversized files (including more than 5,000 rows) return `422 invalid_file`. A household with any invalid row is not created (no partial households).
 
 ## `GET /api/admin/exports/[kind]`
 

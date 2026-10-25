@@ -758,3 +758,53 @@ fieldset.group legend {
     text-align: right;
   }
 }
+
+/* Settings and staff */
+.card-b-divided {
+  border-top: 1px solid var(--border-soft);
+}
+.card-f-start {
+  justify-content: flex-start;
+}
+
+/* Centered pages (sign-in, failed link) */
+.page-center {
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 64px 16px;
+  background: var(--bg);
+}
+.card-narrow {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Import */
+.field-grow {
+  flex: 1 1 320px;
+}
+
+/* Events and answers (user story 4) */
+.card-f-split {
+  justify-content: space-between;
+}
+
+/* Households */
+.field-filter {
+  flex: 0 1 200px;
+}
+.card-f-between {
+  justify-content: space-between;
+}
+.link-strong {
+  font-weight: 600;
+}
+.plain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

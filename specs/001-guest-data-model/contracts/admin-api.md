@@ -40,7 +40,7 @@ Columns and RPC shapes are in [data-model.md](../data-model.md) and [database-rp
 | `POST /api/admin/households`          | Create a household with its guests and its sign-in account                                | 201     | 401, 403, 409 `email_in_use`, 422      |
 | `PATCH /api/admin/households/[id]`    | Change the contact email (updates or unlinks the sign-in account); other fields as needed | 200     | 401, 403, 404, 409 `email_in_use`, 422 |
 | `DELETE /api/admin/households/[id]`   | Delete the household, its guests, and its sign-in account                                 | 204     | 401, 403, 404                          |
-| `POST /api/admin/guests/import`       | CSV import with per-row errors                                                            | 200     | 401, 403, 422                          |
+| `POST /api/admin/guests/import`       | CSV or Excel (.xlsx) import with per-row errors                                           | 200     | 401, 403, 422                          |
 | `POST /api/admin/campaigns/[id]/send` | Send a draft or scheduled campaign now                                                    | 200     | 401, 403, 404, 409                     |
 | `GET /api/admin/exports/[kind]`       | CSV: `guests`, `responses`, `caterer`                                                     | 200     | 401, 403, 404                          |
 | `POST /api/admin/staff`               | Grant planner access (couple only)                                                        | 201     | 401, 403, 409, 422                     |
