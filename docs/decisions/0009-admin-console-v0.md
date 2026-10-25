@@ -1,6 +1,6 @@
 # 0009: Admin console v0
 
-Status: proposed until the couple confirms
+Status: accepted (the couple confirmed on 2026-10-25)
 
 This repository now builds a minimal, deliberately plain admin console for
 Chris, Hannah and their planner. It supersedes the earlier "backend only, build
@@ -43,4 +43,4 @@ temporary: the creative director's version replaces it. The full plan is in
 ## Consequences
 
 - `CLAUDE.md` and `docs/architecture.md` are updated to allow admin screens only.
-- The couple must confirm this decision before its status becomes accepted.
+- The couple confirmed this decision, so its status is accepted.

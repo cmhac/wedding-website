@@ -1,6 +1,6 @@
 # 0010: Excel library for the guest import
 
-Status: proposed until the couple confirms
+Status: accepted (the couple confirmed on 2026-10-25)
 
 The guest import accepts `.xlsx` as well as CSV. The server reads the first
 sheet, turns it into the same text the CSV parser already takes, and runs the
