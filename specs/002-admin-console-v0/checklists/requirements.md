@@ -32,6 +32,6 @@
 ## Notes
 
 - The spec names the existing admin API handoff document and the `/admin` path because they are fixed constraints from the existing system, not implementation choices.
-- Assumed (not asked): the wedding's time zone is not recorded in the repository, so the spec only requires that the time zone be stated; confirm it during planning.
+- Time zone confirmed by the couple: the wedding is in California, so the console uses Pacific time everywhere (see Assumptions).
 - Scope change to confirm: this feature supersedes the repository's "build no screens" rule for admin screens only (FR-033 requires updating the scope note and handoff docs). The project constitution does not forbid screens, but `CLAUDE.md` does.
 - Items are ready for `/speckit-clarify` or `/speckit-plan`.

@@ -274,4 +274,4 @@ Staff change the default RSVP deadline and whether RSVPs are open. The couple (n
 - Guest-facing screens (public site, RSVP) remain out of scope.
 - Real guest data is not used in testing; fixtures and seeds are fake.
 - Accessibility is basic: standard page structure and labelled form fields, keyboard use and no reliance on color alone; a full accessibility review waits for the real design.
-- Dates and times are shown in the wedding's local time zone, with the time zone stated, and entered in the same.
+- The wedding is in California, so every date and time in the console (event times, RSVP deadlines, scheduled sends, history timestamps) is shown and entered in Pacific time (America/Los_Angeles), with the zone named next to each time and daylight saving handled. This holds even though the couple and planner may be using the console from another zone (for example Washington, DC), so a 4:00 PM ceremony is entered as 4:00 PM Pacific. The zone is one configured value used everywhere, not a per-event choice.
