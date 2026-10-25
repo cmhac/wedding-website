@@ -1,3 +1,5 @@
+"use client";
+
 import type { ActionResult } from "@/lib/admin/actions/shared";
 import type { DietaryCategory } from "@/lib/admin/data/menus";
 import { ActionForm } from "./forms/ActionForm";

@@ -1,3 +1,5 @@
+"use client";
+
 import type { StaffRow } from "@/lib/admin/data/settings";
 import { saveSettings } from "@/lib/admin/actions/settings";
 import { savedSettingsMessage } from "@/lib/admin/settings-message";

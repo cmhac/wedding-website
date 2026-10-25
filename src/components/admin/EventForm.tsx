@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { EventRow } from "@/lib/admin/data/events";
 import { Field } from "./primitives";
