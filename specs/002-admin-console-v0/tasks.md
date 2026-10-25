@@ -136,7 +136,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T052 [US1] Create the failure page `src/app/(admin)/auth/error/page.tsx` (research R11): heading, "That sign-in link did not work or has already been used.", and a link to `/admin/sign-in`; add the synchronous component `AuthError` in `src/components/admin/AuthError.tsx` with its test `src/components/admin/__tests__/auth-error.test.tsx` written first
 - [x] T053 [US1] Create the console layout `src/app/(admin)/admin/(console)/layout.tsx`: loads the person with `getShellStaff()`, renders `AdminShell` for staff, and renders `AccessDenied` (no data) for a guest or a signed-in non-staff user; a signed-out visitor is redirected to `/admin/sign-in`
 - [x] T054 [US1] Create the overview page `src/app/(admin)/admin/(console)/page.tsx`: `requireStaffPage()`, `loadOverview()`, render `OverviewView`
-- [ ] T055 [US1] Walk quickstart steps 1 and 2 against local Supabase (`npm run db:reset`, `npm run dev`) and fix anything that does not match; record any gap in `specs/002-admin-console-v0/data-model.md`, "Gaps found"
+- [x] T055 [US1] Walk quickstart steps 1 and 2 against local Supabase (`npm run db:reset`, `npm run dev`) and fix anything that does not match; record any gap in `specs/002-admin-console-v0/data-model.md`, "Gaps found"
 
 **Checkpoint**: A staff member can sign in, see the overview, and sign out; a guest and a signed-out visitor see no data.
 
@@ -168,7 +168,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T068 [US2] Create the households list page `src/app/(admin)/admin/(console)/households/page.tsx`: reads `q`, `invited`, `show`, `page` and `view=duplicates` from `searchParams` (a promise in this Next.js version), loads data, renders the list or the duplicates view
 - [x] T069 [US2] Create `src/app/(admin)/admin/(console)/households/new/page.tsx` rendering `HouseholdCreateForm` (loads event slugs for the "invite to" checkboxes)
 - [x] T070 [US2] Create `src/app/(admin)/admin/(console)/households/[id]/page.tsx` for the `details`, `guests` and `remove` tabs (unknown id shows a not-found message; `confirm` query value selects the confirmation step)
-- [ ] T071 [US2] Walk quickstart step 3 and fix anything that does not match; record gaps in `data-model.md`
+- [x] T071 [US2] Walk quickstart step 3 and fix anything that does not match; record gaps in `data-model.md`
 
 **Checkpoint**: Households and guests can be listed, searched, created, edited and deleted, with every refusal shown in plain words.
 
@@ -196,7 +196,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T080 [P] [US3] Update `docs/admin-api.md`, `specs/001-guest-data-model/contracts/admin-api.md` and `specs/001-guest-data-model/contracts/http-endpoints.md` for the import change (accepts `.xlsx`, `source` field, the new errors); confirm `src/lib/admin-api/__tests__/contract.test.ts` still passes
 - [x] T081 [P] [US3] Create `src/components/admin/forms/ImportForm.tsx` (`"use client"`) and `src/components/admin/ImportResultView.tsx`; make T076 pass
 - [x] T082 [US3] Create the import page `src/app/(admin)/admin/(console)/import/page.tsx` rendering the form and, after upload, the result (the client form holds the result in component state, since the upload goes through the route handler)
-- [ ] T083 [US3] Walk quickstart step 4 with `scripts/sample-guests.csv` and a workbook saved from it (two sheets, one with blank rows before the header) and confirm identical counts and identical error row numbers in both; record anything unexpected in `data-model.md`
+- [x] T083 [US3] Walk quickstart step 4 with `scripts/sample-guests.csv` and a workbook saved from it (two sheets, one with blank rows before the header) and confirm identical counts and identical error row numbers in both; record anything unexpected in `data-model.md`
 
 **Checkpoint**: A guest list can be imported from CSV or Excel with identical results.
 
@@ -227,7 +227,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T095 [P] [US4] Create `src/components/admin/AnswersView.tsx`; make T089 pass
 - [x] T096 [US4] Create the events page `src/app/(admin)/admin/(console)/events/page.tsx` for the `list`, `edit` (with `id`) and `invite` tabs and the `confirm=delete` step
 - [x] T097 [US4] Add the **Answers** tab to `src/app/(admin)/admin/(console)/households/[id]/page.tsx` and its tab link in `HouseholdDetailView`; load `loadHouseholdAnswers` and render `AnswersView`
-- [ ] T098 [US4] Walk quickstart step 5 (including signing in as a guest household and changing the answer, then reading the source on the Answers tab) and fix anything that does not match; record gaps in `data-model.md`
+- [x] T098 [US4] Walk quickstart step 5 (including signing in as a guest household and changing the answer, then reading the source on the Answers tab) and fix anything that does not match; record gaps in `data-model.md`
 
 **Checkpoint**: Events, invitations and answering on behalf work, and every answer shows its true source.
 
@@ -251,7 +251,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T103 [P] [US5] Create `src/lib/admin/actions/menus.ts` (`"use server"`); make T100 pass
 - [x] T104 [P] [US5] Create `src/components/admin/MenuViewBody.tsx`, `AddMenuItemForms.tsx` and `CategoriesView.tsx`; make T101 pass
 - [x] T105 [US5] Create the menus page `src/app/(admin)/admin/(console)/menus/page.tsx` for the `menu`, `add` and `categories` tabs, the `event` query value, and the `confirm=archive&dish=` step
-- [ ] T106 [US5] Walk quickstart step 6 and fix anything that does not match; record gaps in `data-model.md`
+- [x] T106 [US5] Walk quickstart step 6 and fix anything that does not match; record gaps in `data-model.md`
 
 **Checkpoint**: Menus, dishes, dietary tags and categories can be managed, and archiving a dish reports who must choose again.
 
@@ -279,7 +279,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T115 [P] [US6] Create `src/lib/admin/actions/campaigns.ts` (`"use server"`); make T110 pass
 - [x] T116 [P] [US6] Create `src/components/admin/CampaignsListView.tsx`, `AudiencePreviewView.tsx`, `DeliveryView.tsx`, `forms/CampaignEditor.tsx` and `forms/SendCampaignForm.tsx`; make T111 pass
 - [x] T117 [US6] Create the campaigns page `src/app/(admin)/admin/(console)/campaigns/page.tsx` for the `list`, `edit` (with `id`) and `delivery` tabs and the `confirm=send` and `confirm=cancel` steps
-- [ ] T118 [US6] Walk quickstart step 7 (with no template registered, expecting the "no template" message and nothing sent) and fix anything that does not match; record gaps in `data-model.md`
+- [x] T118 [US6] Walk quickstart step 7 (with no template registered, expecting the "no template" message and nothing sent) and fix anything that does not match; record gaps in `data-model.md`
 
 **Checkpoint**: Campaigns can be built, previewed, sent or cancelled, and delivery is visible per household.
 
@@ -304,7 +304,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T124 [P] [US7] Create `src/components/admin/ReportsView.tsx` and `HistoryView.tsx`; make T121 pass
 - [x] T125 [US7] Create the reports page `src/app/(admin)/admin/(console)/reports/page.tsx` (tabs `dish`, `diet`, `conflicts`, `exports`; `event` query value)
 - [x] T126 [US7] Create the history page `src/app/(admin)/admin/(console)/history/page.tsx` (tabs `log`, `rsvp`, `meals`; `from`, `to`, `by` and `page`)
-- [ ] T127 [US7] Walk quickstart step 8 and fix anything that does not match; record gaps in `data-model.md`
+- [x] T127 [US7] Walk quickstart step 8 and fix anything that does not match; record gaps in `data-model.md`
 
 **Checkpoint**: Reports, downloads and history all work, and history shows who did what.
 
@@ -330,7 +330,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T134 [P] [US8] Create `src/lib/admin/actions/settings.ts` (`"use server"`); make T130 pass
 - [x] T135 [P] [US8] Create `src/components/admin/SettingsView.tsx` and `forms/StaffForms.tsx`; make T131 pass
 - [x] T136 [US8] Create the settings page `src/app/(admin)/admin/(console)/settings/page.tsx` (shows staff controls only when the session role is `couple`; the handlers still enforce this)
-- [ ] T137 [US8] Walk quickstart step 9 as both roles and fix anything that does not match; record gaps in `data-model.md`
+- [x] T137 [US8] Walk quickstart step 9 as both roles and fix anything that does not match; record gaps in `data-model.md`
 
 **Checkpoint**: Settings and staff access work, with planner restrictions enforced.
 
@@ -346,7 +346,7 @@ Single Next.js project, as in `plan.md`: pages under `src/app/(admin)/`, compone
 - [x] T141 [P] Confirm every page is wrapped by an auth check close to its data (`requireStaffPage`, `requireCouplePage` or the layout's guest handling), and every action goes through `runAdminAction` (research R2); add a test `src/lib/admin/__tests__/guards-coverage.test.ts` that lists the files in `src/lib/admin/actions` and fails if one exports an action that does not call `runAdminAction`
 - [x] T142 Run `npm run build` with the placeholder variables from `.github/workflows/ci.yml` and fix any build error (the CI build step now runs because the app has pages)
 - [x] T143 Update `README.md` (Commands and Layout) and the Commands block of `CLAUDE.md` if anything changed; confirm `CLAUDE.md`, `docs/architecture.md` and `docs/admin-api.md` no longer say "no screens" anywhere (search for "no screen", "no user interface" and "backend only"), and mark decisions 0009 and 0010 "accepted" once the couple confirms
-- [ ] T144 Run the full quickstart walkthrough from `quickstart.md` start to finish as the SC-009 rehearsal, and list every gap and awkward spot in `data-model.md`, "Gaps found", with a proposed follow-up each
+- [x] T144 Run the full quickstart walkthrough from `quickstart.md` start to finish as the SC-009 rehearsal, and list every gap and awkward spot in `data-model.md`, "Gaps found", with a proposed follow-up each
 - [ ] T145 Before merging, tell the couple in plain words that this branch contains one database migration (the `actor_kind` column on the meal history table) and that merging to `main` applies it to the hosted database automatically; wait for their yes, do not push it by hand (`AGENTS.md`), and name the migration file and the test `360-meal-history-actor-kind` in the pull request description
 - [ ] T146 Before pushing run `npm run format:check && npm run lint && npm run type-check && npm test` (and `npm run test:db`, which now includes the new meal-history test), then update the wireframes' `design/README.md` if any screen's behavior intentionally differs from them and say how
 
