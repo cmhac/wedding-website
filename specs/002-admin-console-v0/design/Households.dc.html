@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Households</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html" aria-current="page">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">Households</h1>
+<p class="page-sub">118 households, 231 guests</p>
+</div>
+<div class="row">
+<a href="Import.dc.html" class="btn">Import</a>
+<button type="button" class="btn btn-primary">New household</button>
+</div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Household views">
+<button type="button" role="tab" class="tab" aria-selected="{{ isAll }}" onClick="{{ showAll }}">All households</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isDupes }}" onClick="{{ showDupes }}">Possible duplicates (2)</button>
+</div>
+
+<sc-if value="{{ isAll }}" hint-placeholder-val="{{ true }}">
+<section class="card">
+<div class="card-b">
+<form class="row-end">
+<div class="field" style="flex: 1 1 260px">
+<label for="q">Search</label>
+<input id="q" type="search" placeholder="Household or guest name" value="exam">
+</div>
+<div class="field" style="flex: 0 1 200px">
+<label for="ev">Invited to</label>
+<select id="ev"><option>Any event</option><option>Welcome party</option><option>Rehearsal</option><option>Ceremony and reception</option></select>
+</div>
+<div class="field" style="flex: 0 1 200px">
+<label for="pg">Show</label>
+<select id="pg"><option>Everyone</option><option>Required answers outstanding</option><option>Optional answers outstanding</option><option>Meals outstanding</option><option>Delivery problem</option><option>Paper only (no email)</option></select>
+</div>
+<button type="button" class="btn">Apply</button>
+</form>
+</div>
+<div class="table-wrap">
+<table class="table">
+<thead>
+<tr><th scope="col">Household</th><th scope="col">Guests</th><th scope="col">Contact email</th><th scope="col">Outstanding</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="HouseholdDetail.dc.html" class="strong" style="font-weight: 600">The Examples</a><div class="table-sub">1 plus-one allowed</div></td>
+<td>Sam Example<br>Alex Example</td>
+<td>household@example.com</td>
+<td>2 required<div class="table-sub">2 optional, 2 meals</div></td>
+<td></td>
+<td class="right"><a href="HouseholdDetail.dc.html" class="btn btn-sm">Open</a></td>
+</tr>
+<tr>
+<td><a href="HouseholdDetail.dc.html" style="font-weight: 600">Example, Jordan</a></td>
+<td>Jordan Example</td>
+<td>jordan@example.com</td>
+<td><span class="muted">All answered</span></td>
+<td><span class="badge badge-bad">Delivery problem</span></td>
+<td class="right"><a href="HouseholdDetail.dc.html" class="btn btn-sm">Open</a></td>
+</tr>
+<tr>
+<td><a href="HouseholdDetail.dc.html" style="font-weight: 600">Exampleton family</a><div class="table-sub">1 plus-one allowed</div></td>
+<td>Casey Exampleton<br>Robin Exampleton<br><span class="muted">Unnamed plus-one</span></td>
+<td><span class="muted">None</span></td>
+<td>3 required</td>
+<td><span class="badge badge-warn">Paper only</span> <span class="badge">Possible duplicate</span></td>
+<td class="right"><a href="HouseholdDetail.dc.html" class="btn btn-sm">Open</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="card-f" style="justify-content: space-between"><span class="muted small">3 of 118 households match</span><span class="muted small">Page 1 of 1</span></div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isDupes }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Possible duplicates</h2></div>
+<div class="card-b"><p class="alert alert-info">These are flagged only. Nothing is merged automatically. Open each household and edit or delete one by hand.</p></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Household A</th><th scope="col">Household B</th><th scope="col">Why flagged</th></tr></thead>
+<tbody>
+<tr><td><a href="HouseholdDetail.dc.html">Exampleton family</a></td><td><a href="HouseholdDetail.dc.html">The Exampletons</a></td><td>Same name once spacing and capitals are ignored</td></tr>
+<tr><td><a href="HouseholdDetail.dc.html">Sample Family</a></td><td><a href="HouseholdDetail.dc.html">Sample, Pat</a></td><td>Same address</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'all' };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+isAll: t === 'all',
+isDupes: t === 'dupes',
+showAll: () => this.setState({ tab: 'all' }),
+showDupes: () => this.setState({ tab: 'dupes' }),
+};
+}
+}
+</script>
+</body>
+</html>

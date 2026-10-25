@@ -157,7 +157,7 @@ Rules enforced by trigger (FR-034):
 
 `archive_dish(dish_id)` (staff RPC) writes `meal_selection_history` rows for every affected selection, deletes those selections, sets `archived_at`, and returns the affected guests so the couple can ask them again (FR-038).
 
-**meal_selection_history**: `id bigint identity`, `guest_id null set null`, `course_id null set null`, `old_dish_id`, `new_dish_id`, `reason text` (`changed`, `declined`, `dish_archived`), `changed_by`, `changed_at`. No names.
+**meal_selection_history**: `id bigint identity`, `guest_id null set null`, `course_id null set null`, `old_dish_id`, `new_dish_id`, `reason text` (`changed`, `declined`, `dish_archived`), `changed_by`, `actor_kind` (nullable; `couple`, `planner`, `guest` or `system`; filled by the same helper as `rsvp_history`; empty for rows written before it was added), `changed_at`. No names.
 
 ### Messaging
 

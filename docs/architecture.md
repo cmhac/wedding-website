@@ -6,20 +6,20 @@ records answers to all seven decisions below, accepted on 2026-10-19.
 
 ## Goals
 
-- Public wedding website (details, schedule, travel, registry, etc.), designed and built by the couple's designer. This repository covers the backend only, exposed through a guest API and an admin API; it builds no screens or visual components (public, guest-facing, or admin)
-- RSVP management for guests, and an admin interface for Chris and Hannah and their planner (the screens are built separately)
+- Public wedding website (details, schedule, travel, registry, etc.), designed and built by the couple's designer. This repository covers the backend, exposed through a guest API and an admin API. It builds no public or guest-facing screens or visual components. The one exception is a minimal, temporary v0 admin console for staff ([`specs/002-admin-console-v0`](../specs/002-admin-console-v0/plan.md)), which uses those same APIs
+- RSVP management for guests, and an admin interface for Chris and Hannah and their planner (a minimal v0 console is built here; the designer's screens replace it later)
 - Guest communications (invitations, reminders, updates) by email
 - Magic-link sign-in for everyone: the couple (admin) and guests
 
 ## Components
 
-| Concern                  | Tool                                                    | Lives in                        |
-| ------------------------ | ------------------------------------------------------- | ------------------------------- |
-| Frontend                 | Next.js, React, Tailwind (screens are built separately) | `src/app`, `src/components`     |
-| Database, auth, API      | Supabase                                                | `supabase/`, `src/lib/supabase` |
-| Backend logic            | Next.js server code and/or Supabase Edge Functions      | `src/app`, `supabase/functions` |
-| Email content and design | Supplied separately (React Email suggested)             | `emails/`                       |
-| Email delivery           | Resend                                                  | `src/lib/email`                 |
+| Concern                  | Tool                                                                                                                              | Lives in                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Frontend                 | Next.js, React; Tailwind for the designer's screens. Only the temporary v0 admin console is built here, with one plain stylesheet | `src/app`, `src/components`     |
+| Database, auth, API      | Supabase                                                                                                                          | `supabase/`, `src/lib/supabase` |
+| Backend logic            | Next.js server code and/or Supabase Edge Functions                                                                                | `src/app`, `supabase/functions` |
+| Email content and design | Supplied separately (React Email suggested)                                                                                       | `emails/`                       |
+| Email delivery           | Resend                                                                                                                            | `src/lib/email`                 |
 
 ## Decisions
 

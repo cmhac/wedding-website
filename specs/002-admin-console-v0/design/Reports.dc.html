@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reports and exports</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html" aria-current="page">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">Reports</h1>
+<p class="page-sub">Meals, dietary needs and downloads.</p>
+</div>
+<div class="field"><label for="ev">Event</label><select id="ev" style="width: 260px"><option>Ceremony and reception</option><option>Welcome party</option><option>Rehearsal</option></select></div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Reports">
+<button type="button" role="tab" class="tab" aria-selected="{{ isDish }}" onClick="{{ showDish }}">Dish totals</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isDiet }}" onClick="{{ showDiet }}">Dietary list</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isConflicts }}" onClick="{{ showConflicts }}">Meal conflicts (1)</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isExports }}" onClick="{{ showExports }}">Exports</button>
+</div>
+
+<sc-if value="{{ isDish }}" hint-placeholder-val="{{ true }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Dish totals</h2><span class="muted small">Attending guests only</span></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Course</th><th scope="col">Dish</th><th scope="col" class="num">Chosen</th></tr></thead>
+<tbody>
+<tr><td>Main</td><td><strong>Grilled salmon</strong></td><td class="num">41</td></tr>
+<tr><td>Main</td><td><strong>Mushroom risotto</strong></td><td class="num">29</td></tr>
+<tr><td>Main</td><td><strong>Herb-crusted chicken</strong></td><td class="num">24</td></tr>
+<tr><td>Main</td><td class="muted">Not yet chosen</td><td class="num">4</td></tr>
+<tr><td>Dessert</td><td><strong>Lemon tart</strong></td><td class="num">52</td></tr>
+<tr><td>Dessert</td><td class="muted">Not yet chosen</td><td class="num">46</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isDiet }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Dietary list</h2><span class="muted small">Attending guests with restrictions</span></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Guest</th><th scope="col">Household</th><th scope="col">Restriction</th><th scope="col">Severity</th><th scope="col">Notes</th></tr></thead>
+<tbody>
+<tr><td><strong>Alex Example</strong></td><td><a href="HouseholdDetail.dc.html">The Examples</a></td><td>Tree nuts</td><td><span class="badge badge-bad">Allergy</span></td><td>Carries an EpiPen</td></tr>
+<tr><td><strong>Sam Example</strong></td><td><a href="HouseholdDetail.dc.html">The Examples</a></td><td>Vegetarian</td><td><span class="badge">Preference</span></td><td></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isConflicts }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Meal conflicts</h2><span class="muted small">Chosen dishes that clash with a restriction</span></div>
+<div class="card-b"><p class="alert alert-warn">To resolve: ask the household, or change the choice for them. A change you make is recorded as staff.</p></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Guest</th><th scope="col">Household</th><th scope="col">Chosen dish</th><th scope="col">Conflicts with</th><th scope="col">Choice made by</th></tr></thead>
+<tbody>
+<tr><td><strong>Alex Example</strong></td><td><a href="HouseholdDetail.dc.html">The Examples</a></td><td>Herb-crusted chicken</td><td><span class="badge badge-bad">Allergy</span> Tree nuts</td><td>Guest</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isExports }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">CSV exports</h2></div>
+<div class="card-b"><p class="alert alert-warn">Exports contain personal data. Keep downloaded files private.</p></div>
+<div class="table-wrap">
+<table class="table">
+<tbody>
+<tr><td><strong>Guests</strong><div class="table-sub">Every household and guest, including addresses</div></td><td class="right"><a href="Reports.dc.html" class="btn btn-sm" download>Download guests.csv</a></td></tr>
+<tr><td><strong>Responses</strong><div class="table-sub">Every answer and who gave it</div></td><td class="right"><a href="Reports.dc.html" class="btn btn-sm" download>Download responses.csv</a></td></tr>
+<tr><td><strong>Caterer</strong><div class="table-sub">Dish totals and dietary needs per event</div></td><td class="right"><a href="Reports.dc.html" class="btn btn-sm" download>Download caterer.csv</a></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'dish' };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+isDish: t === 'dish',
+isDiet: t === 'diet',
+isConflicts: t === 'conflicts',
+isExports: t === 'exports',
+showDish: () => this.setState({ tab: 'dish' }),
+showDiet: () => this.setState({ tab: 'diet' }),
+showConflicts: () => this.setState({ tab: 'conflicts' }),
+showExports: () => this.setState({ tab: 'exports' }),
+};
+}
+}
+</script>
+</body>
+</html>

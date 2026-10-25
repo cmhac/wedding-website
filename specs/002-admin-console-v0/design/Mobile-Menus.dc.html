@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Menus (phone)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="m">
+<header class="m-top">
+<div class="brand"><span class="brand-mark">W</span><span class="m-title">Menus</span></div>
+<button type="button" class="btn" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}">Menu</button>
+</header>
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<nav class="m-drawer" aria-label="Main">
+<a href="Mobile-Overview.dc.html">Overview</a>
+<a href="Mobile-Households.dc.html">Households</a>
+<a href="Mobile-Import.dc.html">Import</a>
+<a href="Mobile-Events.dc.html">Events</a>
+<a href="Mobile-Menus.dc.html" aria-current="page">Menus</a>
+<a href="Mobile-Campaigns.dc.html">Campaigns</a>
+<a href="Mobile-Reports.dc.html">Reports</a>
+<a href="Mobile-History.dc.html">History</a>
+<a href="Mobile-Settings.dc.html">Settings</a>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Mobile-SignIn.dc.html">Sign out</a></div>
+</nav>
+</sc-if>
+
+<main class="m-body">
+<div class="m-head">
+<h1 class="page-title">Menus</h1>
+<p class="page-sub">Courses, dishes and dietary tags for each event.</p>
+</div>
+<div class="field"><label for="ev">Event</label><select id="ev"><option>Ceremony and reception</option><option>Welcome party</option><option>Rehearsal</option></select></div>
+<div class="field"><label for="st">Menu status</label><select id="st"><option>Draft (staff only)</option><option selected>Published (guests can choose)</option><option>Closed (guests can view only)</option></select></div>
+
+<div class="tabs" role="tablist" aria-label="Menu sections">
+<button type="button" role="tab" class="tab" aria-selected="{{ isMenu }}" onClick="{{ showMenu }}">Menu</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isAdd }}" onClick="{{ showAdd }}">Add</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isCats }}" onClick="{{ showCats }}">Dietary categories</button>
+</div>
+
+<sc-if value="{{ isMenu }}" hint-placeholder-val="{{ true }}">
+<div class="stack">
+<sc-if value="{{ archiveAsk }}" hint-placeholder-val="{{ false }}">
+<div class="alert alert-error stack-sm" role="alertdialog" aria-label="Confirm archive">
+<strong>Archive Herb-crusted chicken?</strong>
+<span>It leaves the menu and clears 24 guests' choices (kept in history). Those guests will need to choose again.</span>
+<button type="button" class="btn btn-danger" onClick="{{ archiveDo }}">Archive dish</button>
+<button type="button" class="btn" onClick="{{ archiveCancel }}">Cancel</button>
+</div>
+</sc-if>
+<sc-if value="{{ archiveDone }}" hint-placeholder-val="{{ false }}">
+<p class="alert alert-ok" role="status">Archived. 24 guests in 15 households need to choose again. <a href="Mobile-Households.dc.html">Open those households</a></p>
+</sc-if>
+
+<section class="card">
+<div class="card-h"><div><h2 class="card-t">Main</h2><span class="muted small">Guests must choose one</span></div></div>
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><span class="m-name">Grilled salmon</span><span class="m-sub">41 chose</span></div>
+<span class="m-sub">Seasonal greens, lemon butter</span>
+<div class="m-badges"><span class="badge badge-bad">Contains fish</span></div>
+<div class="m-actions"><button type="button" class="btn btn-sm">Edit</button><button type="button" class="btn btn-sm btn-quiet">Archive</button></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Mushroom risotto</span><span class="m-sub">29 chose</span></div>
+<span class="m-sub">Parmesan, herbs</span>
+<div class="m-badges"><span class="badge badge-ok">Vegetarian</span><span class="badge badge-bad">Contains dairy</span></div>
+<div class="m-actions"><button type="button" class="btn btn-sm">Edit</button><button type="button" class="btn btn-sm btn-quiet">Archive</button></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Herb-crusted chicken</span><span class="m-sub">24 chose</span></div>
+<span class="m-sub">Roasted vegetables</span>
+<div class="m-badges"><span class="badge badge-bad">Contains tree nuts</span></div>
+<div class="m-actions"><button type="button" class="btn btn-sm">Edit</button><button type="button" class="btn btn-sm btn-quiet" onClick="{{ archiveAskNow }}">Archive</button></div>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name muted"><s>Beef short rib</s></span><span class="badge">Archived</span></div>
+<div class="m-actions"><button type="button" class="btn btn-sm btn-quiet">Restore</button></div>
+</div>
+</div>
+</section>
+
+<section class="card">
+<div class="card-h"><div><h2 class="card-t">Dessert</h2><span class="muted small">Choice is optional</span></div></div>
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><span class="m-name">Lemon tart</span><span class="m-sub">52 chose</span></div>
+<span class="m-sub">Fresh berries</span>
+<div class="m-badges"><span class="badge badge-bad">Contains dairy</span><span class="badge badge-bad">Contains gluten</span></div>
+<div class="m-actions"><button type="button" class="btn btn-sm">Edit</button><button type="button" class="btn btn-sm btn-quiet">Archive</button></div>
+</div>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAdd }}" hint-placeholder-val="{{ false }}">
+<div class="stack">
+<form class="card">
+<div class="card-h"><h2 class="card-t">Add a course</h2></div>
+<div class="card-b stack">
+<div class="field"><label for="cn">Course name</label><input id="cn" type="text"></div>
+<div class="field"><label for="co">Order</label><input id="co" type="number" value="3" class="w-sm"></div>
+<label class="check"><input type="checkbox" checked> <span>Guests must choose a dish</span></label>
+</div>
+<div class="card-f"><button type="button" class="btn btn-primary">Add course</button></div>
+</form>
+<form class="card">
+<div class="card-h"><h2 class="card-t">Add a dish</h2></div>
+<div class="card-b stack">
+<div class="field"><label for="dc">Course</label><select id="dc"><option>Main</option><option>Dessert</option></select></div>
+<div class="field"><label for="dn">Dish name</label><input id="dn" type="text"></div>
+<div class="field"><label for="dd">Description</label><textarea id="dd" rows="2"></textarea></div>
+<fieldset class="group"><legend>Dietary tags</legend>
+<label class="check"><input type="checkbox"> <span>Vegetarian (suitable for)</span></label>
+<label class="check"><input type="checkbox"> <span>Tree nuts (contains)</span></label>
+<label class="check"><input type="checkbox"> <span>Dairy (contains)</span></label>
+</fieldset>
+</div>
+<div class="card-f"><button type="button" class="btn btn-primary">Add dish</button></div>
+</form>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCats }}" hint-placeholder-val="{{ false }}">
+<div class="stack">
+<section class="card">
+<div class="m-list">
+<div class="m-item"><div class="m-line"><span class="m-name">Vegetarian</span><span class="badge badge-ok">Diet</span></div><span class="m-sub">Suitable for</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Vegan</span><span class="badge badge-ok">Diet</span></div><span class="m-sub">Suitable for</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Tree nuts</span><span class="badge badge-bad">Allergen</span></div><span class="m-sub">Contains</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Shellfish</span><span class="badge badge-bad">Allergen</span></div><span class="m-sub">Contains</span></div>
+</div>
+</section>
+<form class="card">
+<div class="card-h"><h2 class="card-t">Add a category</h2></div>
+<div class="card-b stack">
+<div class="field"><label for="ln">Label</label><input id="ln" type="text"></div>
+<div class="field"><label for="lk">Kind</label><select id="lk"><option>Diet</option><option>Allergen</option></select></div>
+</div>
+<div class="card-f"><button type="button" class="btn btn-primary">Add category</button></div>
+</form>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1100}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'menu', archive: 'none', menu: false };
+}
+renderVals() {
+const t = this.state.tab;
+const a = this.state.archive;
+return {
+menuOpen: this.state.menu,
+toggleMenu: () => this.setState({ menu: !this.state.menu }),
+isMenu: t === 'menu',
+isAdd: t === 'add',
+isCats: t === 'cats',
+archiveAsk: a === 'ask',
+archiveDone: a === 'done',
+showMenu: () => this.setState({ tab: 'menu' }),
+showAdd: () => this.setState({ tab: 'add' }),
+showCats: () => this.setState({ tab: 'cats' }),
+archiveAskNow: () => this.setState({ archive: 'ask' }),
+archiveDo: () => this.setState({ archive: 'done' }),
+archiveCancel: () => this.setState({ archive: 'none' }),
+};
+}
+}
+</script>
+</body>
+</html>

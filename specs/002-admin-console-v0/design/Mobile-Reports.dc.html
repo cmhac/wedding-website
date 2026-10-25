@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reports (phone)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="m">
+<header class="m-top">
+<div class="brand"><span class="brand-mark">W</span><span class="m-title">Reports</span></div>
+<button type="button" class="btn" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}">Menu</button>
+</header>
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<nav class="m-drawer" aria-label="Main">
+<a href="Mobile-Overview.dc.html">Overview</a>
+<a href="Mobile-Households.dc.html">Households</a>
+<a href="Mobile-Import.dc.html">Import</a>
+<a href="Mobile-Events.dc.html">Events</a>
+<a href="Mobile-Menus.dc.html">Menus</a>
+<a href="Mobile-Campaigns.dc.html">Campaigns</a>
+<a href="Mobile-Reports.dc.html" aria-current="page">Reports</a>
+<a href="Mobile-History.dc.html">History</a>
+<a href="Mobile-Settings.dc.html">Settings</a>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Mobile-SignIn.dc.html">Sign out</a></div>
+</nav>
+</sc-if>
+
+<main class="m-body">
+<div class="m-head">
+<h1 class="page-title">Reports</h1>
+<p class="page-sub">Meals, dietary needs and downloads.</p>
+</div>
+<div class="field"><label for="ev">Event</label><select id="ev"><option>Ceremony and reception</option><option>Welcome party</option><option>Rehearsal</option></select></div>
+
+<div class="tabs" role="tablist" aria-label="Reports">
+<button type="button" role="tab" class="tab" aria-selected="{{ isDish }}" onClick="{{ showDish }}">Dish totals</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isDiet }}" onClick="{{ showDiet }}">Dietary</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isConflicts }}" onClick="{{ showConflicts }}">Conflicts (1)</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isExports }}" onClick="{{ showExports }}">Exports</button>
+</div>
+
+<sc-if value="{{ isDish }}" hint-placeholder-val="{{ true }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Dish totals</h2><span class="muted small">Attending guests only</span></div>
+<div class="m-list">
+<div class="m-item"><div class="m-line"><span class="m-name">Grilled salmon</span><strong>41</strong></div><span class="m-sub">Main</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Mushroom risotto</span><strong>29</strong></div><span class="m-sub">Main</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Herb-crusted chicken</span><strong>24</strong></div><span class="m-sub">Main</span></div>
+<div class="m-item"><div class="m-line"><span class="muted">Not yet chosen</span><strong>4</strong></div><span class="m-sub">Main</span></div>
+<div class="m-item"><div class="m-line"><span class="m-name">Lemon tart</span><strong>52</strong></div><span class="m-sub">Dessert</span></div>
+<div class="m-item"><div class="m-line"><span class="muted">Not yet chosen</span><strong>46</strong></div><span class="m-sub">Dessert</span></div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isDiet }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Dietary list</h2><span class="muted small">Attending guests with restrictions</span></div>
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><span class="m-name">Alex Example</span><span class="badge badge-bad">Allergy</span></div>
+<span>Tree nuts · Carries an EpiPen</span>
+<a href="Mobile-HouseholdDetail.dc.html" class="m-sub">The Examples</a>
+</div>
+<div class="m-item">
+<div class="m-line"><span class="m-name">Sam Example</span><span class="badge">Preference</span></div>
+<span>Vegetarian</span>
+<a href="Mobile-HouseholdDetail.dc.html" class="m-sub">The Examples</a>
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isConflicts }}" hint-placeholder-val="{{ false }}">
+<div class="stack">
+<p class="alert alert-warn">To resolve: ask the household, or change the choice for them. A change you make is recorded as staff.</p>
+<section class="card">
+<div class="m-list">
+<div class="m-item">
+<div class="m-line"><span class="m-name">Alex Example</span><span class="badge badge-bad">Allergy</span></div>
+<div class="m-kv"><span>Chose</span><span>Herb-crusted chicken</span></div>
+<div class="m-kv"><span>Conflicts with</span><span>Tree nuts</span></div>
+<div class="m-kv"><span>Choice made by</span><span>Guest</span></div>
+<a href="Mobile-HouseholdDetail.dc.html" class="btn">Open The Examples</a>
+</div>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isExports }}" hint-placeholder-val="{{ false }}">
+<div class="stack">
+<p class="alert alert-warn">Exports contain personal data. Keep downloaded files private.</p>
+<section class="card">
+<div class="m-list">
+<div class="m-item"><span class="m-name">Guests</span><span class="m-sub">Every household and guest, including addresses</span><a href="Mobile-Reports.dc.html" class="btn" download>Download guests.csv</a></div>
+<div class="m-item"><span class="m-name">Responses</span><span class="m-sub">Every answer and who gave it</span><a href="Mobile-Reports.dc.html" class="btn" download>Download responses.csv</a></div>
+<div class="m-item"><span class="m-name">Caterer</span><span class="m-sub">Dish totals and dietary needs per event</span><a href="Mobile-Reports.dc.html" class="btn" download>Download caterer.csv</a></div>
+</div>
+</section>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'dish', menu: false };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+menuOpen: this.state.menu,
+toggleMenu: () => this.setState({ menu: !this.state.menu }),
+isDish: t === 'dish',
+isDiet: t === 'diet',
+isConflicts: t === 'conflicts',
+isExports: t === 'exports',
+showDish: () => this.setState({ tab: 'dish' }),
+showDiet: () => this.setState({ tab: 'diet' }),
+showConflicts: () => this.setState({ tab: 'conflicts' }),
+showExports: () => this.setState({ tab: 'exports' }),
+};
+}
+}
+</script>
+</body>
+</html>

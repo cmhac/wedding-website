@@ -4,6 +4,7 @@ export type FakeOptions = {
   staffRole?: "couple" | "planner" | null;
   household?: boolean;
   authError?: boolean;
+  displayName?: string;
 };
 
 export function fakeSupabase(options: FakeOptions = {}) {
@@ -13,7 +14,11 @@ export function fakeSupabase(options: FakeOptions = {}) {
     const row =
       table === "staff"
         ? options.staffRole
-          ? { user_id: options.user?.id, role: options.staffRole }
+          ? {
+              user_id: options.user?.id,
+              role: options.staffRole,
+              display_name: options.displayName ?? "Test Staff",
+            }
           : null
         : table === "households"
           ? options.household

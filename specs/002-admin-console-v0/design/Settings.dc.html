@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings and staff</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html" aria-current="page">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">Settings</h1>
+<p class="page-sub">RSVP rules and who can use this console.</p>
+</div>
+</div>
+
+<div class="stack-sm">
+<p class="muted small">Design review: preview as</p>
+<div class="tabs" role="tablist" aria-label="Preview as">
+<button type="button" role="tab" class="tab" aria-selected="{{ isCouple }}" onClick="{{ showCouple }}">Couple</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isPlanner }}" onClick="{{ showPlanner }}">Planner</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isErrors }}" onClick="{{ showErrors }}">Error messages</button>
+</div>
+</div>
+
+<sc-if value="{{ notErrors }}" hint-placeholder-val="{{ true }}">
+<div class="stack">
+<form class="card">
+<div class="card-h"><h2 class="card-t">RSVP settings</h2></div>
+<div class="card-b stack">
+<p class="alert alert-ok" role="status">Saved. Default deadline is May 1, 11:59 PM PT.</p>
+<div class="field"><label for="dd">Default RSVP deadline (Pacific time)</label><input id="dd" type="text" value="2027-05-01 23:59" class="w-md"><span class="hint">Used when neither the household nor the event sets its own.</span></div>
+<label class="check"><input type="checkbox" checked> <span><strong>RSVPs are open</strong><br><span class="muted">Turning this off stops guests changing answers. Staff can still record answers.</span></span></label>
+</div>
+<div class="card-f"><button type="button" class="btn btn-primary">Save settings</button></div>
+</form>
+
+<section class="card">
+<div class="card-h"><h2 class="card-t">Staff access</h2><sc-if value="{{ isPlanner }}" hint-placeholder-val="{{ false }}"><span class="badge">View only</span></sc-if></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+<tbody>
+<tr><td><strong>Chris</strong> <span class="muted">(you)</span></td><td><span class="badge badge-staff">Couple</span></td><td></td></tr>
+<tr><td><strong>Hannah</strong></td><td><span class="badge badge-staff">Couple</span></td><td class="right"><sc-if value="{{ isCouple }}" hint-placeholder-val="{{ true }}"><button type="button" class="btn btn-sm btn-quiet">Remove access</button></sc-if></td></tr>
+<tr><td><strong>Planner (sample)</strong></td><td><span class="badge">Planner</span></td><td class="right"><sc-if value="{{ isCouple }}" hint-placeholder-val="{{ true }}"><button type="button" class="btn btn-sm btn-quiet">Remove access</button></sc-if></td></tr>
+</tbody>
+</table>
+</div>
+<sc-if value="{{ isCouple }}" hint-placeholder-val="{{ true }}">
+<form class="card-b row-end" style="border-top: 1px solid var(--border-soft)">
+<div class="field" style="flex: 1 1 200px"><label for="pn">Planner name</label><input id="pn" type="text"></div>
+<div class="field" style="flex: 1 1 240px"><label for="pe">Planner email</label><input id="pe" type="email"></div>
+<button type="button" class="btn btn-primary">Give planner access</button>
+</form>
+</sc-if>
+<sc-if value="{{ isPlanner }}" hint-placeholder-val="{{ false }}">
+<div class="card-f" style="justify-content: flex-start"><span class="muted">Only the couple can add or remove staff.</span></div>
+</sc-if>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isErrors }}" hint-placeholder-val="{{ false }}">
+<div class="stack-sm">
+<p class="alert alert-error" role="alert">The last couple member cannot be removed.</p>
+<p class="alert alert-error" role="alert">You are signed in as a planner. Only the couple can change staff access.</p>
+<p class="alert alert-error" role="alert">Your session has ended. <a href="Main.dc.html">Sign in again</a>.</p>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { view: 'couple' };
+}
+renderVals() {
+const v = this.state.view;
+return {
+isCouple: v === 'couple',
+isPlanner: v === 'planner',
+isErrors: v === 'errors',
+notErrors: v !== 'errors',
+showCouple: () => this.setState({ view: 'couple' }),
+showPlanner: () => this.setState({ view: 'planner' }),
+showErrors: () => this.setState({ view: 'errors' }),
+};
+}
+}
+</script>
+</body>
+</html>

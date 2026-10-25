@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>History</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html" aria-current="page">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">History</h1>
+<p class="page-sub">Read only. Times are Pacific (PT). Names are never stored in history.</p>
+</div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="History">
+<button type="button" role="tab" class="tab" aria-selected="{{ isLog }}" onClick="{{ showLog }}">Change log</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isRsvp }}" onClick="{{ showRsvp }}">RSVP history</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isMeals }}" onClick="{{ showMeals }}">Meal choices</button>
+</div>
+
+<form class="card">
+<div class="card-b row-end">
+<div class="field"><label for="from">From (PT)</label><input id="from" type="text" placeholder="2026-10-01" style="width: 160px"></div>
+<div class="field"><label for="to">To (PT)</label><input id="to" type="text" placeholder="2026-10-25" style="width: 160px"></div>
+<div class="field"><label for="who">Changed by</label><select id="who" style="width: 180px"><option>Anyone</option><option>Chris</option><option>Hannah</option><option>Planner</option><option>Guest</option><option>System</option></select></div>
+<button type="button" class="btn">Apply</button>
+</div>
+</form>
+
+<sc-if value="{{ isLog }}" hint-placeholder-val="{{ true }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Change log</h2><span class="muted small">Shows which fields changed, never their values</span></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">When</th><th scope="col">Who</th><th scope="col">What</th><th scope="col">Action</th><th scope="col">Fields changed</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">Oct 25, 10:41 AM</td><td>Hannah (couple)</td><td>Household</td><td><span class="badge">Update</span></td><td>staff notes, plus-one allowance</td></tr>
+<tr><td class="nowrap">Oct 25, 10:12 AM</td><td>Chris (couple)</td><td>Campaign</td><td><span class="badge">Update</span></td><td>audience</td></tr>
+<tr><td class="nowrap">Oct 24, 4:55 PM</td><td>Guest</td><td>Invitation</td><td><span class="badge">Update</span></td><td>status, responded at</td></tr>
+<tr><td class="nowrap">Oct 24, 9:00 AM</td><td>System</td><td>Household</td><td><span class="badge">Update</span></td><td>delivery problem</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isRsvp }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">RSVP history</h2></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">When</th><th scope="col">Guest</th><th scope="col">Event</th><th scope="col">Change</th><th scope="col">Changed by</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">Oct 3, 2:14 PM</td><td><strong>Sam Example</strong></td><td>Ceremony and reception</td><td>Pending to Attending</td><td><span class="badge badge-staff">Recorded by staff</span> Hannah</td></tr>
+<tr><td class="nowrap">Sep 28, 9:03 AM</td><td><strong>Alex Example</strong></td><td>Welcome party</td><td>Pending to Declined</td><td>Guest</td></tr>
+<tr><td class="nowrap">Sep 20, 6:30 PM</td><td class="muted">Removed guest</td><td>Rehearsal</td><td>Attending to Declined</td><td>Guest</td></tr>
+</tbody>
+</table>
+</div>
+<div class="card-f" style="justify-content: flex-start"><span class="muted small">Guests deleted from the list show as "Removed guest".</span></div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isMeals }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Meal choice history</h2></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">When</th><th scope="col">Guest</th><th scope="col">Course</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Reason</th><th scope="col">Changed by</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">Oct 3, 2:15 PM</td><td><strong>Sam Example</strong></td><td>Dessert</td><td class="muted">None</td><td>Lemon tart</td><td><span class="badge">Changed</span></td><td><span class="badge badge-staff">Recorded by staff</span> Hannah</td></tr>
+<tr><td class="nowrap">Oct 1, 8:00 AM</td><td><strong>Alex Example</strong></td><td>Main</td><td>Beef short rib</td><td class="muted">None</td><td><span class="badge badge-warn">Dish archived</span></td><td>Chris (couple)</td></tr>
+<tr><td class="nowrap">Sep 30, 1:12 PM</td><td><strong>Alex Example</strong></td><td>Main</td><td>Grilled salmon</td><td class="muted">None</td><td><span class="badge">Declined</span></td><td>Guest</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'log' };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+isLog: t === 'log',
+isRsvp: t === 'rsvp',
+isMeals: t === 'meals',
+showLog: () => this.setState({ tab: 'log' }),
+showRsvp: () => this.setState({ tab: 'rsvp' }),
+showMeals: () => this.setState({ tab: 'meals' }),
+};
+}
+}
+</script>
+</body>
+</html>

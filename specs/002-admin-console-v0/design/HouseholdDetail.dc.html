@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Household detail</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html" aria-current="page">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div>
+<p class="crumbs"><a href="Households.dc.html">Households</a> / The Examples</p>
+<div class="page-head">
+<div>
+<h1 class="page-title">The Examples</h1>
+<p class="page-sub">household@example.com · 2 guests · 1 plus-one allowed</p>
+</div>
+<div class="row"><span class="badge badge-ok">Email deliverable</span></div>
+</div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Household sections">
+<button type="button" role="tab" class="tab" aria-selected="{{ isDetails }}" onClick="{{ showDetails }}">Details</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isGuests }}" onClick="{{ showGuests }}">Guests (3)</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isAnswers }}" onClick="{{ showAnswers }}">Invitations and answers</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isRemove }}" onClick="{{ showRemove }}">Remove</button>
+</div>
+
+<sc-if value="{{ isDetails }}" hint-placeholder-val="{{ true }}">
+<form class="card">
+<div class="card-b stack">
+<p class="alert alert-error" role="alert">Example error: that contact email already belongs to another household. Nothing was changed.</p>
+<div class="grid2">
+<div class="field"><label for="dn">Display name</label><input id="dn" type="text" value="The Examples"><span class="hint">Used for the greeting and the envelope.</span></div>
+<div class="field"><label for="ce">Contact email</label><input id="ce" type="email" value="household@example.com"><span class="hint">Also their sign-in address. Leave empty for a paper-only household.</span></div>
+<div class="field"><label for="po">Plus-one allowance</label><input id="po" type="number" min="0" value="1" class="w-sm"><span class="hint">Cannot go below the plus-ones already named (0).</span></div>
+<div class="field"><label for="dl">RSVP deadline override (Pacific time)</label><input id="dl" type="text" placeholder="Not set"><span class="hint">Currently using Sep 1, 11:59 PM PT.</span></div>
+<div class="field span-all"><label for="ad">Mailing address</label><textarea id="ad" rows="3">123 Sample Street
+Exampleville, CA 90000</textarea></div>
+<div class="field"><label for="mc">Message from the household</label><textarea id="mc" rows="3" readonly>Looking forward to it. Can we sit near the dance floor?</textarea></div>
+<div class="field"><label for="sn">Staff notes</label><textarea id="sn" rows="3">Friends of Hannah. Confirm plus-one name by phone.</textarea><span class="hint">Never shown to guests.</span></div>
+</div>
+<label class="check"><input type="checkbox"> <span>Household turned off reminders. Essential messages still go out.</span></label>
+<p class="muted">Delivery problem: <strong style="color: var(--text)">No</strong>. Set automatically when an email bounces and cleared when the contact email changes.</p>
+</div>
+<div class="card-f"><button type="button" class="btn">Discard changes</button><button type="button" class="btn btn-primary">Save household</button></div>
+</form>
+</sc-if>
+
+<sc-if value="{{ isGuests }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Guests</h2><button type="button" class="btn btn-sm btn-primary">Add guest</button></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Name</th><th scope="col">Dietary needs</th><th scope="col">Notes</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+<tbody>
+<tr><td><strong>Sam Example</strong><div class="table-sub">sam@example.com</div></td><td>Vegetarian <span class="badge">Preference</span></td><td></td><td class="right"><button type="button" class="btn btn-sm">Edit</button> <button type="button" class="btn btn-sm btn-quiet">Remove</button></td></tr>
+<tr><td><strong>Alex Example</strong></td><td>Tree nuts <span class="badge badge-bad">Allergy</span></td><td>Carries an EpiPen</td><td class="right"><button type="button" class="btn btn-sm">Edit</button> <button type="button" class="btn btn-sm btn-quiet">Remove</button></td></tr>
+<tr><td><em class="muted">Unnamed plus-one</em> <span class="badge">Plus-one</span></td><td></td><td></td><td class="right"><button type="button" class="btn btn-sm">Name this guest</button></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isAnswers }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Invitations and answers</h2></div>
+<div class="card-b"><p class="alert alert-info">Every answer shows who gave it. Answers entered by staff are marked <span class="badge badge-staff">Recorded by staff</span> with the staff member's name. Staff can record answers any time, even after the deadline.</p></div>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col">Guest and event</th><th scope="col">Answer</th><th scope="col">Answered by</th><th scope="col">Meals</th><th scope="col">Record on their behalf</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>Sam Example</strong><div class="table-sub">Ceremony and reception</div></td>
+<td><span class="badge badge-ok">Attending</span></td>
+<td><span class="badge badge-staff">Recorded by staff</span><div class="table-sub">Hannah · Oct 3, 2:14 PM PT</div></td>
+<td>Main: Mushroom risotto<div class="table-sub">Dessert: Lemon tart (recorded by staff)</div></td>
+<td><div class="row" style="gap: 8px"><select aria-label="Answer for Sam Example, ceremony" style="width: 130px"><option>Attending</option><option>Declined</option><option>Pending</option></select><button type="button" class="btn btn-sm">Save</button></div></td>
+</tr>
+<tr>
+<td><strong>Alex Example</strong><div class="table-sub">Ceremony and reception</div></td>
+<td><span class="badge badge-ok">Attending</span></td>
+<td>Guest<div class="table-sub">Sep 28, 9:02 AM PT</div></td>
+<td>Main: Grilled salmon<div class="table-sub">Dessert: not chosen</div></td>
+<td><div class="row" style="gap: 8px"><select aria-label="Answer for Alex Example, ceremony" style="width: 130px"><option>Attending</option><option>Declined</option><option>Pending</option></select><button type="button" class="btn btn-sm">Save</button></div></td>
+</tr>
+<tr>
+<td><strong>Sam Example</strong><div class="table-sub">Welcome party</div></td>
+<td><span class="badge badge-warn">Pending</span></td>
+<td><span class="muted">Not answered</span></td>
+<td><span class="muted">No meals</span></td>
+<td><div class="row" style="gap: 8px"><select aria-label="Answer for Sam Example, welcome party" style="width: 130px"><option>Pending</option><option>Attending</option><option>Declined</option></select><button type="button" class="btn btn-sm">Save</button></div></td>
+</tr>
+<tr>
+<td><strong>Alex Example</strong><div class="table-sub">Welcome party</div></td>
+<td><span class="badge">Declined</span></td>
+<td>Guest<div class="table-sub">Sep 28, 9:03 AM PT</div></td>
+<td><span class="muted">No meals</span></td>
+<td><div class="row" style="gap: 8px"><select aria-label="Answer for Alex Example, welcome party" style="width: 130px"><option>Declined</option><option>Attending</option><option>Pending</option></select><button type="button" class="btn btn-sm">Save</button></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="card-f" style="justify-content: space-between">
+<span class="muted small">Declining clears that guest's meal choices for the event. History keeps them.</span>
+<div class="row-end">
+<select aria-label="Invite this household to another event" style="width: 200px"><option>Invite to Rehearsal</option><option>Invite to Welcome party</option></select>
+<button type="button" class="btn">Invite</button>
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isRemove }}" hint-placeholder-val="{{ false }}">
+<section class="danger-zone">
+<div class="card-b stack">
+<div>
+<h2 class="card-t">Delete this household</h2>
+<p class="muted" style="margin-top: 4px; max-width: 70ch">Deletes the household, its guests, all answers and meal choices, and its sign-in account. History keeps the change without names. This cannot be undone.</p>
+</div>
+<sc-if value="{{ notConfirming }}" hint-placeholder-val="{{ true }}">
+<div><button type="button" class="btn btn-danger" onClick="{{ askConfirm }}">Delete The Examples</button></div>
+</sc-if>
+<sc-if value="{{ confirming }}" hint-placeholder-val="{{ false }}">
+<div class="alert alert-error stack-sm" role="alertdialog" aria-label="Confirm delete">
+<label for="cf" style="font-weight: 600">Type the household name to confirm</label>
+<input id="cf" type="text" placeholder="The Examples" style="max-width: 320px; background: var(--surface); color: var(--text)">
+<div class="row"><button type="button" class="btn btn-danger">Delete permanently</button><button type="button" class="btn" onClick="{{ cancelConfirm }}">Cancel</button></div>
+</div>
+</sc-if>
+</div>
+</section>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'details', confirming: false };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+isDetails: t === 'details',
+isGuests: t === 'guests',
+isAnswers: t === 'answers',
+isRemove: t === 'remove',
+confirming: this.state.confirming,
+notConfirming: !this.state.confirming,
+showDetails: () => this.setState({ tab: 'details' }),
+showGuests: () => this.setState({ tab: 'guests' }),
+showAnswers: () => this.setState({ tab: 'answers' }),
+showRemove: () => this.setState({ tab: 'remove' }),
+askConfirm: () => this.setState({ confirming: true }),
+cancelConfirm: () => this.setState({ confirming: false }),
+};
+}
+}
+</script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 # Contract: Admin API
 
-The interface for whoever builds the admin screens. **This repository builds no admin UI and no other visual components**; the couple, the planner, and any admin frontend use the interface below. It is published as `docs/admin-api.md` and enforced by a contract test (the endpoint table must match the route handlers on disk).
+The interface for whoever builds admin screens. **A minimal v0 admin console now exists in this repository; it is temporary and uses this same interface.** Guest-facing screens and the public site are still not built here; the couple, the planner, the v0 console, and any later admin frontend use the interface below. It is published as `docs/admin-api.md` and enforced by a contract test (the endpoint table must match the route handlers on disk).
 
-Assumptions to confirm: the admin frontend is built outside this feature (likely by the designer), is served from the same origin as this Next.js app, and serves `/admin`, where staff land after signing in. Until it exists, the couple can operate through the command-line scripts (`scripts/import-guests.ts`, `scripts/create-staff-user.ts`) and the database dashboard.
+Assumptions to confirm: the admin frontend (the v0 console, or a later one) is served from the same origin as this Next.js app, and serves `/admin`, where staff land after signing in. The couple can also operate through the command-line scripts (`scripts/import-guests.ts`, `scripts/create-staff-user.ts`) and the database dashboard.
 
 All route handlers return JSON (exports return CSV) and use the error shape from [guest-api.md](./guest-api.md): `{ "error": { "code", "message", "issues?" } }`. Every endpoint requires a signed-in staff session (`401` without a session, `403` for a guest), except where noted. Staff are the couple and the planner, who have identical access, except that only the couple can use the staff-access endpoints.
 
@@ -40,7 +40,7 @@ Columns and RPC shapes are in [data-model.md](../data-model.md) and [database-rp
 | `POST /api/admin/households`          | Create a household with its guests and its sign-in account                                | 201     | 401, 403, 409 `email_in_use`, 422      |
 | `PATCH /api/admin/households/[id]`    | Change the contact email (updates or unlinks the sign-in account); other fields as needed | 200     | 401, 403, 404, 409 `email_in_use`, 422 |
 | `DELETE /api/admin/households/[id]`   | Delete the household, its guests, and its sign-in account                                 | 204     | 401, 403, 404                          |
-| `POST /api/admin/guests/import`       | CSV import with per-row errors                                                            | 200     | 401, 403, 422                          |
+| `POST /api/admin/guests/import`       | CSV or Excel (.xlsx) import with per-row errors                                           | 200     | 401, 403, 422                          |
 | `POST /api/admin/campaigns/[id]/send` | Send a draft or scheduled campaign now                                                    | 200     | 401, 403, 404, 409                     |
 | `GET /api/admin/exports/[kind]`       | CSV: `guests`, `responses`, `caterer`                                                     | 200     | 401, 403, 404                          |
 | `POST /api/admin/staff`               | Grant planner access (couple only)                                                        | 201     | 401, 403, 409, 422                     |

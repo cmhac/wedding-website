@@ -1,0 +1,40 @@
+/* Admin console v0: phone layout.
+   Builds on admin.css (same tokens, buttons, badges, fields). Only the
+   phone-specific shell and list patterns live here. */
+.m { width: 100%; min-height: 100%; background: var(--bg); display: flex; flex-direction: column; }
+.m-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; min-height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.m-top .brand { padding: 0; gap: 8px; }
+.m-title { font-weight: 650; font-size: 16px; }
+.m-drawer { background: var(--surface); border-bottom: 1px solid var(--border); padding: 4px 12px 12px; display: flex; flex-direction: column; }
+.m-drawer .nav-h { padding: 12px 8px 2px; }
+.m-drawer a { display: flex; align-items: center; min-height: 44px; padding: 0 10px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text); }
+.m-drawer a[aria-current="page"] { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.m-drawer .who { margin-top: 8px; }
+.m-body { padding: 16px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+.m-head .page-title { font-size: 22px; }
+.m-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.m-stats .stat { padding: 14px; }
+.m-stats .stat-n { font-size: 24px; }
+.m .tabs { flex-wrap: nowrap; overflow-x: auto; }
+.m .tab { white-space: nowrap; flex: 0 0 auto; }
+
+/* List rows replace wide tables */
+.m-list { display: flex; flex-direction: column; }
+.m-item { padding: 14px 16px; border-bottom: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 6px; }
+.m-item:last-child { border-bottom: 0; }
+.m-line { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.m-name { font-weight: 600; }
+.m-sub { color: var(--muted); font-size: 13px; }
+.m-kv { display: flex; justify-content: space-between; gap: 12px; }
+.m-kv span:first-child { color: var(--muted); }
+.m-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Touch-friendly controls and no zoom on focus */
+.m .btn, .m .btn-sm { min-height: 44px; }
+.m input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), .m select, .m textarea { font-size: 16px; min-height: 44px; }
+.m .check input { width: 22px; height: 22px; margin-top: 0; }
+.m .check { gap: 12px; min-height: 44px; align-items: center; }
+.m-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.m-actions .btn { flex: 1 1 140px; }
+.m .card-f { justify-content: stretch; }
+.m .card-f .btn { flex: 1 1 120px; }

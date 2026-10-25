@@ -94,8 +94,40 @@ describe("response schemas", () => {
       importResponseSchema.safeParse({
         created: { households: 1, guests: 2, invitations: 3 },
         errors: [{ row: 4, field: "email", message: "Invalid" }],
+        source: { format: "csv" },
       }).success,
     ).toBe(true);
+  });
+
+  it("parses an xlsx source with its sheet", () => {
+    const r = importResponseSchema.safeParse({
+      created: { households: 1, guests: 2, invitations: 3 },
+      errors: [],
+      source: {
+        format: "xlsx",
+        sheet: { name: "Guest list", index: 1, count: 2 },
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("requires source", () => {
+    expect(
+      importResponseSchema.safeParse({
+        created: { households: 1, guests: 2, invitations: 3 },
+        errors: [],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects an unknown source format", () => {
+    expect(
+      importResponseSchema.safeParse({
+        created: { households: 1, guests: 2, invitations: 3 },
+        errors: [],
+        source: { format: "ods" },
+      }).success,
+    ).toBe(false);
   });
 
   it("parses the shared error body", () => {
@@ -113,6 +145,32 @@ describe("seed-shaped ids", () => {
     expect(
       staffUserIdSchema.safeParse("10000000-0000-0000-0000-000000000002")
         .success,
+    ).toBe(true);
+  });
+});
+
+describe("staff schemas", () => {
+  it("accepts a grant request and rejects a bad email", async () => {
+    const { grantStaffRequestSchema, grantStaffResponseSchema } =
+      await import("../staff-schemas");
+    expect(
+      grantStaffRequestSchema.safeParse({
+        email: "pat@example.com",
+        display_name: "Pat",
+      }).success,
+    ).toBe(true);
+    expect(
+      grantStaffRequestSchema.safeParse({ email: "x", display_name: "Pat" })
+        .success,
+    ).toBe(false);
+    expect(
+      grantStaffResponseSchema.safeParse({
+        staff: {
+          user_id: "10000000-0000-4000-8000-000000000002",
+          role: "planner",
+          display_name: "Pat",
+        },
+      }).success,
     ).toBe(true);
   });
 });

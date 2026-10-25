@@ -10,3 +10,6 @@ src/types/database.ts
 # Spec Kit generated files (hash-tracked by .specify/integrations/*.manifest.json)
 .specify
 .claude/skills/speckit-*
+
+# Design canvas exports (kept verbatim so they match the canvas)
+specs/*/design

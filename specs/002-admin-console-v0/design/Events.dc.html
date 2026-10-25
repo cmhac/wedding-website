@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Events and invitations</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="app">
+<aside class="side">
+<div class="brand"><span class="brand-mark">W</span><div><strong>Wedding admin</strong><div class="muted small">v0 test console</div></div></div>
+<nav class="nav" aria-label="Main">
+<p class="nav-h">Guests</p>
+<a href="Overview.dc.html">Overview</a>
+<a href="Households.dc.html">Households</a>
+<a href="Import.dc.html">Import</a>
+<p class="nav-h">Events</p>
+<a href="Events.dc.html" aria-current="page">Events</a>
+<a href="Menus.dc.html">Menus</a>
+<p class="nav-h">Communicate</p>
+<a href="Campaigns.dc.html">Campaigns</a>
+<p class="nav-h">Insights</p>
+<a href="Reports.dc.html">Reports</a>
+<a href="History.dc.html">History</a>
+<p class="nav-h">Admin</p>
+<a href="Settings.dc.html">Settings</a>
+</nav>
+<div class="who"><strong>Chris</strong><span class="muted small">Couple</span><a href="Main.dc.html" class="small">Sign out</a></div>
+</aside>
+
+<main class="main">
+<div class="page-head">
+<div>
+<h1 class="page-title">Events</h1>
+<p class="page-sub">All times are Pacific time (PT).</p>
+</div>
+<button type="button" class="btn btn-primary" onClick="{{ showForm }}">New event</button>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Event sections">
+<button type="button" role="tab" class="tab" aria-selected="{{ isList }}" onClick="{{ showList }}">All events (3)</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isForm }}" onClick="{{ showForm }}">Add or edit event</button>
+<button type="button" role="tab" class="tab" aria-selected="{{ isInvite }}" onClick="{{ showInvite }}">Invite guests</button>
+</div>
+
+<sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+<section class="card">
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th scope="col" class="num">Order</th><th scope="col">Event</th><th scope="col">Starts</th><th scope="col">Venue</th><th scope="col">Type</th><th scope="col">Deadline</th><th scope="col" class="num">Invited</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td><strong>Welcome party</strong><div class="table-sub">welcome-party · wedding-weekend</div></td><td>Fri, 6:00 PM PT</td><td>[Venue name]</td><td><span class="badge">Optional</span></td><td>Default</td><td class="num">96</td><td class="right"><button type="button" class="btn btn-sm" onClick="{{ showForm }}">Edit</button> <a href="Menus.dc.html" class="btn btn-sm btn-quiet">Menu</a></td></tr>
+<tr><td class="num">2</td><td><strong>Rehearsal</strong><div class="table-sub">rehearsal · wedding-weekend</div></td><td>Fri, 4:00 PM PT</td><td>[Venue name]</td><td><span class="badge">Optional</span></td><td>Default</td><td class="num">34</td><td class="right"><button type="button" class="btn btn-sm" onClick="{{ showForm }}">Edit</button> <a href="Menus.dc.html" class="btn btn-sm btn-quiet">Menu</a></td></tr>
+<tr><td class="num">3</td><td><strong>Ceremony and reception</strong><div class="table-sub">ceremony · wedding-weekend</div></td><td>Sat, 4:00 PM PT</td><td>[Venue name]</td><td><span class="badge badge-staff">Required</span></td><td>Default</td><td class="num">142</td><td class="right"><button type="button" class="btn btn-sm" onClick="{{ showForm }}">Edit</button> <a href="Menus.dc.html" class="btn btn-sm btn-quiet">Menu</a></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isForm }}" hint-placeholder-val="{{ false }}">
+<form class="card">
+<div class="card-h"><h2 class="card-t">New event</h2></div>
+<div class="card-b stack">
+<div class="grid2">
+<div class="field"><label for="n">Name</label><input id="n" type="text"></div>
+<div class="field"><label for="s">Short key</label><input id="s" type="text" placeholder="after-party"><span class="hint">Used by the site and by imports. Cannot change later.</span></div>
+<div class="field"><label for="d">Starts (Pacific time)</label><input id="d" type="text" placeholder="2027-06-12 16:00"></div>
+<div class="field"><label for="v">Venue</label><input id="v" type="text"></div>
+<div class="field"><label for="g">Group</label><input id="g" type="text" placeholder="wedding-weekend"></div>
+<div class="field"><label for="o">Display order</label><input id="o" type="number" value="4" class="w-sm"></div>
+<div class="field"><label for="dl">Own RSVP deadline (Pacific time)</label><input id="dl" type="text" placeholder="Optional"><span class="hint">Leave empty to use the default deadline.</span></div>
+</div>
+<label class="check"><input type="checkbox"> <span>Required event. Guests invited to it must answer.</span></label>
+</div>
+<div class="card-f"><button type="button" class="btn" onClick="{{ showList }}">Cancel</button><button type="button" class="btn btn-primary">Save event</button></div>
+</form>
+</sc-if>
+
+<sc-if value="{{ isInvite }}" hint-placeholder-val="{{ false }}">
+<section class="card">
+<div class="card-h"><h2 class="card-t">Invite guests to an event</h2></div>
+<div class="card-b stack">
+<p class="alert alert-info">Adds invitations only. Nothing is emailed. Existing invitations and answers are left alone.</p>
+<div class="grid2">
+<div class="stack">
+<div class="field"><label for="ie">Event</label><select id="ie"><option>Rehearsal</option><option>Welcome party</option><option>Ceremony and reception</option></select></div>
+<div class="field"><label for="gs">Find guests</label><input id="gs" type="search" placeholder="Search by name"></div>
+</div>
+<fieldset class="group">
+<legend>Guests (3 selected)</legend>
+<label class="check"><input type="checkbox" checked> <span>Sam Example <span class="muted">The Examples</span></span></label>
+<label class="check"><input type="checkbox" checked> <span>Alex Example <span class="muted">The Examples</span></span></label>
+<label class="check"><input type="checkbox" checked> <span>Jordan Example <span class="muted">Example, Jordan</span></span></label>
+<label class="check"><input type="checkbox"> <span>Casey Exampleton <span class="muted">Exampleton family</span></span></label>
+</fieldset>
+</div>
+<p class="alert alert-ok" role="status">Example result: 2 added, 1 already invited, 0 not found.</p>
+</div>
+<div class="card-f"><button type="button" class="btn btn-primary">Invite 3 guests</button></div>
+</section>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tab: 'list' };
+}
+renderVals() {
+const t = this.state.tab;
+return {
+isList: t === 'list',
+isForm: t === 'form',
+isInvite: t === 'invite',
+showList: () => this.setState({ tab: 'list' }),
+showForm: () => this.setState({ tab: 'form' }),
+showInvite: () => this.setState({ tab: 'invite' }),
+};
+}
+}
+</script>
+</body>
+</html>

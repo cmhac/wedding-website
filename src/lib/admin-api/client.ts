@@ -1,5 +1,14 @@
 import type { z } from "zod";
 import {
+  sendCampaignResponseSchema,
+  type SendCampaignResponse,
+} from "./campaign-schemas";
+import {
+  grantStaffResponseSchema,
+  type GrantStaffRequest,
+  type GrantStaffResponse,
+} from "./staff-schemas";
+import {
   createHouseholdResponseSchema,
   errorBodySchema,
   importResponseSchema,
@@ -94,3 +103,43 @@ export const importGuests = (csv: string) =>
     headers: { "content-type": "text/csv" },
     body: csv,
   }) as Promise<ApiResult<ImportResponse>>;
+
+const XLSX_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+/** Sends a `.xlsx` or `.csv` file's bytes; the type comes from the file name. */
+export const importGuestsFile = (file: File) =>
+  call(importResponseSchema, "/api/admin/guests/import", {
+    method: "POST",
+    headers: {
+      "content-type": file.name.toLowerCase().endsWith(".xlsx")
+        ? XLSX_TYPE
+        : "text/csv",
+    },
+    body: file,
+  }) as Promise<ApiResult<ImportResponse>>;
+
+/** Asks for a staff sign-in link. Always 202 with a neutral message. */
+export const requestStaffSignIn = (email: string) =>
+  call(null, "/api/admin/sign-in", json("POST", { email })) as Promise<
+    ApiResult<null>
+  >;
+
+export const sendCampaign = (id: string) =>
+  call(
+    sendCampaignResponseSchema,
+    `/api/admin/campaigns/${encodeURIComponent(id)}/send`,
+    { method: "POST" },
+  ) as Promise<ApiResult<SendCampaignResponse>>;
+
+export const grantStaff = (body: GrantStaffRequest) =>
+  call(
+    grantStaffResponseSchema,
+    "/api/admin/staff",
+    json("POST", body),
+  ) as Promise<ApiResult<GrantStaffResponse>>;
+
+export const revokeStaff = (userId: string) =>
+  call(null, `/api/admin/staff/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  }) as Promise<ApiResult<null>>;

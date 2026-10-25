@@ -1,6 +1,6 @@
 # Admin API
 
-> **No user interface is provided.** This repository builds no screens, forms, or visual components: no public site, no guest screens (including the RSVP), and no admin screens. The couple's designer builds those against this document. Until admin screens exist, the couple can use the command-line scripts (`scripts/import-guests.ts`, `scripts/create-staff-user.ts`) and the database dashboard.
+> **A minimal v0 admin console exists.** It is temporary, and it uses these same interfaces (direct data access under row-level security plus the route handlers below); it adds no other back door. Guest-facing screens, including the RSVP, and the public site are still not provided here; the designer builds those against [guest-api.md](./guest-api.md). The couple can also use the command-line scripts (`scripts/import-guests.ts`, `scripts/create-staff-user.ts`) and the database dashboard.
 
 This document is published from `specs/001-guest-data-model/contracts/admin-api.md`. A contract test (`src/lib/admin-api/__tests__/contract.test.ts`) fails if the route table below stops matching the route handlers under `src/app/api/admin/`.
 
@@ -45,7 +45,7 @@ Columns and RPC shapes are in `specs/001-guest-data-model/data-model.md` and `sp
 | `POST /api/admin/households`          | Create a household with its guests and its sign-in account                                | 201     | 401, 403, 409 `email_in_use`, 422      |
 | `PATCH /api/admin/households/[id]`    | Change the contact email (updates or unlinks the sign-in account); other fields as needed | 200     | 401, 403, 404, 409 `email_in_use`, 422 |
 | `DELETE /api/admin/households/[id]`   | Delete the household, its guests, and its sign-in account                                 | 204     | 401, 403, 404                          |
-| `POST /api/admin/guests/import`       | CSV import with per-row errors                                                            | 200     | 401, 403, 422                          |
+| `POST /api/admin/guests/import`       | CSV or Excel (.xlsx) import with per-row errors                                           | 200     | 401, 403, 422                          |
 | `POST /api/admin/campaigns/[id]/send` | Send a draft or scheduled campaign now                                                    | 200     | 401, 403, 404, 409                     |
 | `GET /api/admin/exports/[kind]`       | CSV: `guests`, `responses`, `caterer`                                                     | 200     | 401, 403, 404                          |
 | `POST /api/admin/staff`               | Grant planner access (couple only)                                                        | 201     | 401, 403, 409, 422                     |
@@ -80,7 +80,11 @@ Errors use `{ "error": { "code", "message", "issues?" } }`. Codes the route hand
 Typed wrappers in `src/lib/admin-api/client.ts` resolve to `{ ok: true, data }` or `{ ok: false, status, error }` and never throw. Shapes are the zod schemas in `src/lib/admin-api/schemas.ts`, `campaign-schemas.ts`, and `staff-schemas.ts`.
 
 ```ts
-import { createHousehold, importGuests } from "@/lib/admin-api/client";
+import {
+  createHousehold,
+  importGuests,
+  importGuestsFile,
+} from "@/lib/admin-api/client";
 
 const created = await createHousehold({
   display_name: "The Examples",
@@ -95,8 +99,23 @@ if (!created.ok && created.error.code === "email_in_use") {
 const result = await importGuests(csvText);
 if (result.ok) {
   // result.data.created and result.data.errors (row, field, message)
+  // result.data.source is { format: "csv" } here
+}
+
+// An Excel file chosen in a file input (the first sheet is read):
+const fromExcel = await importGuestsFile(fileInput.files[0]);
+if (fromExcel.ok && fromExcel.data.source.format === "xlsx") {
+  // source.sheet is { name, index: 1, count }, for "the first of 2 sheets"
 }
 ```
+
+### Importing from Excel
+
+`POST /api/admin/guests/import` takes either the CSV text (`Content-Type: text/csv`, or any type not listed here, as before) or the raw bytes of an `.xlsx` file (`Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`). Excel files are read from the first sheet, with the same columns as the CSV, and then go through the same validation. Limits: 2 MiB upload and 5,000 rows.
+
+- Every response now has `source`: `{ "format": "csv" }`, or `{ "format": "xlsx", "sheet": { "name", "index": 1, "count" } }` where `count` is the number of sheets in the file.
+- Error `row` numbers are the sheet's own row numbers (the header is the first non-blank row; blank rows above it are counted).
+- Whole-file failures are `422 invalid_file` with one of: "This file could not be read. Upload a .csv or .xlsx file." (corrupt, an older `.xls`, or password-protected), "The file is empty." (no rows, or an empty first sheet), "The file has too many rows.", or "The file is too large.". Messages never repeat cell values.
 
 Direct data access (section 1) uses the Supabase client, for example `supabase.rpc("staff_households")` or `supabase.rpc("invite", { guest_ids, event_id })`, under the staff session.
 
