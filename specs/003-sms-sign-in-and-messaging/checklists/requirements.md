@@ -31,6 +31,6 @@
 
 ## Notes
 
-- 2026-10-29 update: the couple decided text sign-in uses the same magic link as email, either channel alone is enough, United States numbers only (everyone else uses email), and sign-in messages move to the repository's own hooks and templates, retiring custom SMTP. Two [NEEDS CLARIFICATION] markers remain: whether Canadian numbers count as allowed (FR-028) and how consent for campaign texts is captured (FR-029).
+- 2026-10-29 rewrite: the couple chose personal long-lived invite links sent by email and text (opening one signs the household in), sign-in by email or US phone number with the same kind of link, staying signed in indefinitely, one shared account per household with several emails and phone numbers, and sign-in messages from the repository's own hooks and templates (retiring custom SMTP). Three [NEEDS CLARIFICATION] markers remain: the default cut-off for personal links (FR-005), how text consent is captured (FR-017), and whether Canadian numbers count (FR-031). Staff staying on email only (FR-012) is an assumption to confirm.
 - The Assumptions section names Supabase and the sending providers on purpose: they are dependencies the couple already chose or must choose, not implementation design.
 - The consent and carrier-registration facts come from vendor and law-firm summaries, not primary sources. They are flagged in Assumptions as needing confirmation before the first campaign text.
