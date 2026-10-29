@@ -62,7 +62,9 @@ the response time does not reveal whether an address is known.
   made for the verified domain), `RESEND_WEBHOOK_SECRET`, `EMAIL_FROM`
   (`Chris & Hannah <hello@updates.hannahandchris.wedding>`) and `CRON_SECRET`.
   They take effect after the next production redeploy.
-- Supabase Auth sends its sign-in emails through Resend over custom SMTP (host
+- Stopgap until the `magic_link` template exists (then the Send Email hook
+  replaces it; see `docs/decisions/0004-auth-emails-via-resend.md`): Supabase
+  Auth sends its sign-in emails through Resend over custom SMTP (host
   `smtp.resend.com`, port 465, username `resend`, the sending-only key as the
   password), from `Chris & Hannah <hello@updates.hannahandchris.wedding>`. The
   hourly cap on emails sent is 30 (it was 2 with the built-in sender). The

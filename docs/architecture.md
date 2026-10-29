@@ -36,7 +36,9 @@ Each is recorded as a file in `docs/decisions/`. The answers are in
    CLI defaults.
 3. **Auth emails through Resend.** _(accepted: 0004)_ Supabase sends magic-link emails itself. To
    send them (and their designs) through Resend, configure custom SMTP under
-   `[auth.email.smtp]` or use an auth email hook.
+   `[auth.email.smtp]` or use an auth email hook. The hook is the long-term
+   choice (the emails must match the site and be coded in this repository);
+   custom SMTP runs in production only as a stopgap until the template exists.
 4. **Where email sends run.** _(accepted: 0005)_ Next.js route handlers vs. Supabase Edge Functions
    (the latter suit database-triggered sends).
 5. **Household/party model.** _(accepted: 0006)_ One invite per household vs. per person, plus-ones,

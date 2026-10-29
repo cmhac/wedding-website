@@ -12,10 +12,9 @@ export type EmailTemplate<P> = (
   props: P,
 ) => RenderedEmail | Promise<RenderedEmail>;
 // emails/index.ts
-export default {/* save_the_date: ..., invitation: ..., */} satisfies Record<
-  string,
-  EmailTemplate<never>
->;
+export default {
+  /* save_the_date: ..., invitation: ..., */
+} satisfies Record<string, EmailTemplate<never>>;
 ```
 
 `src/lib/email/templates.ts` provides `getTemplate(key)`, which returns the template or throws `template_missing`. A template that throws surfaces as `template_failed`. A template is a pure function: no network or database access, no logging, and no `from` address (the sender comes from `EMAIL_FROM`).
@@ -57,6 +56,10 @@ type CampaignProps = {
 - `POST /api/admin/campaigns/[id]/send` returns `409 template_missing` before any message row is created.
 - The scheduled dispatch leaves the campaign `scheduled`, records `campaigns.last_error_code = 'template_missing'`, and processes the other due campaigns.
 - The Send Email hook returns `500 template_missing`. Production keeps the hook disabled until a `magic_link` template is registered; local development leaves it off and uses Supabase's built-in email with local mail capture.
+
+## Requirement: sign-in emails match the site and invitations
+
+Sign-in (`magic_link`) emails must look like the website and the invitations, and their code must be in this repository's template registry, not in Supabase's dashboard settings. Production therefore uses the Send Email hook once a `magic_link` template is registered. Until then a temporary custom SMTP setup sends Supabase's own sign-in wording through Resend (see `docs/decisions/0004-auth-emails-via-resend.md`); it is removed when the hook is turned on.
 
 ## Tests
 
