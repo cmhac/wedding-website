@@ -26,6 +26,7 @@
 - Q: How do staff sign in? → A: By email link, as today. No text sign-in or personal links for staff.
 - Q: Who writes the sign-in, invitation and reminder emails and texts? → A: This feature writes first drafts of the wording and plain templates; the couple polish the wording later. Making the emails look like the website follows the designer's design once it exists.
 - Q: Can signed-in guests add, change or remove their own household's email addresses and phone numbers? → A: No, staff only. Guests can see their household's contacts but must ask the couple to change them.
+- Q: After the wedding day, can guests still sign in by typing their email or phone number? → A: Yes. Only personal links stop on the wedding day; guests can still request a sign-in link, and anyone already signed in stays signed in.
 - Q: Can staff record answers for guests with no email or phone? → A: Yes, as they can today: staff record RSVPs and meal choices on a household's behalf, marked as recorded by staff.
 - Q: How are sign-in and invitation messages built and sent? → A: From templates registered in this repository and sent by this repository's code, so they look like the website and the invitations. Sign-in emails move to the Send Email hook (the auth-emails decision record, `docs/decisions/0004-auth-emails-via-resend.md`); the temporary custom SMTP setup in production is retired.
 
@@ -214,7 +215,7 @@ Each email and text sent is recorded per contact, with its delivery status updat
 - Texts are switched off after being on: stored numbers and consent remain, nothing is sent, and previews say so. A scheduled campaign with text due while texts are off sends its emails, holds its texts, and tells the couple.
 - An elderly relative with no email or phone (paper only) answers by post or by phone call: staff record the RSVP and meal choices on the household's behalf in the admin console, as they can today; it is marked as recorded by staff.
 - The wedding day arrives: personal links stop working (see FR-005). Guests already signed in stay signed in.
-- A guest asks for a sign-in link on or after the wedding day: short-lived sign-in links still work, so a guest can still reach the site (for example to see the schedule). [Assumed; the couple only asked for personal links to stop.]
+- A guest asks for a sign-in link on or after the wedding day: short-lived sign-in links still work, so a guest can still reach the site (for example to see the schedule).
 
 ## Requirements _(mandatory)_
 
@@ -235,6 +236,7 @@ Each email and text sent is recorded per contact, with its delivery status updat
 - **FR-007**: Staff MUST be able to reissue a household's personal link (the old one stops working at once) and sign a household out everywhere (every device must sign in again).
 - **FR-008**: A guest who has signed in by any route MUST stay signed in on that device indefinitely, until they sign out, staff sign the household out everywhere, or the household is deleted. Guests MUST be able to sign out.
 - **FR-009**: Opening a personal link MUST NOT create a new account: the household's sign-in account is created when it is imported or added, and opening the link signs into it. All of a household's contacts and links MUST lead to the same household account and the same access.
+- **FR-008a**: Only personal links stop on the wedding day. Requesting a sign-in link by typing a contact (FR-011) MUST keep working after the wedding day, and existing sessions MUST NOT be ended by the wedding day.
 - **FR-010**: A bad, cancelled or expired link MUST lead to one plain failure page that reveals nothing about any household.
 
 **Sign-in links on request**
