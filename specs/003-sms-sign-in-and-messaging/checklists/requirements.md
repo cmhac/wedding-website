@@ -31,6 +31,6 @@
 
 ## Notes
 
-- Two [NEEDS CLARIFICATION] markers remain, both in requirements: which countries guests' numbers can be in (FR-028) and how consent for campaign texts is captured (FR-029). They change scope and legal exposure, so they are asked of the couple rather than guessed.
+- 2026-10-29 update: the couple decided text sign-in uses the same magic link as email, either channel alone is enough, United States numbers only (everyone else uses email), and sign-in messages move to the repository's own hooks and templates, retiring custom SMTP. Two [NEEDS CLARIFICATION] markers remain: whether Canadian numbers count as allowed (FR-028) and how consent for campaign texts is captured (FR-029).
 - The Assumptions section names Supabase and the sending providers on purpose: they are dependencies the couple already chose or must choose, not implementation design.
 - The consent and carrier-registration facts come from vendor and law-firm summaries, not primary sources. They are flagged in Assumptions as needing confirmation before the first campaign text.
