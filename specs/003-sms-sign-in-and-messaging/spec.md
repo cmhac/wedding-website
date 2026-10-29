@@ -204,6 +204,7 @@ Each email and text sent is recorded per contact, with its delivery status updat
 - A staff member's email is also a household contact: not allowed; a person who is both staff and a guest uses different addresses for each (to confirm: see FR-012).
 - A household is deleted: all its contacts, consent records, personal link and message records are removed or anonymised under the same rule as today's contact email.
 - Texts are switched off after being on: stored numbers and consent remain, nothing is sent, and previews say so. A scheduled campaign with text due while texts are off sends its emails, holds its texts, and tells the couple.
+- An elderly relative with no email or phone (paper only) answers by post or by phone call: staff record the RSVP and meal choices on the household's behalf in the admin console, as they can today; it is marked as recorded by staff.
 - The wedding has passed: personal links stop working on a cut-off date the couple set (see FR-005); existing sessions are unaffected.
 
 ## Requirements _(mandatory)_
@@ -237,6 +238,8 @@ Each email and text sent is recorded per contact, with its delivery status updat
 **Shared household access**
 
 - **FR-016**: Any signed-in member of a household MUST be able to read and change the household's RSVP, with the rights the single responder has today. Concurrent changes MUST NOT corrupt the RSVP, and the change history MUST record each save (field names only, as today).
+
+- **FR-016a**: Staff MUST keep the existing ability to record RSVPs and meal choices on a household's behalf, including for paper-only households with no contacts at all, with no email, phone number or sign-in involved. Answers recorded by staff MUST stay marked as recorded by staff, naming who, as today, and MUST be visible to any member who later signs in.
 
 **Consent and opting out of texts**
 
