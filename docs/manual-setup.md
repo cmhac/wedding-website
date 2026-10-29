@@ -51,7 +51,24 @@ the response time does not reveal whether an address is known.
 | From address   | n/a              | `EMAIL_FROM`, an address on the verified domain.                                                                                                                 |
 | Webhook        | Resend, Webhooks | Endpoint `<site>/api/webhooks/resend` for `email.sent`, `email.delivered`, `email.bounced`, `email.complained`. Signing secret saved as `RESEND_WEBHOOK_SECRET`. |
 
+### Production state (set 2026-10-29)
+
+- Sending domain `updates.hannahandchris.wedding` (region `us-east-1`), verified
+  2026-10-29. DNS records live in Vercel DNS: a DKIM text record on
+  `resend._domainkey.updates`, a mail-exchange and an SPF text record on
+  `send.updates`, and a tracking CNAME on `rsend.updates`.
+- Webhook created for the production endpoint with the four events above.
+- Production variables set as sensitive: `RESEND_API_KEY` (a sending-only key
+  made for the verified domain), `RESEND_WEBHOOK_SECRET`, `EMAIL_FROM`
+  (`Chris & Hannah <hello@updates.hannahandchris.wedding>`) and `CRON_SECRET`.
+  They take effect after the next production redeploy.
+- Still off: the Supabase Send Email hook, and so `SEND_EMAIL_HOOK_SECRET`, until
+  a `magic_link` email template is registered.
+
 ## Supabase Vault (scheduled sends)
+
+Created in production on 2026-10-29: `site_url` (the production site address)
+and `cron_secret` (the same value as `CRON_SECRET`).
 
 The five-minute `pg_cron` job reads two secrets from Vault; if either is absent
 the job skips quietly (local development). In the SQL editor of the production
