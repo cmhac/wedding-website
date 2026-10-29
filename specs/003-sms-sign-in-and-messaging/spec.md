@@ -25,6 +25,7 @@
 - Q: How is consent for texts captured? → A: The couple vouch for it: when staff enter a phone number, they confirm the guest gave it for wedding messages, and that is recorded with who and when.
 - Q: How do staff sign in? → A: By email link, as today. No text sign-in or personal links for staff.
 - Q: Who writes the sign-in, invitation and reminder emails and texts? → A: This feature writes first drafts of the wording and plain templates; the couple polish the wording later. Making the emails look like the website follows the designer's design once it exists.
+- Q: Can signed-in guests add, change or remove their own household's email addresses and phone numbers? → A: No, staff only. Guests can see their household's contacts but must ask the couple to change them.
 - Q: Can staff record answers for guests with no email or phone? → A: Yes, as they can today: staff record RSVPs and meal choices on a household's behalf, marked as recorded by staff.
 - Q: How are sign-in and invitation messages built and sent? → A: From templates registered in this repository and sent by this repository's code, so they look like the website and the invitations. Sign-in emails move to the Send Email hook (the auth-emails decision record, `docs/decisions/0004-auth-emails-via-resend.md`); the temporary custom SMTP setup in production is retired.
 
@@ -224,7 +225,7 @@ Each email and text sent is recorded per contact, with its delivery status updat
 - **FR-001**: A household MUST be able to have zero or more email addresses and zero or more phone numbers. No contacts means paper only; any one contact is enough to be reachable and to sign in.
 - **FR-002**: Every email address and every phone number MUST belong to at most one household, compared case-insensitively for emails and in one standard form for numbers. A repeat MUST be refused with a plain message.
 - **FR-003**: Phone numbers MUST be valid United States numbers (not Canadian; see FR-031); other numbers MUST be refused with a plain message that does not require knowing the standard form.
-- **FR-004**: The couple and the planner MUST be able to add, change and remove a household's contacts, and the guest-list import MUST accept several email and phone columns per household, with per-row, per-column errors, in both spreadsheet formats it already accepts. Removing the last contact MUST warn that the household becomes paper only. Removing a contact MUST stop it from being used to ask for a sign-in link immediately.
+- **FR-004**: Only the couple and the planner MUST be able to add, change and remove a household's contacts; guests MUST NOT be able to change them, though a signed-in guest MAY see their own household's contacts. The guest-list import MUST accept several email and phone columns per household, with per-row, per-column errors, in both spreadsheet formats it already accepts. Removing the last contact MUST warn that the household becomes paper only. Removing a contact MUST stop it from being used to ask for a sign-in link immediately.
 
 **Personal invite links and staying signed in**
 
