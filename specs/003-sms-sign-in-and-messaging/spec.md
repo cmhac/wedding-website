@@ -8,7 +8,7 @@
 
 **Input**: User description (2026-10-26): "Add SMS (text message) as a way for guests to sign in and receive messages, alongside email. Households may have a phone number instead of or in addition to an email; guests who have a phone number can sign in with a one-time code sent by text, and the couple can send campaigns by text as well as email. Out of scope: email content, guest-facing screens. Consider consent and opt-out, carrier registration rules, delivery tracking, uniqueness of phone numbers across households, paper-only households, the admin console v0 screens that need a phone field, and the existing rule that sign-in never reveals who is on the guest list."
 
-**Update (2026-10-29)**, in the couple's words: "For sign in I want to support two paths, email and sms. Same magic link for both, only one is required. For non-us users it'll be email only, for everyone else it'll be sms and email probably or just one or the other in some cases. This means also setting up proper email hooks like we discussed rather than supabase smtp." Then: "What I want is for us to import the guests and send emails and texts telling them to RSVP. When they click the link it counts as account creation and they're allowed to access the app from those devices." Then: "Let people stay signed on indefinitely once they're signed in. We'll want couples and families to get one account shared by multiple people too if that is possible to send this to multiple phones and emails." Then: "Links should stop working on day of wedding. But also need to be able to have an RSVP deadline that keeps the link alive but says that the deadline is passed. No Canadian numbers. I vouch for their consent. Staff sign in via email still. You can write the email and texts, I'll polish them later." And: "We will also need a way to allow the staff to manually mark people as rsvpd without having an email or phone number, like for elderly relatives."
+**Update (2026-10-29)**, in the couple's words: "For sign in I want to support two paths, email and sms. Same magic link for both, only one is required. For non-us users it'll be email only, for everyone else it'll be sms and email probably or just one or the other in some cases. This means also setting up proper email hooks like we discussed rather than supabase smtp." Then: "What I want is for us to import the guests and send emails and texts telling them to RSVP. When they click the link it counts as account creation and they're allowed to access the app from those devices." Then: "Let people stay signed on indefinitely once they're signed in. We'll want couples and families to get one account shared by multiple people too if that is possible to send this to multiple phones and emails." Then: "Links should stop working on day of wedding. But also need to be able to have an RSVP deadline that keeps the link alive but says that the deadline is passed. No Canadian numbers. I vouch for their consent. Staff sign in via email still. You can write the email and texts, I'll polish them later." And: "We will also need a way to allow the staff to manually mark people as rsvpd without having an email or phone number, like for elderly relatives." And, on consent: "They're my wedding guests and this is a small hobbyist app. We don't need to track consent like this."
 
 ## Clarifications
 
@@ -22,7 +22,7 @@
 - Q: One account per person or per household? → A: One shared account per household. A household can have several email addresses and several phone numbers (for example both partners, or parents and an adult child), and every one of them gets the invitation and can sign in to the same household.
 - Q: Must a household have both an email and a phone number? → A: No. Any one contact is enough.
 - Q: Which countries can use texts? → A: United States numbers only. Canadian numbers, although they share the +1 country code, are not accepted. Everyone outside the United States uses email only.
-- Q: How is consent for texts captured? → A: The couple vouch for it: when staff enter a phone number, they confirm the guest gave it for wedding messages, and that is recorded with who and when.
+- Q: Does the site track consent for texts? → A: No. These are the couple's own wedding guests on a small personal site, so there is no consent record. The text provider's standard handling of STOP and HELP replies is relied on instead; the site keeps no opt-out list of its own.
 - Q: How do staff sign in? → A: By email link, as today. No text sign-in or personal links for staff.
 - Q: Who writes the sign-in, invitation and reminder emails and texts? → A: This feature writes first drafts of the wording and plain templates; the couple polish the wording later. Making the emails look like the website follows the designer's design once it exists.
 - Q: Can signed-in guests add, change or remove their own household's email addresses and phone numbers? → A: No, staff only. Guests can see their household's contacts but must ask the couple to change them.
@@ -105,7 +105,7 @@ A guest on a new phone or laptop, or who has lost the invitation, types any one 
 1. **Given** a known contact, **When** a guest asks for a sign-in link for it, **Then** a link is sent to that contact only (by email for an address, by text for a number) and opening it signs them in to the household.
 2. **Given** a sign-in link that has expired or been used, **When** it is opened, **Then** the guest lands on the plain failure page and can ask for another.
 3. **Given** an email or number that is on no household, **When** someone asks for a link, **Then** they get exactly the same on-screen answer, taking the same time, as for a known contact, and nothing is sent and no account is created.
-4. **Given** a known number that has replied STOP, or a number outside the United States, or texts not yet switched on, **When** someone asks for a link by text, **Then** they get the same neutral answer and no text is sent.
+4. **Given** a number outside the United States, or texts not yet switched on, **When** someone asks for a link by text, **Then** they get the same neutral answer and no text is sent.
 
 ---
 
@@ -133,39 +133,21 @@ The couple and the planner add, change and remove a household's email addresses 
 
 When creating a campaign, the couple choose the channels: email, text, or both. The audience filters work as today. The preview shows, per household, how many emails and texts will go out, and who is skipped and why. Invitation and reminder messages include the household's personal link.
 
-**Why this priority**: it is how guests get their personal link, but it depends on contacts (Story 4), consent (Story 6) and text setup being in place.
+**Why this priority**: it is how guests get their personal link, but it depends on contacts (Story 4) and text setup being in place.
 
 **Independent Test**: with households that are email only, text only, both, several contacts, and paper only, send a campaign by both channels and confirm each contact got exactly one message, or is listed as skipped with a reason.
 
 **Acceptance Scenarios**:
 
 1. **Given** a campaign set to both channels, **When** it is sent, **Then** every reachable contact of every household in the audience receives exactly one message on its own channel.
-2. **Given** the preview, **When** staff open it, **Then** each household shows what it will receive and each skipped contact shows why: no recorded consent, texts stopped by the guest, reminders opted out (for a non-essential type), or texts not switched on.
+2. **Given** the preview, **When** staff open it, **Then** each household shows what it will receive and each skipped contact shows why: reminders opted out (for a non-essential type), or texts not switched on.
 3. **Given** a campaign that has already been sent, **When** it is retried or run again, **Then** no contact receives a second copy.
 4. **Given** a message type with no registered template for a channel, **When** staff try to send by that channel, **Then** the send is refused with a plain message and nothing goes out.
-5. **Given** a household that opted out of reminders, **When** a reminder goes out, **Then** it is excluded on every channel, but an essential logistics update still goes to it, except to numbers that replied STOP.
+5. **Given** a household that opted out of reminders, **When** a reminder goes out, **Then** it is excluded on every channel, but an essential logistics update still goes to it.
 
 ---
 
-### User Story 6 - Consent, STOP and HELP for texts (Priority: P2)
-
-A guest can stop texts at any time by replying STOP (or a similar word) and ask for help by replying HELP. The system records consent for each phone number and every opt-out, and never sends a campaign text to a number without recorded consent or after a stop.
-
-**Why this priority**: texting people who have not agreed, or who asked to stop, is the main legal and trust risk of this feature. It must exist before any campaign text is sent.
-
-**Independent Test**: record consent for one number, send it a text, reply STOP, and confirm the next campaign skips that number with the reason shown while the household's other contacts still receive it; reply START and confirm texts resume.
-
-**Acceptance Scenarios**:
-
-1. **Given** a phone number with no recorded consent, **When** a text campaign is previewed or sent, **Then** that number is skipped and listed as "no recorded consent".
-2. **Given** a guest replies STOP, QUIT, END, REVOKE, OPT OUT, CANCEL or UNSUBSCRIBE, **When** the reply arrives, **Then** that number is marked stopped, gets no further campaign texts, and staff can see it on the household; one confirmation text with no other content is allowed.
-3. **Given** a stopped number, **When** the guest replies START, **Then** texts can resume, recorded with its time.
-4. **Given** a guest replies HELP, **When** the reply arrives, **Then** they receive the standard help reply naming the sender and how to stop.
-5. **Given** any text a guest receives, **When** they read it, **Then** it identifies the sender and says how to stop (the wording is supplied separately).
-
----
-
-### User Story 7 - Sign-in messages come from the repository's own templates (Priority: P2)
+### User Story 6 - Sign-in messages come from the repository's own templates (Priority: P2)
 
 Every sign-in email and text is built from a template registered in this repository and sent by this repository's code, so sign-in messages look like the website and the invitations and are versioned and tested with the code. Supabase's own email wording and the custom SMTP stopgap stop being used in production.
 
@@ -182,7 +164,7 @@ Every sign-in email and text is built from a template registered in this reposit
 
 ---
 
-### User Story 8 - Couple tracks delivery and follows up (Priority: P3)
+### User Story 7 - Couple tracks delivery and follows up (Priority: P3)
 
 Each email and text sent is recorded per contact, with its delivery status updated from the sending services. A failed or undeliverable message flags that contact, and the household, for follow-up.
 
@@ -209,10 +191,10 @@ Each email and text sent is recorded per contact, with its delivery status updat
 - A landline or a number that cannot receive texts: the text fails, that contact is flagged, and the household's other contacts still work.
 - A guest outside the United States: their phone number is refused at entry, and the household uses email. A non-US household with no email is paper only.
 - Someone asks for many sign-in links (their own contacts, or ones they do not own): limits per contact and overall stop runaway cost and harassment, without revealing which contacts are known.
-- A guest replies STOP to a sign-in text: that number gets no more campaign texts, and later sign-in texts may be blocked by the carrier; the guest can use another of the household's contacts.
+- A guest replies STOP to a text: the text provider stops sending to that number on its own, and later texts to it fail; the site shows that as a delivery problem on that contact, and the guest can use another of the household's contacts.
 - A staff member's email is also a household contact: not allowed; a person who is both staff and a guest uses different addresses for each (see FR-012).
-- A household is deleted: all its contacts, consent records, personal link and message records are removed or anonymised under the same rule as today's contact email.
-- Texts are switched off after being on: stored numbers and consent remain, nothing is sent, and previews say so. A scheduled campaign with text due while texts are off sends its emails, holds its texts, and tells the couple.
+- A household is deleted: all its contacts, personal link and message records are removed or anonymised under the same rule as today's contact email.
+- Texts are switched off after being on: stored numbers remain, nothing is sent, and previews say so. A scheduled campaign with text due while texts are off sends its emails, holds its texts, and tells the couple.
 - An elderly relative with no email or phone (paper only) answers by post or by phone call: staff record the RSVP and meal choices on the household's behalf in the admin console, as they can today; it is marked as recorded by staff.
 - The wedding day arrives: personal links stop working (see FR-005). Guests already signed in stay signed in.
 - A guest asks for a sign-in link on or after the wedding day: short-lived sign-in links still work, so a guest can still reach the site (for example to see the schedule).
@@ -243,7 +225,7 @@ Each email and text sent is recorded per contact, with its delivery status updat
 
 - **FR-011**: A guest MUST be able to ask for a short-lived sign-in link by typing any one of their household's contacts. The link MUST go only to the contact typed (an email by email, a number by text) and MUST sign in to the same household as the personal link.
 - **FR-012**: Staff sign-in (couple and planner) MUST stay on email links; staff do not get personal invite links or sign-in by text. A staff email MUST NOT also be a household contact.
-- **FR-013**: Asking for a sign-in link MUST never create an account and MUST never reveal whether a contact is on the guest list: the answer, status and response time MUST be the same for known, unknown, stopped and non-US contacts, and when texts are off.
+- **FR-013**: Asking for a sign-in link MUST never create an account and MUST never reveal whether a contact is on the guest list: the answer, status and response time MUST be the same for known, unknown and non-US contacts, and when texts are off.
 - **FR-014**: The system MUST limit sign-in link requests per contact and overall, without changing the neutral answer. Limits MUST be settable without code changes.
 - **FR-015**: The guest-facing interface for personal links, sign-in requests and sign-out MUST be documented in the repository alongside the existing guest interface. This feature builds no screens.
 
@@ -253,13 +235,10 @@ Each email and text sent is recorded per contact, with its delivery status updat
 
 - **FR-016a**: Staff MUST keep the existing ability to record RSVPs and meal choices on a household's behalf, including for paper-only households with no contacts at all, with no email, phone number or sign-in involved. Answers recorded by staff MUST stay marked as recorded by staff, naming who, as today, and MUST be visible to any member who later signs in.
 
-**Consent and opting out of texts**
+**Opting out**
 
-- **FR-017**: The system MUST record consent per phone number: that it was given, how, who recorded it, and when. Campaign texts MUST NOT be sent to a number without recorded consent. A sign-in link the guest asked for is not a campaign and does not need prior consent. Consent is captured by the couple vouching for it: when staff add or import a phone number they MUST confirm the guest gave the number for wedding messages, and the system MUST record that confirmation with who gave it and when. A number added without that confirmation is stored but gets no campaign texts.
-- **FR-018**: A reply of STOP or a listed equivalent (STOP, QUIT, END, REVOKE, OPT OUT, CANCEL, UNSUBSCRIBE, any capitalisation) MUST mark that number stopped within one minute, block further campaign texts to it, show that to staff, and record the time. Other contacts of the household are unaffected.
-- **FR-019**: A reply of START MUST let a stopped number receive texts again, recorded with its time. A reply of HELP MUST produce the standard help reply naming the sender and how to stop.
-- **FR-020**: The existing reminder opt-out MUST apply per household on every channel: non-essential types are excluded, essential logistics updates are still sent, except to stopped numbers.
-- **FR-021**: Every campaign text MUST identify the sender and say how to stop. The wording is supplied separately.
+- **FR-018**: The site MUST NOT keep its own consent or STOP records. It MUST rely on the text provider's standard handling of STOP, START and HELP replies, and MUST treat a text the provider refuses because the number opted out as a failed delivery on that contact (FR-025).
+- **FR-020**: The existing reminder opt-out MUST apply per household on every channel: non-essential types are excluded, essential logistics updates are still sent.
 
 **Campaigns**
 
@@ -277,11 +256,11 @@ Each email and text sent is recorded per contact, with its delivery status updat
 
 **Admin console v0**
 
-- **FR-029**: The temporary admin console MUST let staff view and edit a household's contacts and each number's consent and stopped state; show reachability and contact counts in the household list and detail; reissue a household's personal link and copy it; sign a household out everywhere; accept several contact columns in the import; offer the channel choice in the campaign editor; and show per-contact channel, skips and delivery in the preview, delivery status, overview and reports. It MUST stay plain and use the existing single stylesheet.
+- **FR-029**: The temporary admin console MUST let staff view and edit a household's contacts; show reachability and contact counts in the household list and detail; reissue a household's personal link and copy it; sign a household out everywhere; accept several contact columns in the import; offer the channel choice in the campaign editor; and show per-contact channel, skips and delivery in the preview, delivery status, overview and reports. It MUST stay plain and use the existing single stylesheet.
 
 **Privacy, setup and documentation**
 
-- **FR-030**: Emails, phone numbers and personal links are personal data. They MUST NOT appear in logs, error messages shown to guests, or the change history (field names only), and fixtures and seed data MUST use fake contacts that cannot reach a real person. Deleting a household MUST remove or irreversibly anonymise its contacts, consent records, personal link and message records.
+- **FR-030**: Emails, phone numbers and personal links are personal data. They MUST NOT appear in logs, error messages shown to guests, or the change history (field names only), and fixtures and seed data MUST use fake contacts that cannot reach a real person. Deleting a household MUST remove or irreversibly anonymise its contacts, personal link and message records.
 - **FR-031**: Text messaging MUST be limited to United States numbers. Canadian and other +1 numbers outside the United States MUST be refused like any other non-US number.
 - **FR-032**: The setup steps that cannot be done in code (the text provider account, carrier registration, the sending number, reply and delivery notifications, the text switch, the Send Email hook switch-over and the removal of custom SMTP) MUST be added to the manual setup document, with secrets handled like the existing ones.
 
@@ -289,7 +268,6 @@ Each email and text sent is recorded per contact, with its delivery status updat
 
 - **Household (changed)**: keeps one sign-in account, now shared by all its members. Gains a personal invite link, a links-valid-until date, and a derived reachability state. Its single contact email moves into household contacts.
 - **Household contact (new)**: one email address or one United States phone number belonging to one household, unique across all households, with a delivery-problem flag.
-- **Phone consent**: for a phone contact, whether consent exists, how it was captured, who recorded it and when, and whether the number is currently stopped, with the time of each change.
 - **Personal invite link (new)**: the household's long-lived sign-in link, stored so that a leak does not reveal it, with when it was issued and when it stops working.
 - **Campaign (changed)**: gains a channel choice (email, text, both).
 - **Message (changed)**: one email or text to one contact in one campaign; gains a channel and the contact used, and the text delivery statuses.
@@ -304,13 +282,12 @@ Each email and text sent is recorded per contact, with its delivery status updat
 - **SC-001**: A guest who receives an invitation reaches their household's RSVP in one tap from the message, with no sign-up, password or code, in under 30 seconds.
 - **SC-002**: A guest who signed in stays signed in on that device for at least the whole period from invitation to wedding without signing in again, unless they or staff sign them out.
 - **SC-003**: For a household with several contacts, 100% of reachable contacts receive the invitation exactly once, and signing in from any of them reaches the same household and RSVP.
-- **SC-004**: For known, unknown, stopped and non-US contacts, and with texts off, the sign-in request answer is identical in content and arrives within 250 milliseconds of one another on average; 0 accounts are created by any request or link.
+- **SC-004**: For known, unknown and non-US contacts, and with texts off, the sign-in request answer is identical in content and arrives within 250 milliseconds of one another on average; 0 accounts are created by any request or link.
 - **SC-005**: After staff reissue a household's personal link, the old link signs in 0 people.
-- **SC-006**: 100% of numbers that replied STOP receive 0 further campaign texts, and 100% of numbers without recorded consent receive 0 campaign texts, across a test of at least 200 households.
-- **SC-007**: A campaign by both channels, including when retried, sends each reachable contact exactly one message and no contact two.
-- **SC-008**: 100% of repeated or invalid contacts in an import of at least 200 rows are reported by row and column, and none is saved.
-- **SC-009**: 100% of sign-in emails and texts in production are rendered from templates registered in the repository; 0 use Supabase's own wording.
-- **SC-010**: Within 5 minutes of a status notification arriving, the contact's delivery status and any follow-up flag are correct, and duplicate or out-of-order notifications never leave a wrong state.
+- **SC-006**: A campaign by both channels, including when retried, sends each reachable contact exactly one message and no contact two.
+- **SC-007**: 100% of repeated or invalid contacts in an import of at least 200 rows are reported by row and column, and none is saved.
+- **SC-008**: 100% of sign-in emails and texts in production are rendered from templates registered in the repository; 0 use Supabase's own wording.
+- **SC-009**: Within 5 minutes of a status notification arriving, the contact's delivery status and any follow-up flag are correct, and duplicate or out-of-order notifications never leave a wrong state.
 
 ## Assumptions
 
@@ -321,7 +298,7 @@ Each email and text sent is recorded per contact, with its delivery status updat
 - Per-household personal links are how wedding sites such as Joy work; Joy notes that anyone with a guest's link can RSVP as that guest ([Joy help](https://withjoy.com/help/en/articles/8342084-personalized-ecard-links-for-guests)). The couple accept that risk, mitigated by reissue and sign-out everywhere.
 - Texts are informational wedding messages (invitations, reminders, logistics updates), not marketing.
 - In the United States, sending texts over ordinary numbers requires carrier registration first. A [sole-proprietor registration costs a few dollars and is limited to one campaign, one number and low throughput](https://support.twilio.com/hc/en-us/articles/4407882914971-Comparision-between-Starter-and-Standard-registration-for-A2P-10DLC), and approval involves human review with no published timeline, so it should start early. Fees and limits change; confirm with the chosen provider.
-- Consent and opt-out rules follow current US law and carrier practice: listed reply words count as revocation, and [revocations must be honoured within 10 business days under the FCC's 2025 rule, with the "revoke all" part delayed](https://www.kelleydrye.com/viewpoints/blogs/ad-law-access/fcc-issues-one-year-limited-waiver-of-new-tcpa-consent-revocation-rule). This feature's target is one minute. This summary is from law-firm sources and is not legal advice; the couple should confirm it before the first campaign text.
+- The couple decided against consent tracking for a small personal site whose texts go only to their own wedding guests. The chosen text provider's default opt-out handling is relied on: Twilio, for example, handles STOP, HELP and START automatically on ordinary numbers and blocks future messages to a number that replied STOP ([Twilio opt-out keywords](https://support.twilio.com/hc/en-us/articles/223134027-Twilio-Support-for-Opt-out-Keywords-SMS-STOP-Filtering)). Twilio notes that legal compliance decisions remain the sender's; this spec does not give legal advice.
 - The project constitution says sign-in is "magic-link for everyone". Personal links and texted links are still magic links, so that line holds; the plan checks whether a wording clarification is worth making.
 - The existing rules otherwise stay: guests never create accounts themselves, and sign-in never reveals who is on the guest list.
 - Guest-facing screens stay out of scope; the guest-facing interface is documented here for the designer's frontend. Email and text content is in scope for this feature only as first drafts (FR-027a), by the couple's explicit permission on 2026-10-29, which overrides the repository's general rule against writing email content for these templates.
