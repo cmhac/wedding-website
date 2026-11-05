@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Text messages (SMS) for guest sign-in and campaigns
+# Specification Quality Checklist: Personal invite links and shared household sign-in
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-26
@@ -35,3 +35,4 @@
 - 2026-10-29 answers: personal links stop on the wedding day and survive the RSVP deadline (guests see a "deadline passed" notice); no Canadian numbers; no consent tracking (the text provider handles STOP and HELP); staff stay on email; this feature writes first-draft email and text wording, which the couple polish. All [NEEDS CLARIFICATION] markers are resolved.
 - The Assumptions section names Supabase and the sending providers on purpose: they are dependencies the couple already chose or must choose, not implementation design.
 - The consent and carrier-registration facts come from vendor and law-firm summaries, not primary sources. They are flagged in Assumptions as needing confirmation before the first campaign text.
+- 2026-11-05: text messages deferred to a later feature at the couple's request; this feature is email only. The text-message decisions are kept in the spec's "Deferred: text messages" section.
