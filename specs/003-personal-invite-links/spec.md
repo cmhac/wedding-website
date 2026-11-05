@@ -208,7 +208,7 @@ Each email sent is recorded per address, with its delivery status updated from R
 
 - **FR-004**: Each household MUST have one personal invite link that signs in whoever opens it as that household. It MUST keep working from when it is issued until the wedding day, unless the couple reissue it, and MUST stop working from the start of the wedding day, in the venue's time zone (California). The wedding day is the date of the wedding event, so moving the event moves the cut-off. Opening the link MUST NOT use it up: it MUST sign in any number of devices, each independently.
 - **FR-005**: Passing the RSVP deadline MUST NOT stop a personal link. After the deadline, a signed-in guest MUST still be able to see their household's answers and MUST be told plainly that the deadline has passed and to contact the couple; changes stay refused as the existing deadline rule says, and staff can still change answers.
-- **FR-006**: Personal links MUST be long, random and unguessable, MUST NOT contain any guest name or email, and MUST be stored so that a database leak does not reveal working links.
+- **FR-006**: Personal links MUST be long and unguessable, MUST NOT contain any guest name or email, and MUST NOT be stored in a form that would let a database leak reveal working links.
 - **FR-007**: Staff (the couple and the planner) MUST be able to reissue a household's personal link (the old one stops working at once) and sign a household out everywhere (every device must sign in again).
 - **FR-008**: A guest who has signed in by any route MUST stay signed in on that device indefinitely, until they sign out, staff sign the household out everywhere, or the household is deleted. Guests MUST be able to sign out.
 - **FR-009**: Only personal links stop on the wedding day. Requesting a sign-in link by typing an address (FR-012) MUST keep working after the wedding day, and existing sessions MUST NOT be ended by the wedding day.
@@ -238,7 +238,7 @@ Each email sent is recorded per address, with its delivery status updated from R
 
 **Sign-in emails from the repository**
 
-- **FR-024**: Sign-in emails MUST be sent through the repository's Send Email hook using the `magic_link` template registered in the repository. If the template is missing or fails, nothing MUST be sent, the guest MUST still see the neutral answer, and the failure MUST be logged without any address.
+- **FR-024**: Every sign-in email MUST be rendered from the `magic_link` template registered in the repository and sent through Resend by the site's code: guest sign-in links by the guest sign-in route, staff sign-in links through the Send Email hook. Supabase's own email wording MUST NOT be used. If the template is missing or fails, nothing MUST be sent, the guest MUST still see the neutral answer, and the failure MUST be logged without any address.
 - **FR-025**: This feature MUST write first drafts of the wording and plain templates for the sign-in email (`magic_link`) and the invitation and reminder emails, registered in the repository and covered by tests. The couple polish the wording later. Visual design that matches the website follows the designer's design when it exists; until then the templates are plain.
 - **FR-026**: The custom SMTP stopgap MUST stay on until the hook is on and a test sign-in email through the hook has been delivered; then it MUST be removed and the manual setup document updated.
 
