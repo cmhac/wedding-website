@@ -31,6 +31,9 @@
 ### Session 2026-11-05
 
 - Q: Are text messages part of this feature? → A: No. This feature is email only. Text messages are deferred to a later feature, keeping every decision already made about them (see "Deferred: text messages"), so they do not block this one.
+- Q: Who can reissue a household's personal link and sign a household out everywhere? → A: The couple and the planner.
+- Q: How does a guest sign in on a second device? → A: Either open the invitation's personal link again on that device (it is not used up and works on any number of devices until the wedding day), or type any of the household's email addresses on the sign-in page to get a short-lived link. Each device stays signed in on its own; signing in on one does not sign out another.
+- Q: Is this a custom sign-in system? → A: No. Supabase Auth still owns accounts, sign-in links, sessions and access rules; Resend only delivers the emails. The site adds a thin layer that works out which household a personal link or typed address belongs to, then hands off to Supabase.
 
 ## Background
 
@@ -181,6 +184,8 @@ Each email sent is recorded per address, with its delivery status updated from R
 - A personal link is forwarded to someone outside the household: whoever opens it is signed in as that household (as with Joy's personal links). The couple can reissue the link and sign the household out everywhere.
 - A guest signs in on a shared or public computer: they stay signed in until they sign out, so a visible sign-out is part of the guest interface the frontend builds.
 - A household's personal link is reissued after invitations went out: the old link stops working, and guests who already signed in stay signed in unless the couple also sign the household out everywhere.
+- A guest wants to use a second device: they open the personal link again on it, or ask for a sign-in link by typing any household address; the first device stays signed in.
+- A guest has lost access to every email address on their household: staff add a new address for them, or copy the household's personal link from the admin console and send it to them another way.
 - Two households in one home share an email address: an address can belong to only one household, so the couple list it once, or give the second household a different address.
 - Someone asks for many sign-in links (their own addresses, or ones they do not own): limits per address and overall stop abuse, without revealing which addresses are known.
 - A staff member's email is also a household address: not allowed; a person who is both staff and a guest uses different addresses for each (see FR-013).
@@ -201,10 +206,10 @@ Each email sent is recorded per address, with its delivery status updated from R
 
 **Personal invite links and staying signed in**
 
-- **FR-004**: Each household MUST have one personal invite link that signs in whoever opens it as that household. It MUST keep working from when it is issued until the wedding day, unless the couple reissue it, and MUST stop working from the start of the wedding day, in the venue's time zone (California). The wedding day is the date of the wedding event, so moving the event moves the cut-off.
+- **FR-004**: Each household MUST have one personal invite link that signs in whoever opens it as that household. It MUST keep working from when it is issued until the wedding day, unless the couple reissue it, and MUST stop working from the start of the wedding day, in the venue's time zone (California). The wedding day is the date of the wedding event, so moving the event moves the cut-off. Opening the link MUST NOT use it up: it MUST sign in any number of devices, each independently.
 - **FR-005**: Passing the RSVP deadline MUST NOT stop a personal link. After the deadline, a signed-in guest MUST still be able to see their household's answers and MUST be told plainly that the deadline has passed and to contact the couple; changes stay refused as the existing deadline rule says, and staff can still change answers.
 - **FR-006**: Personal links MUST be long, random and unguessable, MUST NOT contain any guest name or email, and MUST be stored so that a database leak does not reveal working links.
-- **FR-007**: Staff MUST be able to reissue a household's personal link (the old one stops working at once) and sign a household out everywhere (every device must sign in again).
+- **FR-007**: Staff (the couple and the planner) MUST be able to reissue a household's personal link (the old one stops working at once) and sign a household out everywhere (every device must sign in again).
 - **FR-008**: A guest who has signed in by any route MUST stay signed in on that device indefinitely, until they sign out, staff sign the household out everywhere, or the household is deleted. Guests MUST be able to sign out.
 - **FR-009**: Only personal links stop on the wedding day. Requesting a sign-in link by typing an address (FR-012) MUST keep working after the wedding day, and existing sessions MUST NOT be ended by the wedding day.
 - **FR-010**: Opening a personal link MUST NOT create a new account: the household's sign-in account is created when it is imported or added, and opening the link signs into it. All of a household's addresses and links MUST lead to the same household account and the same access.
@@ -271,6 +276,7 @@ Each email sent is recorded per address, with its delivery status updated from R
 
 - **This feature changes two earlier decisions**, which the plan must record as superseded: the guest-identity decision (`docs/decisions/0003-guest-identity.md`) keeps one sign-in account per household but drops the link to a single contact email, and adds personal links; the household decision (`docs/decisions/0006-household-model.md`, exactly one responder per household) becomes any signed-in member answers for the household.
 - Personal invite links are the site's own, not Supabase's: Supabase's sign-in links last an hour by default ([Supabase config reference](https://supabase.com/docs/reference/cli/config-reference)), and third-party write-ups say much longer values are discouraged. Opening a personal link signs into the household's Supabase account behind the scenes, using Supabase's documented admin function that generates a sign-in link without sending it ([generateLink](https://supabase.com/docs/reference/python/auth-admin-generatelink)). Exact mechanics are a planning question.
+- Supabase Auth remains the sign-in system: one account per household, its sign-in links (single use, short-lived), sessions, sign-out and the access rules in the database. Resend only delivers emails. The site's own layer stores personal links and the household's list of addresses, decides which household a link or typed address belongs to, and then asks Supabase for a sign-in link for that household's account. Because a Supabase account holds one email address, a guest typing any of the household's addresses is handled by that layer, not by Supabase's own email sign-in. To be confirmed at planning time.
 - Staying signed in indefinitely is Supabase's default: sessions renew themselves and end only if a maximum lifetime or inactivity timeout is configured ([Supabase sessions](https://supabase.com/docs/guides/auth/sessions)). The plan confirms the production settings leave both off.
 - Per-household personal links are how wedding sites such as Joy work; Joy notes that anyone with a guest's link can RSVP as that guest ([Joy help](https://withjoy.com/help/en/articles/8342084-personalized-ecard-links-for-guests)). The couple accept that risk, mitigated by reissue and sign-out everywhere.
 - The project constitution says sign-in is "magic-link for everyone". Personal links are still magic links, so that line holds; the plan checks whether a wording clarification is worth making.
