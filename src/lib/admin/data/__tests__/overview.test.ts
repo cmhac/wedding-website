@@ -144,6 +144,7 @@ function makeDb(overrides: Record<string, unknown[]> = {}) {
           id: true,
           rsvp_open: true,
           default_rsvp_deadline: "2027-09-02T06:59:00Z",
+          wedding_event_id: "e-ceremony",
         },
       ],
       ...overrides,
@@ -248,6 +249,23 @@ describe("loadOverview", () => {
     );
     expect(closed.rsvpOpen).toBe(false);
     expect(closed.defaultDeadline).toBeNull();
+  });
+
+  it("says whether a wedding event is chosen (personal links close on its date)", async () => {
+    expect((await load()).weddingEventChosen).toBe(true);
+    const none = await load(
+      makeDb({
+        settings: [
+          {
+            id: true,
+            rsvp_open: true,
+            default_rsvp_deadline: null,
+            wedding_event_id: null,
+          },
+        ],
+      }),
+    );
+    expect(none.weddingEventChosen).toBe(false);
   });
 
   it("has no ceremony total when there is no ceremony event", async () => {

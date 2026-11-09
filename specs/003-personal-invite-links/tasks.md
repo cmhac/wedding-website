@@ -148,7 +148,7 @@ description: "Task list for personal invite links and shared household sign-in"
 - [x] T044 [P] [US4] Write `src/app/api/admin/households/[id]/sign-out/__tests__/route.test.ts`: staff → `204` and `revoke_household_sessions` called; `401`, `403`, `404`
 - [x] T045 [P] [US4] Add to `src/app/api/admin/staff/__tests__/route.test.ts`: granting staff access to an address that is a household contact returns `409 household_contact`
 - [x] T046 [P] [US4] Add to `src/lib/guests/__tests__/import.test.ts`: `contact_email` plus any `contact_email_2`, `contact_email_3`, … columns are read per household; an invalid or repeated address (within the file or already on another household) is reported by row and column and the household is skipped; differing address sets across rows of one household are an error, as `contact_email` differences are today; both CSV and `.xlsx`
-- [ ] T047 [P] [US4] Write component tests in `src/components/admin/__tests__/` for `ContactsList.tsx` (add, edit, remove, delivery flag, last-address warning), `InviteLinkControls.tsx` (copy, reissue with confirmation text that the old link stops and the new one must be sent) and `SignOutEverywhereForm.tsx` (confirmation)
+- [x] T047 [P] [US4] Write component tests in `src/components/admin/__tests__/` for `ContactsList.tsx` (add, edit, remove, delivery flag, last-address warning), `InviteLinkControls.tsx` (copy, reissue with confirmation text that the old link stops and the new one must be sent) and `SignOutEverywhereForm.tsx` (confirmation)
 
 ### Implementation for User Story 4
 
@@ -159,10 +159,10 @@ description: "Task list for personal invite links and shared household sign-in"
 - [x] T052 [P] [US4] Implement `src/app/api/admin/households/[id]/sign-out/route.ts`
 - [x] T053 [P] [US4] Change `src/app/api/admin/staff/route.ts` per T045
 - [x] T054 [P] [US4] Change `src/lib/guests/import.ts` per T046 and update `scripts/sample-guests.csv` with a fake `contact_email_2` example
-- [ ] T055 [US4] Build `src/components/admin/ContactsList.tsx`, `src/components/admin/InviteLinkControls.tsx` and `src/components/admin/forms/SignOutEverywhereForm.tsx`; delete `src/components/admin/forms/ContactEmailForm.tsx`; add Server Actions in `src/lib/admin/actions/households.ts`; wire them into `src/components/admin/HouseholdDetailView.tsx` and `src/app/(admin)/admin/(console)/households/[id]/page.tsx`; plain markup, styles only in `src/app/(admin)/admin.css`
-- [ ] T056 [US4] Show address count and paper-only marker in `src/components/admin/HouseholdsListView.tsx` (data in `src/lib/admin/data/households.ts`) with tests
-- [ ] T057 [US4] Settings: wedding event selector and sign-in limits in `src/components/admin/SettingsView.tsx`, `src/lib/admin/actions/settings.ts`, `src/lib/admin/data/settings.ts`; overview warning when no wedding event is chosen in `src/components/admin/OverviewView.tsx` and `src/lib/admin/data/overview.ts`; tests for each
-- [ ] T058 [US4] Import page help text listing the extra address columns in `src/app/(admin)/admin/(console)/import/` and `src/components/admin/ImportResultView.tsx`
+- [x] T055 [US4] Build `src/components/admin/ContactsList.tsx`, `src/components/admin/InviteLinkControls.tsx` and `src/components/admin/forms/SignOutEverywhereForm.tsx`; delete `src/components/admin/forms/ContactEmailForm.tsx`; add Server Actions in `src/lib/admin/actions/households.ts`; wire them into `src/components/admin/HouseholdDetailView.tsx` and `src/app/(admin)/admin/(console)/households/[id]/page.tsx`; plain markup, styles only in `src/app/(admin)/admin.css`
+- [x] T056 [US4] Show address count and paper-only marker in `src/components/admin/HouseholdsListView.tsx` (data in `src/lib/admin/data/households.ts`) with tests
+- [x] T057 [US4] Settings: wedding event selector and sign-in limits in `src/components/admin/SettingsView.tsx`, `src/lib/admin/actions/settings.ts`, `src/lib/admin/data/settings.ts`; overview warning when no wedding event is chosen in `src/components/admin/OverviewView.tsx` and `src/lib/admin/data/overview.ts`; tests for each
+- [x] T058 [US4] Import page help text listing the extra address columns in `src/app/(admin)/admin/(console)/import/` and `src/components/admin/ImportResultView.tsx`
 
 **Checkpoint**: staff can run the whole address and link lifecycle from the console.
 

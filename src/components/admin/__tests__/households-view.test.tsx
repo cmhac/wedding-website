@@ -161,6 +161,20 @@ describe("HouseholdsListView", () => {
     expect(screen.getByText("All answered")).toBeInTheDocument();
   });
 
+  it("shows how many addresses a household has, listing each", () => {
+    renderList([
+      row({ contacts: ["a@example.test", "b@example.test"] }),
+      row({
+        id: "h2",
+        displayName: "One address",
+        contacts: ["c@example.test"],
+      }),
+    ]);
+    expect(screen.getByText("2 addresses")).toBeInTheDocument();
+    expect(screen.getByText("1 address")).toBeInTheDocument();
+    expect(screen.getByText("b@example.test")).toBeInTheDocument();
+  });
+
   it("shows None for a household with no email, and its unnamed plus-one", () => {
     renderList([
       row({

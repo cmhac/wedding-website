@@ -155,11 +155,17 @@ export function HouseholdsListView({
                 row.contacts.length === 0 ? (
                   <span className="muted">None</span>
                 ) : (
-                  <ul className="plain">
-                    {row.contacts.map((address) => (
-                      <li key={address}>{address}</li>
-                    ))}
-                  </ul>
+                  <>
+                    <span className="muted">
+                      {row.contacts.length}{" "}
+                      {row.contacts.length === 1 ? "address" : "addresses"}
+                    </span>
+                    <ul className="plain">
+                      {row.contacts.map((address) => (
+                        <li key={address}>{address}</li>
+                      ))}
+                    </ul>
+                  </>
                 ),
             },
             {

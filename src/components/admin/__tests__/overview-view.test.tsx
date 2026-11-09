@@ -52,6 +52,7 @@ const data: OverviewData = {
   rsvpOpen: true,
   // 11:59 PM Pacific on Sep 1, 2027
   defaultDeadline: "2027-09-02T06:59:00Z",
+  weddingEventChosen: true,
 };
 
 describe("OverviewView", () => {
@@ -149,6 +150,25 @@ describe("OverviewView", () => {
     );
     const text = screen.getByText(/RSVPs are closed/).textContent;
     expect(text).not.toMatch(/deadline/i);
+  });
+
+  it("warns when no wedding event is chosen, linking to the settings", () => {
+    render(<OverviewView data={{ ...data, weddingEventChosen: false }} />);
+    const warning = screen
+      .getByText(/No wedding event is chosen/)
+      .closest(".alert") as HTMLElement;
+    expect(warning).toHaveTextContent(/No wedding event is chosen/);
+    expect(warning).toHaveTextContent(/personal links never close/i);
+    expect(
+      within(warning).getByRole("link", { name: /Choose it in Settings/ }),
+    ).toHaveAttribute("href", "/admin/settings");
+  });
+
+  it("shows no warning once the wedding event is chosen", () => {
+    render(<OverviewView data={data} />);
+    expect(
+      screen.queryByText(/No wedding event is chosen/),
+    ).not.toBeInTheDocument();
   });
 
   it("shows an empty state when there are no events", () => {

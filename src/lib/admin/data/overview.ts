@@ -38,6 +38,8 @@ export type OverviewData = {
   mostOutstanding: OutstandingHousehold[];
   rsvpOpen: boolean;
   defaultDeadline: string | null;
+  /** False until the wedding event is chosen: personal links then never close. */
+  weddingEventChosen: boolean;
 };
 
 const MOST_OUTSTANDING_LIMIT = 3;
@@ -107,7 +109,9 @@ export async function loadOverview(
     ),
     rows(
       "settings",
-      supabase.from("settings").select("rsvp_open, default_rsvp_deadline"),
+      supabase
+        .from("settings")
+        .select("rsvp_open, default_rsvp_deadline, wedding_event_id"),
     ),
   ]);
 
@@ -165,5 +169,6 @@ export async function loadOverview(
     mostOutstanding,
     rsvpOpen: settings ? settings.rsvp_open !== false : true,
     defaultDeadline: (settings?.default_rsvp_deadline as string | null) ?? null,
+    weddingEventChosen: Boolean(settings?.wedding_event_id),
   };
 }

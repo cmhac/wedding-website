@@ -1,5 +1,8 @@
 "use client";
 
+import { ContactsList } from "./ContactsList";
+import { InviteLinkControls } from "./InviteLinkControls";
+import { SignOutEverywhereForm } from "./forms/SignOutEverywhereForm";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -136,26 +139,20 @@ function DetailsTab({ household }: { household: HouseholdDetail }) {
   return (
     <div className="stack">
       <Card heading="Email addresses">
-        <fieldset className="group">
-          <legend>Email addresses</legend>
-          {household.contacts.length === 0 ? (
-            <p className="muted">None. This household is paper only.</p>
-          ) : (
-            <ul className="plain">
-              {household.contacts.map((contact) => (
-                <li key={contact.id}>
-                  {contact.value}
-                  {contact.deliveryProblem ? (
-                    <>
-                      {" "}
-                      <Badge variant="bad">Delivery problem</Badge>
-                    </>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </fieldset>
+        <ContactsList
+          householdId={household.id}
+          contacts={household.contacts}
+        />
+      </Card>
+      <Card heading="Personal link and sign-in">
+        <div className="stack">
+          <p className="muted">
+            The personal link signs the household in on any device, with no
+            email needed. Reissuing it stops the old link at once.
+          </p>
+          <InviteLinkControls householdId={household.id} />
+          <SignOutEverywhereForm householdId={household.id} />
+        </div>
       </Card>
       <Card heading="Household details">
         <ActionForm

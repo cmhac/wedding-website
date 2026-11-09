@@ -21,6 +21,10 @@ describe("loadSettings", () => {
     expect(result).toEqual({
       default_rsvp_deadline: "2027-05-01T23:59",
       rsvp_open: false,
+      wedding_event_id: "",
+      sign_in_limit_per_address: 3,
+      sign_in_window_minutes: 10,
+      sign_in_limit_global_per_hour: 60,
       row,
     });
   });
@@ -32,6 +36,28 @@ describe("loadSettings", () => {
     const result = await loadSettings(asClient(db));
     expect(result.default_rsvp_deadline).toBe("");
     expect(result.rsvp_open).toBe(true);
+  });
+
+  it("returns the wedding event and the sign-in limits", async () => {
+    const db = createAdminFakeDb({
+      settings: [
+        {
+          id: true,
+          default_rsvp_deadline: null,
+          rsvp_open: true,
+          wedding_event_id: "e1",
+          sign_in_limit_per_address: 5,
+          sign_in_window_minutes: 15,
+          sign_in_limit_global_per_hour: 100,
+        },
+      ],
+    });
+    expect(await loadSettings(asClient(db))).toMatchObject({
+      wedding_event_id: "e1",
+      sign_in_limit_per_address: 5,
+      sign_in_window_minutes: 15,
+      sign_in_limit_global_per_hour: 100,
+    });
   });
 
   it("throws when the settings row cannot be read", async () => {

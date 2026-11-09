@@ -17,7 +17,14 @@ export type SettingsViewProps = {
     /** A Pacific datetime-local value, or "". */
     default_rsvp_deadline: string;
     rsvp_open: boolean;
+    /** The event whose date closes personal links, or "" when none is chosen. */
+    wedding_event_id: string;
+    sign_in_limit_per_address: number;
+    sign_in_window_minutes: number;
+    sign_in_limit_global_per_hour: number;
   };
+  /** Events to choose the wedding from. */
+  events: { id: string; name: string }[];
   staff: Pick<StaffRow, "user_id" | "display_name" | "role">[];
 };
 
@@ -25,6 +32,7 @@ export function SettingsView({
   role,
   currentUserId,
   settings,
+  events,
   staff,
 }: SettingsViewProps) {
   const isCouple = role === "couple";
@@ -126,6 +134,93 @@ export function SettingsView({
                     </span>
                   </span>
                 </label>
+                <Field
+                  id="wedding-event"
+                  label="Wedding event"
+                  hint="Personal invite links stop working on this event's date (Pacific time). Until one is chosen they never close."
+                  error={fieldErrors.wedding_event_id}
+                >
+                  <select
+                    id="wedding-event"
+                    name="wedding_event_id"
+                    defaultValue={
+                      refilled
+                        ? String(values.wedding_event_id ?? "")
+                        : settings.wedding_event_id
+                    }
+                  >
+                    <option value="">Not chosen</option>
+                    {events.map((event) => (
+                      <option key={event.id} value={event.id}>
+                        {event.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <fieldset className="group">
+                  <legend>Limits on sign-in emails</legend>
+                  <p className="muted">
+                    These stop anyone using the sign-in form to flood an address
+                    with emails.
+                  </p>
+                  <div className="grid2">
+                    <Field
+                      id="sign-in-limit-per-address"
+                      label="Sign-in links per address"
+                      error={fieldErrors.sign_in_limit_per_address}
+                    >
+                      <input
+                        id="sign-in-limit-per-address"
+                        name="sign_in_limit_per_address"
+                        type="number"
+                        min={1}
+                        className="w-sm"
+                        defaultValue={
+                          refilled
+                            ? String(values.sign_in_limit_per_address ?? "")
+                            : settings.sign_in_limit_per_address
+                        }
+                      />
+                    </Field>
+                    <Field
+                      id="sign-in-window-minutes"
+                      label="Window (minutes)"
+                      hint="The limit above applies within this many minutes."
+                      error={fieldErrors.sign_in_window_minutes}
+                    >
+                      <input
+                        id="sign-in-window-minutes"
+                        name="sign_in_window_minutes"
+                        type="number"
+                        min={1}
+                        className="w-sm"
+                        defaultValue={
+                          refilled
+                            ? String(values.sign_in_window_minutes ?? "")
+                            : settings.sign_in_window_minutes
+                        }
+                      />
+                    </Field>
+                    <Field
+                      id="sign-in-limit-global"
+                      label="Sign-in links per hour, all addresses"
+                      error={fieldErrors.sign_in_limit_global_per_hour}
+                    >
+                      <input
+                        id="sign-in-limit-global"
+                        name="sign_in_limit_global_per_hour"
+                        type="number"
+                        min={1}
+                        className="w-sm"
+                        defaultValue={
+                          refilled
+                            ? String(values.sign_in_limit_global_per_hour ?? "")
+                            : settings.sign_in_limit_global_per_hour
+                        }
+                      />
+                    </Field>
+                  </div>
+                </fieldset>
               </>
             );
           }}

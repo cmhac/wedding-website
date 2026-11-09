@@ -94,6 +94,56 @@ describe("saveSettings", () => {
     expect(db.tables.settings[0].default_rsvp_deadline).toBeNull();
   });
 
+  it("saves the wedding event and the sign-in limits when the form includes them", async () => {
+    const { db, client } = setup();
+    const result = await run(client, [
+      ["default_rsvp_deadline", ""],
+      ["rsvp_open", "on"],
+      ["wedding_event_id", "5f1c2b8e-1111-4222-8333-944455556666"],
+      ["sign_in_limit_per_address", "5"],
+      ["sign_in_window_minutes", "15"],
+      ["sign_in_limit_global_per_hour", "100"],
+    ]);
+    expect(result.ok).toBe(true);
+    expect(db.tables.settings[0]).toMatchObject({
+      wedding_event_id: "5f1c2b8e-1111-4222-8333-944455556666",
+      sign_in_limit_per_address: 5,
+      sign_in_window_minutes: 15,
+      sign_in_limit_global_per_hour: 100,
+    });
+  });
+
+  it("clears the wedding event when 'not chosen' is selected", async () => {
+    const { db, client } = setup();
+    db.tables.settings[0].wedding_event_id =
+      "5f1c2b8e-1111-4222-8333-944455556666";
+    await run(client, [
+      ["default_rsvp_deadline", ""],
+      ["wedding_event_id", ""],
+    ]);
+    expect(db.tables.settings[0].wedding_event_id).toBeNull();
+  });
+
+  it.each([
+    ["sign_in_limit_per_address", "0"],
+    ["sign_in_limit_per_address", "abc"],
+    ["sign_in_window_minutes", "-1"],
+    ["sign_in_limit_global_per_hour", "1.5"],
+    ["wedding_event_id", "not-a-uuid"],
+  ])(
+    "refuses %s = %s, naming the field and writing nothing",
+    async (field, value) => {
+      const { db, client } = setup();
+      const result = await run(client, [
+        ["default_rsvp_deadline", ""],
+        [field, value],
+      ]);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.fieldErrors?.[field]).toBeDefined();
+      expect(db.tables.settings[0]).not.toHaveProperty(field);
+    },
+  );
+
   it("refuses a time skipped by the clock change", async () => {
     const { client } = setup();
     const result = await run(client, [
