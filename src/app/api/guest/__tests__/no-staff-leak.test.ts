@@ -166,8 +166,13 @@ describe("guest route handlers are structurally limited", () => {
     });
   }
 
-  it("never uses the service-role client or reads tables directly", () => {
-    const files = routeFiles(root);
+  // The sign-in route is the one exception: it serves visitors who are not
+  // signed in, so it looks a typed address up with the service role (and sends
+  // the link itself). It returns nothing from that lookup but a neutral answer.
+  const isSignIn = (file: string) => file.includes(join("guest", "sign-in"));
+
+  it("never uses the service-role client or reads tables directly, except the sign-in route", () => {
+    const files = routeFiles(root).filter((f) => !isSignIn(f));
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
       const source = readFileSync(file, "utf8");

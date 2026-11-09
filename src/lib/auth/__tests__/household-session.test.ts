@@ -22,7 +22,10 @@ jest.mock("@/lib/supabase/server", () => ({
   createServerSupabase: async () => ({ auth: { verifyOtp } }),
 }));
 
-import { createHouseholdSession } from "../household-session";
+import {
+  createHouseholdSession,
+  generateHouseholdTokenHash,
+} from "../household-session";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -125,5 +128,21 @@ describe("createHouseholdSession", () => {
     const res = await createHouseholdSession("h1");
     expect(res).toEqual({ ok: false });
     expect(JSON.stringify(res)).not.toContain("leak");
+  });
+});
+
+describe("generateHouseholdTokenHash", () => {
+  it("returns the token hash for the household's Auth user, without exchanging it", async () => {
+    expect(await generateHouseholdTokenHash("h1")).toBe("hash-1");
+    expect(verifyOtp).not.toHaveBeenCalled();
+  });
+
+  it("returns null when anything fails", async () => {
+    generateLink.mockResolvedValue({ data: null, error: { message: "x" } });
+    expect(await generateHouseholdTokenHash("h1")).toBeNull();
+    maybeSingle.mockResolvedValue({ data: null, error: null });
+    expect(await generateHouseholdTokenHash("h1")).toBeNull();
+    generateLink.mockRejectedValue(new Error("leak@example.test"));
+    expect(await generateHouseholdTokenHash("h1")).toBeNull();
   });
 });

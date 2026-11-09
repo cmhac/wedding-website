@@ -579,14 +579,14 @@ isOneToOne: false
                   ]
                 },"settings": {
                   Row: {
-                    "couple_names": string | null,"default_rsvp_deadline": string | null,"id": boolean,"last_dispatch_at": string | null,"rsvp_open": boolean,"wedding_event_id": string | null
+                    "couple_names": string | null,"default_rsvp_deadline": string | null,"id": boolean,"last_dispatch_at": string | null,"rsvp_open": boolean,"sign_in_limit_global_per_hour": number,"sign_in_limit_per_address": number,"sign_in_window_minutes": number,"wedding_event_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "couple_names"?: string | null,"default_rsvp_deadline"?: string | null,"id"?: boolean,"last_dispatch_at"?: string | null,"rsvp_open"?: boolean,"wedding_event_id"?: string | null
+                    "couple_names"?: string | null,"default_rsvp_deadline"?: string | null,"id"?: boolean,"last_dispatch_at"?: string | null,"rsvp_open"?: boolean,"sign_in_limit_global_per_hour"?: number,"sign_in_limit_per_address"?: number,"sign_in_window_minutes"?: number,"wedding_event_id"?: string | null
                   }
                   Update: {
-                    "couple_names"?: string | null,"default_rsvp_deadline"?: string | null,"id"?: boolean,"last_dispatch_at"?: string | null,"rsvp_open"?: boolean,"wedding_event_id"?: string | null
+                    "couple_names"?: string | null,"default_rsvp_deadline"?: string | null,"id"?: boolean,"last_dispatch_at"?: string | null,"rsvp_open"?: boolean,"sign_in_limit_global_per_hour"?: number,"sign_in_limit_per_address"?: number,"sign_in_window_minutes"?: number,"wedding_event_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -602,6 +602,20 @@ isOneToOne: false
       referencedRelation: "events"
       referencedColumns: ["id"]
     }
+                  ]
+                },"sign_in_attempts": {
+                  Row: {
+                    "address_hash": string,"at": string,"id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address_hash": string,"at"?: string,"id"?: never
+                  }
+                  Update: {
+                    "address_hash"?: string,"at"?: string,"id"?: never
+                  }
+                  Relationships: [
+                    
                   ]
                 },"staff": {
                   Row: {
@@ -726,6 +740,9 @@ isOneToOne: true
             "add_household_contact":
 { Args: { "household_id": string,"value": string }; Returns: string
                            },
+"allow_sign_in_attempt":
+{ Args: { "address_hash": string }; Returns: boolean
+                           },
 "archive_dish":
 { Args: { "dish_id": string }; Returns: {
               "guest_id": string,"household_id": string
@@ -735,6 +752,9 @@ isOneToOne: true
 { Args: { "campaign_id": string,"limit": number }; Returns: {
               "household_id": string,"id": string,"to_email": string
             }[]
+                           },
+"cleanup_sign_in_attempts":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "create_household_record":
 { Args: { "payload": Json }; Returns: Json
