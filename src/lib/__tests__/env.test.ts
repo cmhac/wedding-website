@@ -19,8 +19,8 @@ describe("getServerEnv", () => {
     expect(env.SUPABASE_SERVICE_ROLE_KEY).toBe("service-fake");
   });
 
-  it("defaults GUEST_RSVP_PATH to /rsvp", () => {
-    expect(getServerEnv(valid).GUEST_RSVP_PATH).toBe("/rsvp");
+  it("defaults GUEST_RSVP_PATH to the home page", () => {
+    expect(getServerEnv(valid).GUEST_RSVP_PATH).toBe("/");
   });
 
   it("keeps a provided GUEST_RSVP_PATH", () => {

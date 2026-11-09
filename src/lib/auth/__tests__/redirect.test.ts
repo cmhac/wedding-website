@@ -13,8 +13,8 @@ beforeEach(() => {
 });
 
 describe("guestPath", () => {
-  it("defaults to /rsvp and follows GUEST_RSVP_PATH", () => {
-    expect(guestPath()).toBe("/rsvp");
+  it("defaults to the home page and follows GUEST_RSVP_PATH", () => {
+    expect(guestPath()).toBe("/");
     process.env.GUEST_RSVP_PATH = "/reply";
     expect(guestPath()).toBe("/reply");
   });
@@ -22,18 +22,36 @@ describe("guestPath", () => {
 
 describe("allowedNext", () => {
   it.each([
-    ["/rsvp", "guest", "/rsvp"],
-    ["/rsvp/meals", "guest", "/rsvp/meals"],
+    ["/", "guest", "/"],
+    ["/", "staff", "/"],
+    ["/rsvp", "guest", null],
     ["/admin", "guest", null],
     ["/admin/households", "staff", "/admin/households"],
-    ["/rsvp", "staff", "/rsvp"],
+    ["/rsvp", "staff", null],
     ["//evil.example", "guest", null],
-    ["https://evil.example/rsvp", "guest", null],
+    ["//evil.example", "staff", null],
+    ["https://evil.example/", "guest", null],
     ["/rsvp//x", "guest", null],
-    ["/rsvpx", "guest", null],
-    ["/rsvp?x=1", "guest", null],
+    ["/?x=1", "guest", null],
     ["", "guest", null],
     [null, "guest", null],
+  ] as const)("%s for a %s session gives %s", (next, kind, expected) => {
+    expect(allowedNext(next, kind)).toBe(expected);
+  });
+});
+
+describe("allowedNext with GUEST_RSVP_PATH set", () => {
+  beforeEach(() => {
+    process.env.GUEST_RSVP_PATH = "/rsvp";
+  });
+
+  it.each([
+    ["/rsvp", "guest", "/rsvp"],
+    ["/rsvp/meals", "guest", "/rsvp/meals"],
+    ["/rsvp", "staff", "/rsvp"],
+    ["/rsvpx", "guest", null],
+    ["/rsvp?x=1", "guest", null],
+    ["/", "guest", null],
   ] as const)("%s for a %s session gives %s", (next, kind, expected) => {
     expect(allowedNext(next, kind)).toBe(expected);
   });

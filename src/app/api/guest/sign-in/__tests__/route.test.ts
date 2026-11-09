@@ -56,7 +56,8 @@ import { TemplateError } from "@/lib/email/templates";
 import { POST } from "../route";
 
 const NEUTRAL = {
-  message: "If that address is on the guest list, a link is on its way.",
+  message:
+    "If that address is on the guest list or belongs to a staff account, a link is on its way.",
 };
 
 function request(body: unknown, raw = false) {
@@ -89,6 +90,7 @@ beforeEach(() => {
   mockToken.mockResolvedValue("token-hash-1");
   mockRender.mockResolvedValue({ subject: "s", html: "<p>h</p>", text: "t" });
   mockSend.mockResolvedValue({ ok: true, providerMessageId: "m1" });
+  mockSignInWithOtp.mockResolvedValue({ data: {}, error: null });
 });
 
 describe("POST /api/guest/sign-in: a known address", () => {
@@ -126,8 +128,14 @@ describe("POST /api/guest/sign-in: a known address", () => {
 
 describe.each([
   [
-    "an unknown address",
-    () => contactMaybeSingle.mockResolvedValue({ data: null, error: null }),
+    "an address on neither list",
+    () => {
+      contactMaybeSingle.mockResolvedValue({ data: null, error: null });
+      mockSignInWithOtp.mockResolvedValue({
+        data: {},
+        error: { code: "user_not_found" },
+      });
+    },
     "unknown",
   ],
   [
@@ -181,6 +189,75 @@ describe.each([
     expect(loggedText()).toContain(outcome);
     expect(loggedText()).not.toContain("example.test");
     expect(loggedText()).not.toContain("token-hash");
+  });
+});
+
+describe("POST /api/guest/sign-in: a staff address", () => {
+  beforeEach(() => {
+    contactMaybeSingle.mockResolvedValue({ data: null, error: null });
+  });
+
+  it("asks for the staff link, sends no household email, and answers the neutral 202", async () => {
+    const res = await POST(request({ email: "Planner@Example.test" }));
+    expect(res.status).toBe(202);
+    expect(await res.json()).toEqual(NEUTRAL);
+    expect(mockSignInWithOtp).toHaveBeenCalledTimes(1);
+    expect(mockSignInWithOtp).toHaveBeenCalledWith({
+      email: "Planner@Example.test",
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: "http://localhost:3000/auth/callback?audience=staff",
+      },
+    });
+    expect(mockToken).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(loggedText()).toContain("staff_requested");
+    expect(loggedText()).not.toContain("example.test");
+  });
+
+  it("answers the same neutral 202 when Supabase refuses or fails, logging only a code", async () => {
+    mockSignInWithOtp.mockResolvedValue({
+      data: {},
+      error: { code: "user_not_found" },
+    });
+    const refused = await POST(request({ email: "nobody@example.test" }));
+    mockSignInWithOtp.mockRejectedValue(new Error("down nobody@example.test"));
+    const failed = await POST(request({ email: "nobody@example.test" }));
+    for (const res of [refused, failed]) {
+      expect(res.status).toBe(202);
+      expect(await res.json()).toEqual(NEUTRAL);
+    }
+    expect(loggedText()).toContain("unknown");
+    expect(loggedText()).not.toContain("example.test");
+  });
+
+  it("does not look for a staff account when the household lookup itself failed", async () => {
+    contactMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: "x" },
+    });
+    await POST(request({ email: "planner@example.test" }));
+    expect(mockSignInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("does not look for a staff account when the limit was reached", async () => {
+    mockAllow.mockResolvedValue(false);
+    await POST(request({ email: "planner@example.test" }));
+    expect(mockSignInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("makes no Supabase call for a household's internal account address", async () => {
+    delete process.env.HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN;
+    const res = await POST(
+      request({ email: "household-1@households.invalid" }),
+    );
+    expect(res.status).toBe(202);
+    expect(mockSignInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("still waits the full minimum time, as for any other address", async () => {
+    await POST(request({ email: "planner@example.test" }));
+    expect(mockMinimum).toHaveBeenCalledWith(1500);
   });
 });
 

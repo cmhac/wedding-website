@@ -1,6 +1,8 @@
 import { clientIp, createRateLimiter } from "@/lib/rate-limit";
 import { withMinimumDuration } from "@/lib/sign-in-timing";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { requestStaffLink } from "@/lib/auth/staff-sign-in";
 import { log } from "@/lib/log";
 import { errorResponse, validationError } from "@/lib/api-errors";
 import { signInRequestSchema } from "@/lib/guest-api/schemas";
@@ -17,15 +19,21 @@ const limiter = createRateLimiter({ limit: 5, windowMs: 60_000 });
 // reveal whether the address is known.
 const MIN_RESPONSE_MS = 1500;
 
+// Covers both kinds of address, so the answer never shows which one was typed.
 const NEUTRAL = {
-  message: "If that address is on the guest list, a link is on its way.",
+  message:
+    "If that address is on the guest list or belongs to a staff account, a link is on its way.",
 };
 
 /**
- * Emails a sign-in link to the address typed, when it is one of a household's
- * addresses (research R5). The site sends it, not Supabase, so the link goes to
- * the typed address whichever of the household's addresses it is. Every outcome
- * other than "sent" is only logged, as a code with no address.
+ * Emails a sign-in link to the address typed. A household address gets the
+ * household link: the site sends it, not Supabase, so it goes to the typed
+ * address whichever of the household's addresses it is (research R5). Any other
+ * address is tried as a staff address: Supabase sends the staff link only when
+ * a staff account exists. Staff addresses are never household addresses
+ * (decision 0012), so the order cannot change who gets what. Every outcome
+ * other than "sent" and "staff_requested" is only logged, as a code with no
+ * address.
  */
 async function sendLink(typed: string): Promise<string> {
   const admin = createAdminSupabase();
@@ -40,7 +48,12 @@ async function sendLink(typed: string): Promise<string> {
     .eq("value", typed.trim().toLowerCase())
     .maybeSingle();
   if (contact.error) return "lookup_failed";
-  if (!contact.data) return "unknown";
+  if (!contact.data) {
+    // The server client, so the one-time-link verifier cookie is set on this
+    // response, as when staff sign in from the admin page.
+    const outcome = await requestStaffLink(await createServerSupabase(), typed);
+    return outcome === "requested" ? "staff_requested" : "unknown";
+  }
 
   const tokenHash = await generateHouseholdTokenHash(contact.data.household_id);
   if (!tokenHash) return "no_token";
@@ -86,8 +99,9 @@ export async function POST(request: Request) {
     }
     // Same answer whatever happened, so the response never reveals who is on
     // the guest list. The log holds the outcome code only.
-    if (outcome === "sent") log.info("guest_sign_in", { outcome });
-    else log.warn("guest_sign_in", { outcome });
+    if (outcome === "sent" || outcome === "staff_requested") {
+      log.info("guest_sign_in", { outcome });
+    } else log.warn("guest_sign_in", { outcome });
   });
   return Response.json(NEUTRAL, { status: 202 });
 }

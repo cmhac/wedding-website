@@ -1,13 +1,13 @@
 # Guest API
 
-> **No guest-facing user interface is provided.** This repository builds no public site and no guest screens (including the RSVP), forms, or visual components for guests. (A minimal, temporary v0 admin console exists for staff; it does not use this API.) The couple's designer builds the guest-facing screens against this document. The guest API is the only interface between this backend and the guest-facing screens.
+> **No guest-facing user interface is provided.** This repository builds no public site and no guest screens (including the RSVP), forms, or visual components for guests. (A minimal, temporary v0 admin console exists for staff, and one plain placeholder homepage at `/` shows a sign-in prompt and a "Coming soon" page; both are built here, and the homepage uses the sign-in endpoints below. The designer may replace or build on it.) The couple's designer builds the guest-facing screens against this document. The guest API is the only interface between this backend and the guest-facing screens.
 
 This document is published from `specs/001-guest-data-model/contracts/guest-api.md`. A contract test (`src/lib/guest-api/__tests__/contract.test.ts`) fails if the endpoint table below stops matching the route handlers under `src/app/api/guest/`.
 
 ## Assumptions to confirm with the designer
 
 - The frontend is served from the **same origin** as this Next.js app. Session cookies are set by the server and are same-site; no cross-origin (CORS) support is built.
-- The frontend serves the path `/rsvp` (configurable on the server with `GUEST_RSVP_PATH`) and the sign-in failure path `/auth/error`. Guests are redirected to these after following the emailed link.
+- The frontend serves the sign-in failure path `/auth/error`, and the RSVP at the path in `GUEST_RSVP_PATH` once it exists. Until `GUEST_RSVP_PATH` is set, guests are redirected to `/` (the placeholder homepage built in this repository) after following the emailed link.
 
 All endpoints return JSON. Errors use one shape:
 
@@ -40,11 +40,11 @@ All endpoints return JSON. Errors use one shape:
 
 A household has one shared sign-in; any of its people can use it, on any device, and a household can have several email addresses. There are two ways in.
 
-**Personal link, `GET /i/[token]`.** Each household has a personal link (`/i/<household id>.<signature>`, never containing a name or address) that is in its invitation emails. Opening it sets the session cookie and redirects `302` to `/rsvp` (an optional relative `next` under `/rsvp` is honoured). The link is reusable: every open creates its own session, so it works on any number of devices, and it keeps working after the RSVP deadline (`deadline_passed` in the RSVP response says so; saves are refused with `409 rsvp_closed`). It stops working on the wedding day (typed-address sign-in and open sessions are not affected), when staff reissue it (the old link stops at once), or if it is malformed. Every failure is a `302` to `/auth/error` with no detail, with `Cache-Control: no-store` and `X-Robots-Tag: noindex`.
+**Personal link, `GET /i/[token]`.** Each household has a personal link (`/i/<household id>.<signature>`, never containing a name or address) that is in its invitation emails. Opening it sets the session cookie and redirects `302` to the guest landing path (`GUEST_RSVP_PATH`, default `/`; an optional relative `next` under that path is honoured). The link is reusable: every open creates its own session, so it works on any number of devices, and it keeps working after the RSVP deadline (`deadline_passed` in the RSVP response says so; saves are refused with `409 rsvp_closed`). It stops working on the wedding day (typed-address sign-in and open sessions are not affected), when staff reissue it (the old link stops at once), or if it is malformed. Every failure is a `302` to `/auth/error` with no detail, with `Cache-Control: no-store` and `X-Robots-Tag: noindex`.
 
-**Typed address, `POST /api/guest/sign-in`** with `{ "email": "..." }` always answers `202` with `{ "message": "If that address is on the guest list, a link is on its way." }` after at least 1.5 seconds, whether the address is known, unknown, over a limit, or something failed. For an address on a household, the site emails a link to **that address**. The link opens `GET /auth/confirm?token_hash=...&type=email`, which sets the session cookie and redirects to `/rsvp`. The same fields can be sent as a form `POST` to `/auth/confirm`, so a frontend can show a "Continue" page first (a mail scanner that only opens the link then does not use the token up). A link is single use and short lived; ask again for a new one. Staff sign-in is separate (`GET /auth/callback`).
+**Typed address, `POST /api/guest/sign-in`** with `{ "email": "..." }` always answers `202` with `{ "message": "If that address is on the guest list or belongs to a staff account, a link is on its way." }` after at least 1.5 seconds, whether the address is a household address, a staff address, unknown, over a limit, or something failed. For an address on a household, the site emails a link to **that address**. Any other address is tried as a staff address: Supabase emails a staff sign-in link only when a staff account exists (staff addresses are never household addresses), and the link opens `GET /auth/callback`, which lands on the admin console. The link opens `GET /auth/confirm?token_hash=...&type=email`, which sets the session cookie and redirects to the guest landing path. The same fields can be sent as a form `POST` to `/auth/confirm`, so a frontend can show a "Continue" page first (a mail scanner that only opens the link then does not use the token up). A link is single use and short lived; ask again for a new one. The home page's one prompt uses this endpoint for guests and staff alike; the admin console's own sign-in page still uses `POST /api/admin/sign-in`.
 
-Guests stay signed in until staff use "sign out everywhere" for the household (access ends on the next request) or `POST /api/guest/sign-out` ends this device's session.
+Guests stay signed in until staff use "sign out everywhere" for the household (access ends on the next request) or `POST /api/guest/sign-out` ends this device's session only; other devices of the same household stay signed in.
 
 ## `GET /api/guest/rsvp` response
 
@@ -152,7 +152,7 @@ All errors use the shape at the top of this document. `message` is safe to show 
 
 ## Redirect paths after sign-in
 
-`GET /auth/callback` finishes sign-in and redirects (302): a guest to `/rsvp` (or `GUEST_RSVP_PATH`), anything unusable to `/auth/error`. An optional `next` query value is honored only if it is a plain relative path under `/rsvp`.
+`GET /auth/callback` finishes sign-in and redirects (302): a guest to the guest landing path (`GUEST_RSVP_PATH`, default `/`), staff to `/admin`, anything unusable to `/auth/error` (whose page links back to `/`). An optional `next` query value is honored only if it is a plain relative path under the guest landing path (or `/admin` for staff).
 
 ## Example calls
 

@@ -9,7 +9,9 @@ import type { SessionKind } from "@/lib/auth/session";
 /** Where a failed or unusable link lands; served by whoever builds the screens. */
 export const FAILURE_PATH = "/auth/error";
 export const ADMIN_PATH = "/admin";
-const DEFAULT_GUEST_PATH = "/rsvp";
+// The placeholder homepage until the designer builds the RSVP page; set
+// GUEST_RSVP_PATH to send guests elsewhere.
+const DEFAULT_GUEST_PATH = "/";
 
 export function guestPath(): string {
   return process.env.GUEST_RSVP_PATH || DEFAULT_GUEST_PATH;

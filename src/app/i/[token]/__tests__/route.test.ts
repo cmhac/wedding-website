@@ -42,10 +42,10 @@ beforeEach(() => {
 });
 
 describe("GET /i/[token]", () => {
-  it("signs the household in and redirects to the RSVP, uncached and unindexed", async () => {
+  it("signs the household in and redirects to the home page, uncached and unindexed", async () => {
     const res = await open(inviteToken(ID, 2));
     expect(res.status).toBe(302);
-    expect(to(res)).toBe("/rsvp");
+    expect(to(res)).toBe("/");
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(res.headers.get("x-robots-tag")).toBe("noindex");
     expect(mockCreateSession).toHaveBeenCalledWith(ID);
@@ -59,6 +59,7 @@ describe("GET /i/[token]", () => {
   });
 
   it("honours a relative next under the RSVP path and ignores anything else", async () => {
+    process.env.GUEST_RSVP_PATH = "/rsvp";
     const token = inviteToken(ID, 2);
     expect(to(await open(token, "?next=/rsvp/meals"))).toBe("/rsvp/meals");
     expect(to(await open(token, "?next=/admin"))).toBe("/rsvp");
@@ -68,8 +69,8 @@ describe("GET /i/[token]", () => {
 
   it("opens twice with two independent sessions, using up nothing", async () => {
     const token = inviteToken(ID, 2);
-    expect(to(await open(token))).toBe("/rsvp");
-    expect(to(await open(token))).toBe("/rsvp");
+    expect(to(await open(token))).toBe("/");
+    expect(to(await open(token))).toBe("/");
     expect(mockCreateSession).toHaveBeenCalledTimes(2);
   });
 

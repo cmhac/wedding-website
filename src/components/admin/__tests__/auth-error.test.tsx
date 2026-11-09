@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { AuthError } from "../AuthError";
 
 describe("AuthError", () => {
-  it("explains the link did not work and links to the staff sign-in", () => {
+  it("explains the link did not work and links back to the home page sign-in", () => {
     render(<AuthError />);
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
     expect(
@@ -10,7 +10,8 @@ describe("AuthError", () => {
         "That sign-in link did not work or has already been used.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/admin/sign-in");
+    const link = screen.getByRole("link", { name: "Back to sign in" });
+    expect(link).toHaveAttribute("href", "/");
   });
 
   it("shows no data", () => {

@@ -37,14 +37,14 @@ describe.each([
   ],
   ["POST", post],
 ] as const)("%s /auth/confirm", (_name, call) => {
-  it("exchanges the token and sends a guest to the RSVP, uncached", async () => {
+  it("exchanges the token and sends a guest to the home page, uncached", async () => {
     const res = await call({ token_hash: "th", type: "email" });
     expect(mockVerify).toHaveBeenCalledWith({
       token_hash: "th",
       type: "email",
     });
     expect(res.status).toBe(302);
-    expect(to(res)).toBe("/rsvp");
+    expect(to(res)).toBe("/");
     expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
@@ -54,6 +54,7 @@ describe.each([
   });
 
   it("honours a relative next under the allowed paths, and ignores anything else", async () => {
+    process.env.GUEST_RSVP_PATH = "/rsvp";
     expect(
       to(await call({ token_hash: "th", type: "email", next: "/rsvp/meals" })),
     ).toBe("/rsvp/meals");

@@ -7,8 +7,11 @@ guest communications, and the email designs. One repo for all of it.
 
 > Status: the backend is built (database, guest API, admin API, email sending).
 > A minimal, temporary v0 admin console exists
-> ([specs/002-admin-console-v0](specs/002-admin-console-v0/plan.md)). Guest-facing
-> screens and the public site are not provided; the designer builds them against
+> ([specs/002-admin-console-v0](specs/002-admin-console-v0/plan.md)), and so does
+> one placeholder homepage at `/`: a sign-in prompt, then a "Coming soon" page
+> ([specs/004-placeholder-homepage](specs/004-placeholder-homepage/plan.md),
+> a permanent exception). Every other guest-facing screen and the public site are
+> not provided; the designer builds them against
 > [docs/guest-api.md](docs/guest-api.md) and [docs/admin-api.md](docs/admin-api.md).
 > See [docs/architecture.md](docs/architecture.md) and
 > [docs/manual-setup.md](docs/manual-setup.md) for the dashboard settings.
@@ -57,6 +60,15 @@ endpoint never creates users. It needs `NEXT_PUBLIC_SUPABASE_URL` and
 ```bash
 node --env-file=.env.local scripts/create-staff-user.ts <email> "<display name>" <couple|planner>
 ```
+
+### Placeholder homepage
+
+`/` shows a plain sign-in prompt to visitors who are not signed in (one email
+field for guests and staff alike) and, to anyone signed in, a page with the line
+"Coming soon 👀", a light/dark toggle and a sign-out link. It lives in
+`src/app/(site)` and `src/components/site`, styled by one plain stylesheet,
+`src/app/(site)/site.css`. The designer may replace or build on it. See
+[docs/decisions/0013-placeholder-homepage.md](docs/decisions/0013-placeholder-homepage.md).
 
 ### Admin console (temporary v0)
 
