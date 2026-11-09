@@ -13,6 +13,7 @@
 ### Session 2026-11-09
 
 - Q: After a couple or planner member signs in from the prompt at `/` using their staff email link, which page do they land on? → A: The admin console, as staff sign-in works today. The admin console gets a button at the very top of its sidebar, visible to staff only, that opens the home page in a new browser tab.
+- Q: Should the placeholder page give a signed-in guest or staff member a way to sign out? → A: Yes, for now: a small "Sign out" text link next to the theme toggle. The admin console already has its own sign-out button, which is unchanged.
 
 ## Background
 
@@ -41,8 +42,9 @@ A guest who has opened their personal invite link or a typed-address sign-in lin
 1. **Given** a guest signed in through a personal invite link, **When** they open `/`, **Then** they see the placeholder page.
 2. **Given** a guest signed in through a typed-address sign-in link, **When** they open `/`, **Then** they see the placeholder page.
 3. **Given** a couple or planner member signed in to the admin console, **When** they open `/` without signing in again, **Then** they see the placeholder page.
-4. **Given** the placeholder page is open, **Then** the only content is the line "Coming soon 👀" and the theme toggle: no header, navigation, footer, images or other text.
+4. **Given** the placeholder page is open, **Then** the only content is the line "Coming soon 👀", the theme toggle and a small "Sign out" link: no header, navigation, footer, images or other text.
 5. **Given** the placeholder page is open at any window size, **Then** the line is centered both vertically and horizontally and shown in a plain sans-serif font.
+6. **Given** the placeholder page is open, **When** the person presses "Sign out", **Then** they are signed out on that device and see the sign-in prompt, and the prompt works again for a fresh demo.
 
 ---
 
@@ -126,7 +128,8 @@ A couple or planner member in the admin console sees a button at the very top of
 - **FR-005a**: When the address belongs to a household, the visitor MUST be sent the existing guest sign-in link. When it belongs to a couple or planner account, the visitor MUST be sent the existing staff sign-in link instead, which signs them in through the staff process. When it is neither, nothing is sent. The three cases MUST be indistinguishable to the visitor in message, response and response time.
 - **FR-006**: After opening an emailed sign-in link or a personal invite link, a guest MUST end up on the placeholder page (not a "not found" page) with a valid session.
 - **FR-007**: The sign-in prompt MUST NOT need a separate staff sign-in link or screen to be reached. The existing admin sign-in page keeps working at its own address.
-- **FR-008**: The placeholder page MUST contain exactly one line of text, "Coming soon 👀", and one theme toggle, and nothing else visible.
+- **FR-008**: The placeholder page MUST contain exactly one line of body text, "Coming soon 👀", one theme toggle and one small "Sign out" link, and nothing else visible. The toggle and sign-out link MUST sit apart from the centered line (for example, in a corner) and never overlap it.
+- **FR-008a**: Pressing "Sign out" MUST end the person's session on that device, for a guest or staff session alike, and show the sign-in prompt. It MUST NOT sign them out on other devices.
 - **FR-009**: The line of text MUST be centered vertically and horizontally in the visible window, in a basic sans-serif font.
 - **FR-010**: The placeholder page MUST start in the device's light or dark setting when the visitor has made no choice.
 - **FR-011**: The toggle MUST switch between light and dark, MUST remember the visitor's choice on that device, and MUST be operable by keyboard with an accessible name and state.
@@ -155,7 +158,7 @@ A couple or planner member in the admin console sees a button at the very top of
 - **SC-004**: In every check that uses an address on neither list, the message shown and the response time are indistinguishable from those for a household address and for a staff address.
 - **SC-004a**: A couple or planner member can go from the sign-in prompt to the admin console signed in, using only their staff email address, with no other page visited, in under 2 minutes.
 - **SC-004b**: From any admin console page with a sidebar, a staff member reaches the placeholder page in one press, in a new tab, in 100% of checks.
-- **SC-005**: The placeholder page contains one line of text and one control; the line stays centered within 1% of the window's center at phone, tablet and desktop sizes.
+- **SC-005**: The placeholder page contains one line of text and two small controls (the toggle and "Sign out"); the line stays centered within 1% of the window's center at phone, tablet and desktop sizes.
 - **SC-006**: In light and dark device settings, the page loads with no visible flash of the wrong theme, and text meets standard accessible contrast in both themes.
 - **SC-007**: The couple can use this page, unaided, to show family or the designer that the production deployment and the real sign-in flows work.
 
@@ -166,6 +169,7 @@ A couple or planner member in the admin console sees a button at the very top of
 - **Address on both lists.** If one address is both a staff account and a household contact (for example, a couple member who is also on the guest list), the staff link is sent. Staff can already see the placeholder page, and a household's personal invite link still reaches the guest side.
 - **Staff status is looked up on the server.** The visitor's browser learns nothing about staff status; the same limits on attempts per address and per visitor that guest sign-in has apply to the whole prompt, so the prompt cannot be used to probe for staff addresses. Wording is plain first-draft text for the couple to polish. Text messages are not part of the sign-in (they are deferred to a later feature).
 - **Where signed-in guests land.** The guest sign-in routes currently send guests to `/rsvp`, which is not built. Until the designer's RSVP exists, this feature makes those landings reach the placeholder page instead. Changing where the sign-in routes redirect to is therefore in scope; when the RSVP page is built it will take that back.
+- **Sign-out.** Added at the couple's request (2026-11-09) so a demo can be repeated; it is a plain text link, and the designer's site decides whether guests keep it. Signing out here does not change the admin console's own sign-out.
 - **Theme.** The saved choice is a per-device convenience only; with nothing saved, the device's light/dark setting applies. The toggle is on the placeholder page; the sign-in prompt follows the device setting without a toggle.
 - **Search engines.** The placeholder is marked as not to be indexed; this is revisited when the real homepage replaces it.
 - **Admin console change.** The sidebar button changes the existing admin console, which stays temporary and plain; it uses the console's one stylesheet and adds no design system.
