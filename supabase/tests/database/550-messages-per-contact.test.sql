@@ -8,7 +8,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(14);
+select plan(20);
 
 insert into public.message_types (key, label, is_essential, template_key) values
   ('invitation', 'Invitation', true, 'invitation');
@@ -106,6 +106,51 @@ delete from public.households where id = '0000000a-0000-0000-0000-000000000000';
 select is(
   (select count(*)::int from public.messages where to_email is not null and household_id is null),
   0, 'deleting a household leaves no address on its messages'
+);
+
+-- Delivery problems are per address (record_message_event).
+select tests.clear_data();
+insert into public.message_types (key, label, is_essential, template_key) values
+  ('invitation', 'Invitation', true, 'invitation');
+insert into public.households (id, display_name) values
+  ('0000000c-0000-0000-0000-000000000000', 'Household C');
+insert into public.household_contacts (id, household_id, kind, value) values
+  ('c000000c-0000-0000-0000-000000000001', '0000000c-0000-0000-0000-000000000000', 'email', 'c1@example.test'),
+  ('c000000c-0000-0000-0000-000000000002', '0000000c-0000-0000-0000-000000000000', 'email', 'c2@example.test');
+insert into public.campaigns (id, message_type_key, name, audience, status) values
+  ('c0000002-0000-0000-0000-000000000000', 'invitation', 'Invitations', '{"scope":"all"}', 'sending');
+insert into public.messages (id, campaign_id, household_id, contact_id, to_email, status, provider_message_id) values
+  ('a0000011-0000-0000-0000-000000000000', 'c0000002-0000-0000-0000-000000000000', '0000000c-0000-0000-0000-000000000000', 'c000000c-0000-0000-0000-000000000001', 'c1@example.test', 'sent', 'prov-1'),
+  ('a0000012-0000-0000-0000-000000000000', 'c0000002-0000-0000-0000-000000000000', '0000000c-0000-0000-0000-000000000000', 'c000000c-0000-0000-0000-000000000002', 'c2@example.test', 'sent', 'prov-2');
+
+select tests.authenticate_service_role();
+select is(public.record_message_event('evt-1', 'prov-1', 'email.bounced', now()), 'applied', 'a bounce is applied');
+select tests.clear_auth();
+select results_eq(
+  $$select value::text, delivery_problem from public.household_contacts order by value$$,
+  $$values ('c1@example.test'::text, true), ('c2@example.test', false)$$,
+  'only the address that bounced is flagged'
+);
+select is(
+  (select delivery_problem from public.households where id = '0000000c-0000-0000-0000-000000000000'),
+  true, 'and so is its household'
+);
+
+-- A repeated or out-of-order event ends in the same state.
+select tests.authenticate_service_role();
+select is(public.record_message_event('evt-1', 'prov-1', 'email.bounced', now()), 'duplicate', 'a repeated event is a duplicate');
+select is(public.record_message_event('evt-2', 'prov-1', 'email.delivered', now()), 'ignored', 'a later delivered event cannot undo the bounce');
+select tests.clear_auth();
+
+-- A complaint on the other address flags it too; correcting one clears only that one.
+select tests.authenticate_service_role();
+select public.record_message_event('evt-3', 'prov-2', 'email.complained', now());
+select tests.clear_auth();
+update public.household_contacts set value = 'c1-fixed@example.test' where id = 'c000000c-0000-0000-0000-000000000001';
+select results_eq(
+  $$select value::text, delivery_problem from public.household_contacts order by value$$,
+  $$values ('c1-fixed@example.test'::text, false), ('c2@example.test', true)$$,
+  'correcting an address clears its flag and leaves the other address flagged'
 );
 
 select * from finish();

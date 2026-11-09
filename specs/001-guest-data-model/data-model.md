@@ -1,6 +1,8 @@
 # Data Model: Guest, Invitation, and Communication
 
-Postgres (Supabase). Every table has row-level security. Roles used below: **anon** (not signed in), **guest** (signed-in household responder), **staff** (couple or planner). Types are generated into `src/types/database.ts`; this document is the design, not the migration.
+> **Changed by [`specs/003-personal-invite-links/data-model.md`](../003-personal-invite-links/data-model.md):** household addresses moved from `households.contact_email` to `household_contacts` (several per household), households gained link-version columns, `settings` gained the wedding event and sign-in limits, `sign_in_attempts` was added, and `messages` are per address. Read that document together with this one.
+
+Postgres (Supabase). Every table has row-level security. Roles used below: **anon** (not signed in), **guest** (a signed-in member of a household), **staff** (couple or planner). Types are generated into `src/types/database.ts`; this document is the design, not the migration.
 
 Conventions: `id uuid primary key default gen_random_uuid()`, `created_at`/`updated_at timestamptz`, `citext` for emails, enums for fixed sets. Migrations are split by concern, in this order:
 

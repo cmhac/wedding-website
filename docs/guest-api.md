@@ -23,19 +23,28 @@ All endpoints return JSON. Errors use one shape:
 
 `issues` appears only on `422`. Messages never contain other households' data or reveal whether an email is on the guest list.
 
-| Method and path            | Purpose                                     | Success | Errors                                                                    |
-| -------------------------- | ------------------------------------------- | ------- | ------------------------------------------------------------------------- |
-| `POST /api/guest/sign-in`  | Email a sign-in link                        | 202     | 422 invalid email format, 429 rate limited                                |
-| `POST /api/guest/sign-out` | End the session                             | 204     | none                                                                      |
-| `GET /api/guest/rsvp`      | Read the household, guests, events, menus   | 200     | 401 not signed in, 403 not a guest                                        |
-| `PUT /api/guest/rsvp`      | Save answers, meals, dietary needs, message | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
-| `POST /api/guest/plus-one` | Name a plus-one placeholder                 | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
-| `POST /api/guest/opt-out`  | Turn reminder emails off or on              | 200     | 401, 403, 422                                                             |
-| `GET /auth/callback`       | Completes sign-in from the emailed link     | 302     | 302 to the sign-in failure path                                           |
+| Method and path            | Purpose                                                             | Success | Errors                                                                    |
+| -------------------------- | ------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `GET /i/[token]`           | Open a household's personal invite link: sign in and go to the RSVP | 302     | 302 to the sign-in failure path                                           |
+| `GET /auth/confirm`        | Complete a typed-address sign-in link                               | 302     | 302 to the sign-in failure path                                           |
+| `POST /auth/confirm`       | Same, for a frontend "Continue" page (form-encoded fields)          | 302     | 302 to the sign-in failure path                                           |
+| `POST /api/guest/sign-in`  | Email a sign-in link to the address typed                           | 202     | 422 invalid email format, 429 rate limited                                |
+| `POST /api/guest/sign-out` | End the session                                                     | 204     | none                                                                      |
+| `GET /api/guest/rsvp`      | Read the household, guests, events, menus                           | 200     | 401 not signed in, 403 not a guest                                        |
+| `PUT /api/guest/rsvp`      | Save answers, meals, dietary needs, message                         | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
+| `POST /api/guest/plus-one` | Name a plus-one placeholder                                         | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
+| `POST /api/guest/opt-out`  | Turn reminder emails off or on                                      | 200     | 401, 403, 422                                                             |
+| `GET /auth/callback`       | Completes sign-in from the emailed link                             | 302     | 302 to the sign-in failure path                                           |
 
-## Sign-in and the emailed link
+## Sign-in
 
-`POST /api/guest/sign-in` with `{ "email": "..." }` always answers `202` with `{ "message": "If that address is on the guest list, a link is on its way." }`, whether the address is known, unknown, or Supabase returned an error (the guest identity decision, `docs/decisions/0003-guest-identity.md`). The emailed link opens `/auth/callback`, which sets the session cookie and redirects to `/rsvp`.
+A household has one shared sign-in; any of its people can use it, on any device, and a household can have several email addresses. There are two ways in.
+
+**Personal link, `GET /i/[token]`.** Each household has a personal link (`/i/<household id>.<signature>`, never containing a name or address) that is in its invitation emails. Opening it sets the session cookie and redirects `302` to `/rsvp` (an optional relative `next` under `/rsvp` is honoured). The link is reusable: every open creates its own session, so it works on any number of devices, and it keeps working after the RSVP deadline (`deadline_passed` in the RSVP response says so; saves are refused with `409 rsvp_closed`). It stops working on the wedding day (typed-address sign-in and open sessions are not affected), when staff reissue it (the old link stops at once), or if it is malformed. Every failure is a `302` to `/auth/error` with no detail, with `Cache-Control: no-store` and `X-Robots-Tag: noindex`.
+
+**Typed address, `POST /api/guest/sign-in`** with `{ "email": "..." }` always answers `202` with `{ "message": "If that address is on the guest list, a link is on its way." }` after at least 1.5 seconds, whether the address is known, unknown, over a limit, or something failed. For an address on a household, the site emails a link to **that address**. The link opens `GET /auth/confirm?token_hash=...&type=email`, which sets the session cookie and redirects to `/rsvp`. The same fields can be sent as a form `POST` to `/auth/confirm`, so a frontend can show a "Continue" page first (a mail scanner that only opens the link then does not use the token up). A link is single use and short lived; ask again for a new one. Staff sign-in is separate (`GET /auth/callback`).
+
+Guests stay signed in until staff use "sign out everywhere" for the household (access ends on the next request) or `POST /api/guest/sign-out` ends this device's session.
 
 ## `GET /api/guest/rsvp` response
 
@@ -49,6 +58,8 @@ Built from `get_my_rsvp()`; contains only the caller's household.
     "message_to_couple": null,
     "reminders_opt_out": false
   },
+  "contacts": [{ "kind": "email", "masked": "a•••@example.com" }],
+  "deadline_passed": false,
   "guests": [
     {
       "id": "uuid",
@@ -105,6 +116,8 @@ Built from `get_my_rsvp()`; contains only the caller's household.
 - `menu` is present only for events with a published or closed menu that the guest is attending. Draft menus and archived dishes are never returned.
 - `event.is_required`, `group_key`, and `display_order` let any frontend mark optional events and group them; this API makes no presentation decisions.
 - `event.closed` is true when the effective deadline has passed or RSVPs are closed globally.
+- `contacts` lists the household's email addresses masked (first character, `•••`, then the domain). Guests can see but not change them; staff manage them.
+- `deadline_passed` is true when every invited event is closed, so the frontend can show a "deadline passed, contact the couple" notice. Saves are still refused with `409 rsvp_closed`.
 
 ## `PUT /api/guest/rsvp` request
 
@@ -184,6 +197,7 @@ await api.signOut();
 
 ## Rules
 
+- Any session of the household may use every guest endpoint; there is no separate "responder".
 - Staff sessions are refused (`403`) on guest endpoints; staff use the admin API.
 - No endpoint accepts a household id from the client; the household always comes from the session.
 - Guest responses never include staff notes, addresses, other households, draft menus, messages, or audit data.

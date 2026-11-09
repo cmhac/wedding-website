@@ -28,7 +28,8 @@ The two interfaces are published for the designer as [docs/guest-api.md](docs/gu
 | `src/app/api/guest`                        | Guest API route handlers (sign-in, RSVP, plus-one, opt-out)                     |
 | `src/app/api/admin`                        | Admin API route handlers (households, import, exports, send, staff)             |
 | `src/app/api/auth`, `webhooks`, `internal` | Auth email hook, Resend webhook, scheduled dispatch                             |
-| `src/app/auth`                             | Sign-in callback route (redirects only, no screens)                             |
+| `src/app/auth`                             | Sign-in callback and confirm routes (redirects only, no screens)                |
+| `src/app/i`                                | Personal invite link route (`/i/[token]`, redirects only)                       |
 | `src/app/(admin)`                          | Admin console pages, its root layout and `admin.css` (temporary, admin only)    |
 | `src/components/admin`                     | Admin console components (presentational, tested with Jest)                     |
 | `src/lib/admin`                            | Admin console data functions, Server Actions and helpers (session guard, time)  |

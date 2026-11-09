@@ -179,7 +179,11 @@ export function HouseholdsListView({
               cell: (row) => (
                 <div className="row">
                   {row.deliveryProblem ? (
-                    <Badge variant="bad">Delivery problem</Badge>
+                    <Badge variant="bad">
+                      {row.problemAddresses.length > 0
+                        ? `Delivery problem: ${row.problemAddresses.join(", ")}`
+                        : "Delivery problem"}
+                    </Badge>
                   ) : null}
                   {row.paperOnly ? (
                     <Badge variant="warn">Paper only</Badge>

@@ -1,3 +1,4 @@
+import { maskEmail } from "@/lib/guest-api/mask";
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { log } from "@/lib/log";
@@ -36,6 +37,8 @@ export type HouseholdRow = {
   unnamedSeats: number;
   /** Every address, oldest first. */
   contacts: string[];
+  /** Addresses with a delivery problem, masked (first character and domain only). */
+  problemAddresses: string[];
   plusOnesAllowed: number;
   plusOnesNamed: number;
   outstanding: { required: number; optional: number; meals: number };
@@ -199,7 +202,7 @@ export async function loadHouseholdList(
       "household_contacts",
       db
         .from("household_contacts")
-        .select("household_id, value, created_at")
+        .select("household_id, value, delivery_problem, created_at")
         .order("created_at", { ascending: true }),
     ),
     rows(
@@ -227,11 +230,17 @@ export async function loadHouseholdList(
     guestsByHousehold.set(key, list);
   }
   const contactsByHousehold = new Map<string, string[]>();
+  const problemsByHousehold = new Map<string, string[]>();
   for (const c of contacts) {
     const key = c.household_id as string;
     const list = contactsByHousehold.get(key) ?? [];
     list.push(String(c.value));
     contactsByHousehold.set(key, list);
+    if (c.delivery_problem === true) {
+      const problems = problemsByHousehold.get(key) ?? [];
+      problems.push(maskEmail(String(c.value)));
+      problemsByHousehold.set(key, problems);
+    }
   }
   const progressByHousehold = new Map(
     progress.map((p) => [p.household_id as string, p]),
@@ -269,6 +278,7 @@ export async function loadHouseholdList(
       guestNames: members.map(fullName).filter((n): n is string => n !== null),
       unnamedSeats: members.filter((g) => g.is_placeholder).length,
       contacts: addresses,
+      problemAddresses: problemsByHousehold.get(id) ?? [],
       plusOnesAllowed: num(h.plus_one_allowance),
       plusOnesNamed: members.filter((g) => g.is_plus_one && !g.is_placeholder)
         .length,

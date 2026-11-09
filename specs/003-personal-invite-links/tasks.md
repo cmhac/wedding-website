@@ -223,13 +223,13 @@ description: "Task list for personal invite links and shared household sign-in"
 
 ### Tests for User Story 7
 
-- [ ] T074 [P] [US7] Add to `supabase/tests/database/530-message-events.test.sql`: `record_message_event` for a bounce or complaint sets `household_contacts.delivery_problem` on the contact whose `value` still equals the message's `to_email`, and not on others; duplicates and out-of-order events end in the correct state, as today
-- [ ] T075 [P] [US7] Add to `src/app/api/webhooks/resend/__tests__/route.test.ts` and `src/components/admin/__tests__/` (`OverviewView`, `ReportsView`, `ContactsList`): a flagged address shows on the household and in the delivery-problem counts with which address failed (masked in lists, full in the household detail)
+- [x] T074 [P] [US7] Add to `supabase/tests/database/530-message-events.test.sql`: `record_message_event` for a bounce or complaint sets `household_contacts.delivery_problem` on the contact whose `value` still equals the message's `to_email`, and not on others; duplicates and out-of-order events end in the correct state, as today
+- [x] T075 [P] [US7] Add to `src/app/api/webhooks/resend/__tests__/route.test.ts` and `src/components/admin/__tests__/` (`OverviewView`, `ReportsView`, `ContactsList`): a flagged address shows on the household and in the delivery-problem counts with which address failed (masked in lists, full in the household detail)
 
 ### Implementation for User Story 7
 
-- [ ] T076 [US7] Migration `supabase/migrations/<ts>_contact_delivery_flags.sql`: change `record_message_event` per T074
-- [ ] T077 [US7] Update `src/lib/admin/data/overview.ts`, `src/lib/admin/data/reports.ts`, `src/components/admin/OverviewView.tsx`, `src/components/admin/ReportsView.tsx` and `src/components/admin/ContactsList.tsx` per T075
+- [x] T076 [US7] Migration `supabase/migrations/<ts>_contact_delivery_flags.sql`: change `record_message_event` per T074
+- [x] T077 [US7] Update `src/lib/admin/data/overview.ts`, `src/lib/admin/data/reports.ts`, `src/components/admin/OverviewView.tsx`, `src/components/admin/ReportsView.tsx` and `src/components/admin/ContactsList.tsx` per T075
 
 **Checkpoint**: follow-up works per address.
 
@@ -237,13 +237,13 @@ description: "Task list for personal invite links and shared household sign-in"
 
 ## Phase 10: Polish and cross-cutting concerns
 
-- [ ] T078 [P] Update `specs/001-guest-data-model/contracts/guest-api.md` and `docs/guest-api.md` with the changes in `specs/003-personal-invite-links/contracts/guest-api.md`, and extend `src/lib/guest-api/__tests__/contract.test.ts` so the endpoint table includes `/i/[token]` and `/auth/confirm`
-- [ ] T079 [P] Update `specs/001-guest-data-model/contracts/admin-api.md`, `specs/001-guest-data-model/contracts/http-endpoints.md`, `specs/002-admin-console-v0/contracts/admin-routes.md` and `docs/admin-api.md` with `specs/003-personal-invite-links/contracts/admin-api.md`
-- [ ] T080 [P] Update `specs/001-guest-data-model/contracts/email-templates.md` with `specs/003-personal-invite-links/contracts/email-templates.md`
-- [ ] T081 [P] Write the decision record for guest identity (one shared Auth user per household with a synthetic address, personal invite links, typed-address links sent by the site) as `docs/decisions/0011-household-sign-in-and-invite-links.md`, superseding the guest-identity decision; mark `docs/decisions/0003-guest-identity.md` as superseded with a link
-- [ ] T082 [P] Write the decision record for shared household access (several addresses, any signed-in member answers) as `docs/decisions/0012-shared-household-access.md`; add a note to `docs/decisions/0006-household-model.md` that its "exactly one responder" part is superseded, the rest stands; update `docs/architecture.md` items 2 and 3
-- [ ] T083 [P] Update `docs/manual-setup.md`: `INVITE_LINK_SECRET` (sensitive, production), `HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN`, choosing the wedding event, the sign-in limits and their defaults, the conversion script and when to run it
-- [ ] T084 [P] Update `CLAUDE.md` layout table entries for the new routes (`src/app/i`, `src/app/auth/confirm`) and `specs/001-guest-data-model/data-model.md` with a pointer to this feature's data model
+- [x] T078 [P] Update `specs/001-guest-data-model/contracts/guest-api.md` and `docs/guest-api.md` with the changes in `specs/003-personal-invite-links/contracts/guest-api.md`, and extend `src/lib/guest-api/__tests__/contract.test.ts` so the endpoint table includes `/i/[token]` and `/auth/confirm`
+- [x] T079 [P] Update `specs/001-guest-data-model/contracts/admin-api.md`, `specs/001-guest-data-model/contracts/http-endpoints.md`, `specs/002-admin-console-v0/contracts/admin-routes.md` and `docs/admin-api.md` with `specs/003-personal-invite-links/contracts/admin-api.md`
+- [x] T080 [P] Update `specs/001-guest-data-model/contracts/email-templates.md` with `specs/003-personal-invite-links/contracts/email-templates.md`
+- [x] T081 [P] Write the decision record for guest identity (one shared Auth user per household with a synthetic address, personal invite links, typed-address links sent by the site) as `docs/decisions/0011-household-sign-in-and-invite-links.md`, superseding the guest-identity decision; mark `docs/decisions/0003-guest-identity.md` as superseded with a link
+- [x] T082 [P] Write the decision record for shared household access (several addresses, any signed-in member answers) as `docs/decisions/0012-shared-household-access.md`; add a note to `docs/decisions/0006-household-model.md` that its "exactly one responder" part is superseded, the rest stands; update `docs/architecture.md` items 2 and 3
+- [x] T083 [P] Update `docs/manual-setup.md`: `INVITE_LINK_SECRET` (sensitive, production), `HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN`, choosing the wedding event, the sign-in limits and their defaults, the conversion script and when to run it
+- [x] T084 [P] Update `CLAUDE.md` layout table entries for the new routes (`src/app/i`, `src/app/auth/confirm`) and `specs/001-guest-data-model/data-model.md` with a pointer to this feature's data model
 - [ ] T085 Run every scenario in `specs/003-personal-invite-links/quickstart.md` section 3 locally and record any deviation in `research.md`
 - [ ] T086 Final gate: `npm run format:check && npm run lint && npm run type-check && npm test && npm run test:db`, and `npm run build`
 

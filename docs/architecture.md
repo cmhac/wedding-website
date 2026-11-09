@@ -29,7 +29,7 @@ Each is recorded as a file in `docs/decisions/`. The answers are in
 1. **Hosting.** _(accepted: 0002)_ The portfolio site is a static export on GitHub Pages. This site
    uses server-side auth cookies, so it likely needs a host that runs Next.js
    server code. `next.config.ts` deliberately does not set `output: "export"`.
-2. **Guest identity model.** _(accepted: 0003)_ Guests sign in by magic link. Options: create a
+2. **Guest identity model.** _(accepted: 0003, superseded by 0011)_ Guests sign in by personal link or a link emailed to any household address; each household has one Auth user with a synthetic, never-mailed address (0011). The original options follow. Guests sign in by magic link. Options: create a
    Supabase user per invited guest ahead of time and call `signInWithOtp` with
    `shouldCreateUser: false`, or allow open sign-up and match by email. This
    affects the `[auth]` settings in `supabase/config.toml`, which are still the
@@ -41,8 +41,8 @@ Each is recorded as a file in `docs/decisions/`. The answers are in
    custom SMTP runs in production only as a stopgap until the template exists.
 4. **Where email sends run.** _(accepted: 0005)_ Next.js route handlers vs. Supabase Edge Functions
    (the latter suit database-triggered sends).
-5. **Household/party model.** _(accepted: 0006)_ One invite per household vs. per person, plus-ones,
-   per-event invitations.
+5. **Household/party model.** _(accepted: 0006; the one-responder part superseded by 0012)_ One invite per household vs. per person, plus-ones,
+   per-event invitations. A household can have several addresses and anyone signed in to it can answer (0012).
 6. **Sending domain.** _(accepted: 0007)_ Needs DNS verification in Resend before production sends.
 7. **Admin authorization.** _(accepted: 0008)_ How Chris and Hannah are distinguished from guests
    (e.g. a roles table checked by row-level security policies).

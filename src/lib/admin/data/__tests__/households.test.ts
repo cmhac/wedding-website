@@ -338,6 +338,18 @@ describe("loadHouseholdList", () => {
     });
   });
 
+  it("names which address failed, masked, in the list", async () => {
+    const { client } = build();
+    const list = await loadHouseholdList(query(), client);
+    expect(list.rows.find((r) => r.id === "h-b")?.problemAddresses).toEqual([
+      "s•••@example.test",
+    ]);
+    expect(list.rows.find((r) => r.id === "h-a")?.problemAddresses).toEqual([]);
+    expect(
+      JSON.stringify(list.rows.map((r) => r.problemAddresses)),
+    ).not.toContain("second@");
+  });
+
   it("flags delivery problem, paper only and possible duplicate", async () => {
     const { client } = build([
       {
