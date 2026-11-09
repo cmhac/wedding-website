@@ -19,7 +19,7 @@
 
 Today the site's front door, `hannahandchris.wedding/`, answers "not found". The sign-in flows (guest personal links, guest typed-address links, and staff sign-in) all work behind the scenes, but there is no public page that shows them working, and a signed-in guest is sent to the RSVP page, which has not been built.
 
-This feature adds one deliberately minimal, **temporary** page at the site's front door. Its job is to let the couple show that production is live and that the real sign-in flows work end to end. The designer's guest-facing site replaces it later, so it carries no visual design beyond what is described here.
+This feature adds one deliberately minimal page at the site's front door. Its job is to let the couple show that production is live and that the real sign-in flows work end to end. The designer's guest-facing site can replace or build on it later, so it carries no visual design beyond what is described here.
 
 Plain-language terms used below:
 
@@ -137,7 +137,7 @@ A couple or planner member in the admin console sees a button at the very top of
 - **FR-013**: The sign-in prompt MUST follow the device's light or dark setting.
 - **FR-014**: The page MUST NOT reveal anything about households, guests, staff or settings to a visitor who is not signed in.
 - **FR-015**: Signing out, an expired session or a revoked staff role MUST return the visitor to the sign-in prompt at `/`, not to an error.
-- **FR-016**: The feature MUST be marked temporary in the repository's documents, so the designer's guest-facing site is understood to replace the page, and it MUST add no design system, theming library or component library.
+- **FR-016**: The repository's scope guidance MUST record this page as a permanent, deliberately narrow exception to "no guest-facing screens" (this page and its sign-in prompt only, in plain styling), so the designer's site is understood to own every other guest-facing screen, and the feature MUST add no design system, theming library or component library.
 - **FR-017**: The page MUST NOT be offered to search engines for indexing while it is a placeholder.
 - **FR-018**: Apart from the sidebar button in FR-020, the existing admin console, guest API, and sign-in flows MUST keep working unchanged.
 - **FR-019**: After a staff member signs in from the prompt at `/`, they MUST land on the admin console, the same page as when they sign in from the admin sign-in page.
@@ -164,9 +164,9 @@ A couple or planner member in the admin console sees a button at the very top of
 
 ## Assumptions
 
-- **Scope exception.** The project rules say guest-facing screens are out of scope and belong to the designer. The couple's request for this placeholder (2026-11-09) is an explicit, narrow exception for one temporary page and its sign-in prompt: no visual design, no design system, no component library, and the designer's site replaces it. The project's scope notes should record this exception when the plan is written.
+- **Scope exception.** The project rules say guest-facing screens are out of scope and belong to the designer. The couple's request for this placeholder (2026-11-09) is a permanent, narrow amendment to that rule: this one page and its sign-in prompt, in plain styling, are built here; no visual design, no design system, no component library, and every other guest-facing screen stays with the designer, who may replace this page's contents. The amendment is recorded in the project's scope guidance (`CLAUDE.md`), the architecture notes, a decision record and, where the constitution's stack wording needs it, the constitution.
 - **Sign-in prompt contents.** An email field, a submit button, and the neutral confirmation message. There is no separate staff link (changed 2026-11-09 at the couple's request): staff are recognized by the address they type.
-- **Address on both lists.** If one address is both a staff account and a household contact (for example, a couple member who is also on the guest list), the staff link is sent. Staff can already see the placeholder page, and a household's personal invite link still reaches the guest side.
+- **Address on both lists.** Cannot happen: staff addresses cannot also be household addresses (decision 0012, shared household access). The prompt therefore needs only to try the household list and, failing that, the staff list.
 - **Staff status is looked up on the server.** The visitor's browser learns nothing about staff status; the same limits on attempts per address and per visitor that guest sign-in has apply to the whole prompt, so the prompt cannot be used to probe for staff addresses. Wording is plain first-draft text for the couple to polish. Text messages are not part of the sign-in (they are deferred to a later feature).
 - **Where signed-in guests land.** The guest sign-in routes currently send guests to `/rsvp`, which is not built. Until the designer's RSVP exists, this feature makes those landings reach the placeholder page instead. Changing where the sign-in routes redirect to is therefore in scope; when the RSVP page is built it will take that back.
 - **Sign-out.** Added at the couple's request (2026-11-09) so a demo can be repeated; it is a plain text link, and the designer's site decides whether guests keep it. Signing out here does not change the admin console's own sign-out.

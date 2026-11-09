@@ -60,7 +60,11 @@ older ones, and unrecorded exceptions get "fixed" later and break the toolchain.
 
 ## Technology Stack and Constraints
 
-- **Frontend:** Next.js (App Router), React, TypeScript (strict), Tailwind CSS.
+- **Frontend:** Next.js (App Router), React, TypeScript (strict), Tailwind CSS for the
+  designer's guest-facing screens. The two plain pages built in this repository, the temporary
+  admin console and the permanent placeholder homepage at `/`, each use one plain stylesheet
+  and MUST NOT add a design system, theming library, or component library, as recorded in
+  `docs/decisions/0009-admin-console-v0.md` and `docs/decisions/0013-placeholder-homepage.md`.
 - **Backend:** Supabase for Postgres, Auth, API, and Edge Functions.
 - **Auth:** magic-link sign-in for everyone, the couple and guests alike.
 - **Email:** Resend for delivery, React Email for templates.
@@ -100,4 +104,4 @@ MUST stay consistent with it.
 - **Compliance:** reviews and plans MUST verify compliance with these principles. Complexity
   or deviation MUST be justified in writing in the plan or the pull request.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-10-18
+**Version**: 1.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-11-09
