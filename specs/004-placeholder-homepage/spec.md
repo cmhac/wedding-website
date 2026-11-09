@@ -42,7 +42,7 @@ A guest who has opened their personal invite link or a typed-address sign-in lin
 
 ### User Story 2 - Visitor who is not signed in is prompted to sign in (Priority: P1)
 
-A visitor who is not signed in opens `/` and is prompted to sign in. They go through the normal flow: type an email address, receive the sign-in email, open its link, and arrive at the placeholder page signed in. A couple or planner member can reach the staff sign-in from the same prompt.
+A visitor who is not signed in opens `/` and is prompted to sign in. They go through the normal flow: type an email address, receive the sign-in email, open its link, and arrive at the placeholder page signed in. A couple or planner member uses the same prompt with their staff email address and is signed in through the staff process, with no separate staff link to find.
 
 **Why this priority**: without it the placeholder cannot demonstrate the real sign-in flows, which is the point of the feature.
 
@@ -54,8 +54,9 @@ A visitor who is not signed in opens `/` and is prompted to sign in. They go thr
 2. **Given** the sign-in prompt, **When** the visitor submits an email address, **Then** they are shown the same neutral message whether or not the address is on the guest list ("If that address is on the guest list, a link is on its way."), so the page never reveals who is invited.
 3. **Given** a household's email address was submitted, **When** the visitor opens the emailed link, **Then** they are signed in and land on the placeholder page.
 4. **Given** a visitor with no session who opens a household's personal invite link, **When** the link is valid, **Then** they are signed in and land on the placeholder page.
-5. **Given** the sign-in prompt, **When** a couple or planner member chooses the staff sign-in option, **Then** they go to the existing admin sign-in and, once signed in, can open `/` and see the placeholder page.
-6. **Given** an invalid, cancelled or expired link, **When** a visitor opens it, **Then** they see the existing plain sign-in failure page, and can get back to the sign-in prompt from there.
+5. **Given** the sign-in prompt, **When** someone submits the email address of a couple or planner account, **Then** they are shown the same neutral message and receive the staff sign-in email (not a guest one); opening it signs them in as staff, and they can open `/` and see the placeholder page and the admin console.
+6. **Given** the sign-in prompt, **When** the visitor submits the address of a staff account and, separately, one that is on neither list, **Then** the message shown and the time taken to show it look the same, so the page never reveals who is staff.
+7. **Given** an invalid, cancelled or expired link, **When** a visitor opens it, **Then** they see the existing plain sign-in failure page, and can get back to the sign-in prompt from there.
 
 ---
 
@@ -96,9 +97,10 @@ On the placeholder page, the page starts in whichever theme the visitor's device
 - **FR-002**: A visitor with a valid guest or staff session MUST see the placeholder page at `/`.
 - **FR-003**: Staff sessions (couple and planner) MUST be accepted at `/` with no separate guest sign-in; being signed in to the admin console is enough.
 - **FR-004**: A visitor without a valid session MUST see a sign-in prompt at `/` and MUST NOT see the placeholder page.
-- **FR-005**: The sign-in prompt MUST let a visitor submit an email address to receive a sign-in link through the existing guest sign-in, and MUST show the existing neutral confirmation message whatever address is typed, with no hint of whether the address is on the guest list.
+- **FR-005**: The sign-in prompt MUST let a visitor submit an email address and MUST show one neutral confirmation message whatever address is typed, with no hint of whether the address is on the guest list or belongs to staff. The message MUST cover both cases (for example, "If that address is on the guest list or belongs to a staff account, a link is on its way.").
+- **FR-005a**: When the address belongs to a household, the visitor MUST be sent the existing guest sign-in link. When it belongs to a couple or planner account, the visitor MUST be sent the existing staff sign-in link instead, which signs them in through the staff process. When it is neither, nothing is sent. The three cases MUST be indistinguishable to the visitor in message, response and response time.
 - **FR-006**: After opening an emailed sign-in link or a personal invite link, a guest MUST end up on the placeholder page (not a "not found" page) with a valid session.
-- **FR-007**: The sign-in prompt MUST offer a way for staff to reach the existing admin sign-in.
+- **FR-007**: The sign-in prompt MUST NOT need a separate staff sign-in link or screen to be reached. The existing admin sign-in page keeps working at its own address.
 - **FR-008**: The placeholder page MUST contain exactly one line of text, "Coming soon 👀", and one theme toggle, and nothing else visible.
 - **FR-009**: The line of text MUST be centered vertically and horizontally in the visible window, in a basic sans-serif font.
 - **FR-010**: The placeholder page MUST start in the device's light or dark setting when the visitor has made no choice.
@@ -123,7 +125,8 @@ On the placeholder page, the page starts in whichever theme the visitor's device
 - **SC-001**: Opening the site's front door never produces "not found"; it shows either the placeholder page or the sign-in prompt in 100% of checks.
 - **SC-002**: A person with a household's email address can go from the sign-in prompt to the placeholder page signed in, in under 2 minutes, with no account creation or password.
 - **SC-003**: A couple or planner member already signed in to the admin console sees the placeholder page at `/` on the first try, with no second sign-in, in 100% of checks.
-- **SC-004**: In every check that uses a not-on-the-list address, the message shown is identical to the message for a listed address.
+- **SC-004**: In every check that uses an address on neither list, the message shown and the response time are indistinguishable from those for a household address and for a staff address.
+- **SC-004a**: A couple or planner member can go from the sign-in prompt to the admin console signed in, using only their staff email address, with no other page visited, in under 2 minutes.
 - **SC-005**: The placeholder page contains one line of text and one control; the line stays centered within 1% of the window's center at phone, tablet and desktop sizes.
 - **SC-006**: In light and dark device settings, the page loads with no visible flash of the wrong theme, and text meets standard accessible contrast in both themes.
 - **SC-007**: The couple can use this page, unaided, to show family or the designer that the production deployment and the real sign-in flows work.
@@ -131,7 +134,9 @@ On the placeholder page, the page starts in whichever theme the visitor's device
 ## Assumptions
 
 - **Scope exception.** The project rules say guest-facing screens are out of scope and belong to the designer. The couple's request for this placeholder (2026-11-09) is an explicit, narrow exception for one temporary page and its sign-in prompt: no visual design, no design system, no component library, and the designer's site replaces it. The project's scope notes should record this exception when the plan is written.
-- **Sign-in prompt contents.** An email field, a submit button, the neutral confirmation message, and a small "Staff sign in" link. Wording is plain first-draft text for the couple to polish. Text messages are not part of the sign-in (they are deferred to a later feature).
+- **Sign-in prompt contents.** An email field, a submit button, and the neutral confirmation message. There is no separate staff link (changed 2026-11-09 at the couple's request): staff are recognized by the address they type.
+- **Address on both lists.** If one address is both a staff account and a household contact (for example, a couple member who is also on the guest list), the staff link is sent. Staff can already see the placeholder page, and a household's personal invite link still reaches the guest side.
+- **Staff status is looked up on the server.** The visitor's browser learns nothing about staff status; the same limits on attempts per address and per visitor that guest sign-in has apply to the whole prompt, so the prompt cannot be used to probe for staff addresses. Wording is plain first-draft text for the couple to polish. Text messages are not part of the sign-in (they are deferred to a later feature).
 - **Where signed-in guests land.** The guest sign-in routes currently send guests to `/rsvp`, which is not built. Until the designer's RSVP exists, this feature makes those landings reach the placeholder page instead. Changing where the sign-in routes redirect to is therefore in scope; when the RSVP page is built it will take that back.
 - **Theme.** The saved choice is a per-device convenience only; with nothing saved, the device's light/dark setting applies. The toggle is on the placeholder page; the sign-in prompt follows the device setting without a toggle.
 - **Search engines.** The placeholder is marked as not to be indexed; this is revisited when the real homepage replaces it.

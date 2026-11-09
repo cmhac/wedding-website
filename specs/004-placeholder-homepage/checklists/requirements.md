@@ -32,5 +32,6 @@
 ## Notes
 
 - No clarification markers were needed; defaults are recorded under Assumptions.
+- Revised 2026-11-09: one sign-in prompt for guests and staff; the server picks the guest or staff link by address, with one neutral answer so staff addresses are not revealed.
 - The spec reuses existing sign-in behavior and names routes only where the user-facing address matters (`/`, the admin sign-in).
 - The scope exception to the project's "no guest-facing screens" rule is recorded in Assumptions for the plan to carry into CLAUDE.md and the architecture notes.
