@@ -21,16 +21,7 @@ function fakeAdmin() {
   const update = jest.fn((_row: object) => ({
     eq: async (_k: string, _v: string) => ({ error: null }),
   }));
-  const households = {
-    select: () => households,
-    in: () => households,
-    is: () => households,
-    not: async () => ({
-      data: [{ id: "hh-1", contact_email: "test@example.com" }],
-      error: null,
-    }),
-    update,
-  };
+  const households = { update };
   const from = jest.fn((table: string) =>
     table === "events"
       ? { select: async () => ({ data: [{ slug: "ceremony" }], error: null }) }
@@ -68,6 +59,9 @@ describe("importGuestsFromFile", () => {
       read(`${HEADER}\nh1,Test Household,test@example.com,Ann,Example,yes`),
     );
     expect(createUser).toHaveBeenCalledTimes(1);
+    expect(createUser).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "household-hh-1@households.invalid" }),
+    );
     expect(update).toHaveBeenCalledWith({ auth_user_id: "user-1" });
     expect(report).toContain("1 linked, 0 failed");
     expect(report).not.toContain("example.com");
@@ -105,6 +99,7 @@ describe("formatReport", () => {
       created: { households: 2, guests: 5, invitations: 7 },
       errors: [{ row: 3, field: "email", message: "Invalid email" }],
       householdIds: [],
+      accounts: { linked: 0, failed: 0 },
     });
     expect(text).toContain("2 households, 5 guests, 7 invitations");
     expect(text).toContain("Row 3 (email): Invalid email");

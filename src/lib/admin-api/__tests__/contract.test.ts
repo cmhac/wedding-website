@@ -162,7 +162,7 @@ describe("admin API responses parse against the exported schemas", () => {
     const household = {
       id: ID,
       display_name: "The Fakes",
-      contact_email: null,
+      contact_count: 0,
       plus_one_allowance: 0,
       paper_only: true,
     };

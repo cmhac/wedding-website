@@ -71,6 +71,7 @@ export async function loadOverview(
     countRows,
     progressRows,
     householdRows,
+    contactRows,
     duplicateRows,
     settingsRows,
   ] = await Promise.all([
@@ -97,6 +98,10 @@ export async function loadOverview(
     ),
     rows("staff_households", supabase.rpc("staff_households")),
     rows(
+      "household_contacts",
+      supabase.from("household_contacts").select("household_id"),
+    ),
+    rows(
       "find_duplicate_households",
       supabase.rpc("find_duplicate_households"),
     ),
@@ -106,6 +111,7 @@ export async function loadOverview(
     ),
   ]);
 
+  const withAddress = new Set(contactRows.map((c) => c.household_id as string));
   const countsByEvent = new Map(
     countRows.map((c) => [c.event_id as string, c]),
   );
@@ -153,7 +159,8 @@ export async function loadOverview(
     mealsOutstanding: outstanding.filter((h) => h.meals > 0).length,
     deliveryProblems: householdRows.filter((h) => h.delivery_problem === true)
       .length,
-    paperOnly: householdRows.filter((h) => !h.contact_email).length,
+    paperOnly: householdRows.filter((h) => !withAddress.has(h.id as string))
+      .length,
     possibleDuplicates: duplicateRows.length,
     mostOutstanding,
     rsvpOpen: settings ? settings.rsvp_open !== false : true,

@@ -33,7 +33,6 @@ export async function POST(request: Request) {
     session.supabase,
     {
       ...parsed.data,
-      contact_email: parsed.data.contact_email ?? null,
       address: parsed.data.address ?? null,
       notes: parsed.data.notes ?? null,
     },
@@ -43,7 +42,14 @@ export async function POST(request: Request) {
       return errorResponse(
         409,
         "email_in_use",
-        "That email address is already used by another household. Use a different address.",
+        "One of those email addresses is already used by another household. Use a different address.",
+      );
+    }
+    if (result.code === "staff_account") {
+      return errorResponse(
+        409,
+        "staff_account",
+        "One of those email addresses belongs to a staff sign-in account and cannot be used for a household.",
       );
     }
     if (result.code === "invalid_payload") {

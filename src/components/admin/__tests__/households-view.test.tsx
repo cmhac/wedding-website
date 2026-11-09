@@ -13,7 +13,7 @@ const row = (over: Partial<HouseholdRow> = {}): HouseholdRow => ({
   displayName: "The Examples",
   guestNames: ["Sam Example", "Alex Example"],
   unnamedSeats: 0,
-  contactEmail: "household@example.test",
+  contacts: ["household@example.test"],
   plusOnesAllowed: 1,
   plusOnesNamed: 0,
   outstanding: { required: 2, optional: 2, meals: 2 },
@@ -125,7 +125,7 @@ describe("HouseholdsListView", () => {
     for (const name of [
       "Household",
       "Guests",
-      "Contact email",
+      "Email addresses",
       "Outstanding",
       "Status",
     ]) {
@@ -166,7 +166,7 @@ describe("HouseholdsListView", () => {
       row({
         id: "h3",
         displayName: "Exampleton family",
-        contactEmail: null,
+        contacts: [],
         paperOnly: true,
         unnamedSeats: 1,
         possibleDuplicate: true,

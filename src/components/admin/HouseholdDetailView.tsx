@@ -13,7 +13,6 @@ import { formatPacific, isoToPacificLocal } from "@/lib/admin/time";
 import { ConfirmPanel } from "./ConfirmPanel";
 import { DataTable } from "./DataTable";
 import { ActionForm, type ActionFormState } from "./forms/ActionForm";
-import { ContactEmailForm } from "./forms/ContactEmailForm";
 import { DeleteHouseholdForm } from "./forms/DeleteHouseholdForm";
 import { Alert, Badge, Card, Field, PageHeader, TabLinks } from "./primitives";
 
@@ -91,13 +90,13 @@ export function HouseholdDetailView({
       </p>
       <PageHeader
         title={household.displayName}
-        description={`${household.contactEmail ?? "No email"} · ${household.guests.length} ${household.guests.length === 1 ? "guest" : "guests"} · ${plusOnes(household.plusOneAllowance)}`}
+        description={`${household.contacts.length === 0 ? "No email" : `${household.contacts.length} ${household.contacts.length === 1 ? "email address" : "email addresses"}`} · ${household.guests.length} ${household.guests.length === 1 ? "guest" : "guests"} · ${plusOnes(household.plusOneAllowance)}`}
         actions={
           <>
             {household.deliveryProblem ? (
               <Badge variant="bad">Delivery problem</Badge>
             ) : null}
-            {household.contactEmail === null ? (
+            {household.contacts.length === 0 ? (
               <Badge variant="warn">Paper only</Badge>
             ) : !household.deliveryProblem ? (
               <Badge variant="ok">Email deliverable</Badge>
@@ -136,11 +135,27 @@ function DetailsTab({ household }: { household: HouseholdDetail }) {
   const address = household.address ?? {};
   return (
     <div className="stack">
-      <Card heading="Contact email">
-        <ContactEmailForm
-          householdId={household.id}
-          email={household.contactEmail}
-        />
+      <Card heading="Email addresses">
+        <fieldset className="group">
+          <legend>Email addresses</legend>
+          {household.contacts.length === 0 ? (
+            <p className="muted">None. This household is paper only.</p>
+          ) : (
+            <ul className="plain">
+              {household.contacts.map((contact) => (
+                <li key={contact.id}>
+                  {contact.value}
+                  {contact.deliveryProblem ? (
+                    <>
+                      {" "}
+                      <Badge variant="bad">Delivery problem</Badge>
+                    </>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </fieldset>
       </Card>
       <Card heading="Household details">
         <ActionForm

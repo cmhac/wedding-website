@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../types/database.ts";
+import { createHouseholdAuthUser } from "./household-access.ts";
 import { parseGuestImport, type ImportError } from "./import.ts";
 
 /**
@@ -23,8 +24,10 @@ export type RunImportResult =
       kind: "done";
       created: Counts;
       errors: ImportError[];
-      /** The new households, to link sign-in accounts to afterwards. */
+      /** The new households. */
       householdIds: string[];
+      /** Sign-in accounts created for them (counts only). */
+      accounts: { linked: number; failed: number };
     }
   /** The file itself cannot be read (empty, not CSV, or missing columns). */
   | { kind: "invalid"; errors: ImportError[] };
@@ -35,9 +38,45 @@ type RpcResult = {
   household_ids?: { ref: string; household_id: string }[];
 } | null;
 
+/**
+ * Gives each new household its sign-in account (research R2): an Auth user with
+ * a synthetic address, linked on the household row. `admin` is the service-role
+ * client. Returns counts only; an account that cannot be linked is removed.
+ */
+async function provisionAccounts(
+  admin: SupabaseClient<Database>,
+  householdIds: string[],
+): Promise<{ linked: number; failed: number }> {
+  let linked = 0;
+  let failed = 0;
+  for (const id of householdIds) {
+    const user = await createHouseholdAuthUser(admin, id);
+    if (!user) {
+      failed++;
+      continue;
+    }
+    const { error } = await admin
+      .from("households")
+      .update({ auth_user_id: user.id })
+      .eq("id", id);
+    if (error) {
+      await admin.auth.admin.deleteUser(user.id);
+      failed++;
+    } else {
+      linked++;
+    }
+  }
+  return { linked, failed };
+}
+
+/**
+ * With `admin` (the service-role client), every imported household also gets its
+ * sign-in account; without it no accounts are created.
+ */
 export async function runGuestImport(
   supabase: SupabaseClient<Database>,
   csv: string,
+  admin?: SupabaseClient<Database>,
 ): Promise<RunImportResult> {
   const events = await supabase.from("events").select("slug");
   if (events.error) throw new Error("The import could not be completed.");
@@ -73,6 +112,11 @@ export async function runGuestImport(
     );
   }
 
+  const accounts =
+    admin && householdIds.length > 0
+      ? await provisionAccounts(admin, householdIds)
+      : { linked: 0, failed: 0 };
+
   errors.sort((a, b) => a.row - b.row);
-  return { kind: "done", created, errors, householdIds };
+  return { kind: "done", created, errors, householdIds, accounts };
 }

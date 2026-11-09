@@ -15,7 +15,7 @@ import {
 const household = {
   id: "h1",
   display_name: "Test Household",
-  contact_email: null,
+  contact_count: 0,
   plus_one_allowance: 0,
   paper_only: true,
 };
@@ -36,6 +36,7 @@ describe("admin API client", () => {
     const f = mockFetch(201, { household, guest_ids: ["g1"] });
     const res = await createHousehold({
       display_name: "Test Household",
+      contacts: [],
       plus_one_allowance: 0,
       guests: [{ first_name: "Ann", last_name: "Example" }],
     });
@@ -49,7 +50,7 @@ describe("admin API client", () => {
 
   it("returns the error body on a failure", async () => {
     mockFetch(409, { error: { code: "email_in_use", message: "In use." } });
-    const res = await updateHousehold("h1", { contact_email: "a@example.com" });
+    const res = await updateHousehold("h1", { display_name: "New name" });
     expect(res).toEqual({
       ok: false,
       status: 409,
@@ -59,7 +60,7 @@ describe("admin API client", () => {
 
   it("sends a PATCH to the household path", async () => {
     const f = mockFetch(200, { household });
-    await updateHousehold("h1", { contact_email: null });
+    await updateHousehold("h1", { notes: null });
     expect(f.mock.calls[0][0]).toBe("/api/admin/households/h1");
     expect(f.mock.calls[0][1]?.method).toBe("PATCH");
   });

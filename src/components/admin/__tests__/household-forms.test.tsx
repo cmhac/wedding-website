@@ -6,7 +6,6 @@ import {
   updateHousehold,
 } from "@/lib/admin-api/client";
 import { messageFor } from "@/lib/admin/messages";
-import { ContactEmailForm } from "../forms/ContactEmailForm";
 import { DeleteHouseholdForm } from "../forms/DeleteHouseholdForm";
 import { HouseholdCreateForm } from "../forms/HouseholdCreateForm";
 
@@ -42,7 +41,7 @@ const created = {
     household: {
       id: "new-1",
       display_name: "The Examples",
-      contact_email: null,
+      contact_count: 0,
       plus_one_allowance: 1,
       paper_only: true,
     },
@@ -92,7 +91,7 @@ describe("HouseholdCreateForm", () => {
     expect(create).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledWith({
       display_name: "The Examples",
-      contact_email: null,
+      contacts: [],
       plus_one_allowance: 1,
       address: null,
       notes: null,
@@ -107,21 +106,25 @@ describe("HouseholdCreateForm", () => {
     });
   });
 
-  it("sends a contact email and address when given, then opens the household", async () => {
+  it("sends every address typed, one per line, and the mailing address, then opens the household", async () => {
     create.mockResolvedValue(created);
     const user = userEvent.setup();
     render(<HouseholdCreateForm events={events} />);
     await fillBasics(user);
     await user.type(
-      screen.getByLabelText("Contact email"),
-      "household@example.test",
+      screen.getByLabelText("Email addresses"),
+      "Household@example.test{Enter}second@example.test, third@example.test",
     );
     await user.type(screen.getByLabelText("Street"), "1 Sample Street");
     await user.type(screen.getByLabelText("City"), "Exampleville");
     await user.click(screen.getByRole("button", { name: "Create household" }));
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
-        contact_email: "household@example.test",
+        contacts: [
+          { kind: "email", value: "household@example.test" },
+          { kind: "email", value: "second@example.test" },
+          { kind: "email", value: "third@example.test" },
+        ],
         address: { street: "1 Sample Street", city: "Exampleville" },
       }),
     );
@@ -178,17 +181,17 @@ describe("HouseholdCreateForm", () => {
     render(<HouseholdCreateForm events={events} />);
     await fillBasics(user);
     await user.type(
-      screen.getByLabelText("Contact email"),
+      screen.getByLabelText("Email addresses"),
       "taken@example.test",
     );
     await user.type(screen.getByLabelText("Staff notes"), "Friends of Hannah");
     await user.click(screen.getByRole("button", { name: "Create household" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "That contact email already belongs to another household.",
+      "One of those email addresses already belongs to another household.",
     );
     expect(screen.queryByText(/raw text/)).not.toBeInTheDocument();
     expect(screen.getByLabelText("Display name")).toHaveValue("The Examples");
-    expect(screen.getByLabelText("Contact email")).toHaveValue(
+    expect(screen.getByLabelText("Email addresses")).toHaveValue(
       "taken@example.test",
     );
     expect(screen.getByLabelText("Guest 1 first name")).toHaveValue("Sam");
@@ -233,73 +236,6 @@ describe("HouseholdCreateForm", () => {
       screen.queryByLabelText("Guest 2 first name"),
     ).not.toBeInTheDocument();
   });
-});
-
-describe("ContactEmailForm", () => {
-  const okResponse = {
-    ok: true,
-    data: { household: { id: "h1", paper_only: false } },
-  };
-
-  it("starts with the current address", () => {
-    render(<ContactEmailForm householdId="h1" email="old@example.test" />);
-    expect(screen.getByLabelText("Contact email")).toHaveValue(
-      "old@example.test",
-    );
-  });
-
-  it("sends the new email and refreshes the page", async () => {
-    update.mockResolvedValue(okResponse);
-    const user = userEvent.setup();
-    render(<ContactEmailForm householdId="h1" email="old@example.test" />);
-    const field = screen.getByLabelText("Contact email");
-    await user.clear(field);
-    await user.type(field, "new@example.test");
-    await user.click(
-      screen.getByRole("button", { name: "Save contact email" }),
-    );
-    expect(update).toHaveBeenCalledWith("h1", {
-      contact_email: "new@example.test",
-    });
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Contact email saved.",
-    );
-    expect(refresh).toHaveBeenCalled();
-  });
-
-  it("sends null for an empty field, which makes the household paper-only", async () => {
-    update.mockResolvedValue(okResponse);
-    const user = userEvent.setup();
-    render(<ContactEmailForm householdId="h1" email="old@example.test" />);
-    await user.clear(screen.getByLabelText("Contact email"));
-    await user.click(
-      screen.getByRole("button", { name: "Save contact email" }),
-    );
-    expect(update).toHaveBeenCalledWith("h1", { contact_email: null });
-  });
-
-  it.each(["email_in_use", "staff_account"])(
-    "shows the %s message from messages.ts and keeps the typed email",
-    async (code) => {
-      update.mockResolvedValue(failure(code));
-      const user = userEvent.setup();
-      render(<ContactEmailForm householdId="h1" email={null} />);
-      await user.type(
-        screen.getByLabelText("Contact email"),
-        "other@example.test",
-      );
-      await user.click(
-        screen.getByRole("button", { name: "Save contact email" }),
-      );
-      expect(await screen.findByRole("alert")).toHaveTextContent(
-        messageFor(code),
-      );
-      expect(screen.getByLabelText("Contact email")).toHaveValue(
-        "other@example.test",
-      );
-      expect(refresh).not.toHaveBeenCalled();
-    },
-  );
 });
 
 describe("DeleteHouseholdForm", () => {

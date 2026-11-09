@@ -13,18 +13,38 @@ describe("createHouseholdRequestSchema", () => {
   it("accepts a household with guests and applies defaults", () => {
     const r = createHouseholdRequestSchema.parse({
       display_name: "Test Household",
-      contact_email: "test@example.com",
+      contacts: [{ kind: "email", value: "test@example.com" }],
       guests: [guest],
     });
     expect(r.plus_one_allowance).toBe(0);
+    expect(r.contacts).toEqual([{ kind: "email", value: "test@example.com" }]);
     expect(r.guests).toHaveLength(1);
   });
 
-  it("accepts a null contact email for a paper-only household", () => {
+  it("accepts no contacts for a paper-only household, and defaults to none", () => {
+    expect(
+      createHouseholdRequestSchema.parse({
+        display_name: "Paper",
+        guests: [guest],
+      }).contacts,
+    ).toEqual([]);
     expect(
       createHouseholdRequestSchema.safeParse({
         display_name: "Paper",
-        contact_email: null,
+        contacts: [],
+        guests: [guest],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("accepts several addresses", () => {
+    expect(
+      createHouseholdRequestSchema.safeParse({
+        display_name: "Many",
+        contacts: [
+          { kind: "email", value: "a@example.com" },
+          { kind: "email", value: "b@example.com" },
+        ],
         guests: [guest],
       }).success,
     ).toBe(true);
@@ -35,7 +55,23 @@ describe("createHouseholdRequestSchema", () => {
     ["blank name", { display_name: " ", guests: [guest] }],
     [
       "bad email",
-      { display_name: "X", contact_email: "nope", guests: [guest] },
+      {
+        display_name: "X",
+        contacts: [{ kind: "email", value: "nope" }],
+        guests: [guest],
+      },
+    ],
+    [
+      "unknown contact kind",
+      {
+        display_name: "X",
+        contacts: [{ kind: "sms", value: "a@example.com" }],
+        guests: [guest],
+      },
+    ],
+    [
+      "the old single address field",
+      { display_name: "X", contact_email: "a@example.com", guests: [guest] },
     ],
     [
       "negative allowance",
@@ -51,9 +87,19 @@ describe("createHouseholdRequestSchema", () => {
 });
 
 describe("updateHouseholdRequestSchema", () => {
-  it("accepts clearing the contact email", () => {
+  it("no longer changes addresses", () => {
     expect(
       updateHouseholdRequestSchema.safeParse({ contact_email: null }).success,
+    ).toBe(false);
+    expect(
+      updateHouseholdRequestSchema.safeParse({ contacts: [] }).success,
+    ).toBe(false);
+  });
+
+  it("accepts the other household fields", () => {
+    expect(
+      updateHouseholdRequestSchema.safeParse({ display_name: "New name" })
+        .success,
     ).toBe(true);
   });
 
@@ -72,7 +118,7 @@ describe("response schemas", () => {
   const household = {
     id: "5f1c2b8e-1111-4222-8333-944455556666",
     display_name: "Test Household",
-    contact_email: null,
+    contact_count: 0,
     plus_one_allowance: 0,
     paper_only: true,
   };

@@ -1,7 +1,9 @@
 -- Household contacts: the functions that read or wrote households.contact_email
 -- now use household_contacts, then the column is dropped.
 --
---   import_one_household    reads `contacts` (a list of addresses) instead of `contact_email`
+--   import_one_household    reads `contacts` (a list of addresses) instead of `contact_email`,
+--                           and an optional `id` so the caller can name the household's
+--                           synthetic sign-in address before it exists
 --   create_household_record reports a staff address as staff_account
 --   add / update / remove_household_contact replace set_household_contact
 --   resolve_audience, claim_campaign_messages, record_message_event
@@ -179,10 +181,10 @@ begin
   -- together. The block is a subtransaction, so a failure leaves nothing behind.
   begin
     insert into public.households (
-      display_name, auth_user_id, address, plus_one_allowance,
+      id, display_name, auth_user_id, address, plus_one_allowance,
       rsvp_deadline_override, notes
     ) values (
-      v_name, (h ->> 'auth_user_id')::uuid, v_address, v_allowance,
+      coalesce(nullif(h ->> 'id', '')::uuid, gen_random_uuid()), v_name, (h ->> 'auth_user_id')::uuid, v_address, v_allowance,
       v_deadline, nullif(btrim(h ->> 'notes'), '')
     ) returning id into v_hid;
 

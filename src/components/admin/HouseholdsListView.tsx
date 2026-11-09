@@ -150,9 +150,17 @@ export function HouseholdsListView({
             },
             {
               key: "email",
-              header: "Contact email",
+              header: "Email addresses",
               cell: (row) =>
-                row.contactEmail ?? <span className="muted">None</span>,
+                row.contacts.length === 0 ? (
+                  <span className="muted">None</span>
+                ) : (
+                  <ul className="plain">
+                    {row.contacts.map((address) => (
+                      <li key={address}>{address}</li>
+                    ))}
+                  </ul>
+                ),
             },
             {
               key: "outstanding",

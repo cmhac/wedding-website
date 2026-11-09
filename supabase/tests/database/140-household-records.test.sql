@@ -6,7 +6,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(30);
+select plan(31);
 
 select tests.create_user('staff@example.test') as staff_user \gset
 select tests.create_user('planner@example.test') as planner_user \gset
@@ -112,6 +112,14 @@ select results_eq(
   $$values ('planner'::text)$$,
   'and the change is attributed to the planner'
 );
+
+-- The caller can name the household's id (it is part of the sign-in address).
+select tests.authenticate_as(:'staff_user');
+select is(
+  (public.create_household_record('{"id": "dddddddd-0000-0000-0000-00000000000d", "display_name": "Named", "contacts": [], "guests": [{"first_name": "Nia", "last_name": "Named"}]}'::jsonb)) ->> 'household_id',
+  'dddddddd-0000-0000-0000-00000000000d', 'a household can be created with the id the caller chose'
+);
+select tests.clear_auth();
 
 -- Address changes.
 select tests.authenticate_as(:'staff_user');

@@ -18,7 +18,6 @@ type Row = Record<string, unknown>;
 const household = (id: string, name: string, extra: Row = {}): Row => ({
   id,
   display_name: name,
-  contact_email: `${id}@example.test`,
   plus_one_allowance: 0,
   delivery_problem: false,
   notes: null,
@@ -30,6 +29,21 @@ const household = (id: string, name: string, extra: Row = {}): Row => ({
   created_at: "2027-01-01T00:00:00Z",
   updated_at: "2027-01-01T00:00:00Z",
   ...extra,
+});
+
+const contact = (
+  id: string,
+  householdId: string,
+  value: string,
+  createdAt = "2027-01-01T00:00:00Z",
+  deliveryProblem = false,
+): Row => ({
+  id,
+  household_id: householdId,
+  kind: "email",
+  value,
+  delivery_problem: deliveryProblem,
+  created_at: createdAt,
 });
 
 const guest = (
@@ -57,12 +71,8 @@ function seed() {
       household("h-b", "The Examples", { plus_one_allowance: 1 }),
       household("h-a", "Accent family"),
       household("h-c", "Example, Jordan", { delivery_problem: true }),
-      household("h-d", "Exampleton family", {
-        contact_email: "",
-        plus_one_allowance: 1,
-      }),
+      household("h-d", "Exampleton family", { plus_one_allowance: 1 }),
       household("h-e", "Sample Family", {
-        contact_email: null,
         notes: "Friends of the couple",
         address: { street: "1 Sample Street", city: "Exampleville" },
         rsvp_deadline_override: "2027-09-01T18:59:00Z",
@@ -84,6 +94,12 @@ function seed() {
         is_plus_one: true,
       }),
       guest("g7", "h-e", "Pat", "Sample"),
+    ],
+    household_contacts: [
+      contact("c1", "h-b", "h-b@example.test", "2027-01-01T00:00:01Z"),
+      contact("c2", "h-b", "second@example.test", "2027-01-01T00:00:02Z", true),
+      contact("c3", "h-a", "h-a@example.test"),
+      contact("c4", "h-c", "h-c@example.test"),
     ],
     events: [
       { id: "e-party", slug: "welcome-party", name: "Welcome party" },
@@ -310,7 +326,7 @@ describe("loadHouseholdList", () => {
       plusOnesNamed: 1,
       unnamedSeats: 0,
       guestNames: ["Sam Example", "Alex Example"],
-      contactEmail: "h-b@example.test",
+      contacts: ["h-b@example.test", "second@example.test"],
       outstanding: { required: 2, optional: 1, meals: 0 },
     });
     const exampleton = list.rows.find((r) => r.id === "h-d");
@@ -339,7 +355,7 @@ describe("loadHouseholdList", () => {
     expect(flags("h-d")).toEqual([false, true, true]);
     expect(flags("h-e")).toEqual([false, true, true]);
     expect(flags("h-b")).toEqual([false, false, false]);
-    expect(list.rows.find((r) => r.id === "h-d")?.contactEmail).toBeNull();
+    expect(list.rows.find((r) => r.id === "h-d")?.contacts).toEqual([]);
   });
 
   it("names its columns and never selects * on households, guests or invitations", async () => {
@@ -404,7 +420,7 @@ describe("loadHouseholdDetail", () => {
     expect(detail).toMatchObject({
       id: "h-e",
       displayName: "Sample Family",
-      contactEmail: null,
+      contacts: [],
       plusOneAllowance: 0,
       address: { street: "1 Sample Street", city: "Exampleville" },
       notes: "Friends of the couple",
@@ -415,6 +431,16 @@ describe("loadHouseholdDetail", () => {
       defaultDeadline: "2027-09-02T06:59:00Z",
     });
     expect(detail?.guests).toHaveLength(1);
+  });
+
+  it("returns the household's addresses, oldest first, with their delivery flags", async () => {
+    const { client } = build();
+    const detail = await loadHouseholdDetail("h-b", client);
+    expect(detail?.contacts).toEqual([
+      { id: "c1", value: "h-b@example.test", deliveryProblem: false },
+      { id: "c2", value: "second@example.test", deliveryProblem: true },
+    ]);
+    expect((await loadHouseholdDetail("h-d", client))?.contacts).toEqual([]);
   });
 
   it("attaches dietary entries with labels, severity and details", async () => {

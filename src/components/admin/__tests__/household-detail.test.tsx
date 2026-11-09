@@ -22,7 +22,10 @@ jest.mock("@/lib/admin-api/client", () => ({
 const household = (over: Partial<HouseholdDetail> = {}): HouseholdDetail => ({
   id: "h1",
   displayName: "The Examples",
-  contactEmail: "household@example.test",
+  contacts: [
+    { id: "c1", value: "household@example.test", deliveryProblem: false },
+    { id: "c2", value: "second@example.test", deliveryProblem: true },
+  ],
   plusOneAllowance: 1,
   address: { street: "123 Sample Street", city: "Exampleville", region: "CA" },
   notes: "Friends of Hannah",
@@ -108,9 +111,7 @@ describe("HouseholdDetailView: frame", () => {
       "/admin/households",
     );
     expect(
-      screen.getByText(
-        /household@example\.test · 3 guests · 1 plus-one allowed/,
-      ),
+      screen.getByText(/2 email addresses · 3 guests · 1 plus-one allowed/),
     ).toBeInTheDocument();
     const tabs = screen.getByRole("navigation", { name: "Household sections" });
     expect(within(tabs).getByRole("link", { name: "Details" })).toHaveAttribute(
@@ -127,7 +128,7 @@ describe("HouseholdDetailView: frame", () => {
   });
 
   it("shows the delivery problem and paper-only flags", () => {
-    view("details", { deliveryProblem: true, contactEmail: null });
+    view("details", { deliveryProblem: true, contacts: [] });
     expect(screen.getAllByText("Delivery problem").length).toBeGreaterThan(0);
     expect(screen.getByText("Paper only")).toBeInTheDocument();
   });
@@ -174,9 +175,10 @@ describe("HouseholdDetailView: Details tab", () => {
   it("has the labelled fields filled from the household", () => {
     view("details");
     expect(screen.getByLabelText("Display name")).toHaveValue("The Examples");
-    expect(screen.getByLabelText("Contact email")).toHaveValue(
-      "household@example.test",
-    );
+    const addresses = screen.getByRole("group", { name: "Email addresses" });
+    expect(within(addresses).getByText("household@example.test")).toBeVisible();
+    expect(within(addresses).getByText("second@example.test")).toBeVisible();
+    expect(within(addresses).getByText("Delivery problem")).toBeVisible();
     expect(screen.getByLabelText("Plus-one allowance")).toHaveValue(1);
     expect(
       screen.getByLabelText("RSVP deadline override (Pacific time)"),
@@ -237,9 +239,6 @@ describe("HouseholdDetailView: Details tab", () => {
     view("details");
     expect(
       screen.getByRole("button", { name: "Save household" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Save contact email" }),
     ).toBeInTheDocument();
   });
 
