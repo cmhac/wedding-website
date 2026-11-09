@@ -21,10 +21,14 @@ update public.settings set default_rsvp_deadline = now() + interval '30 days', r
 
 -- Household A allows two plus-ones. Household B is another responder. Household
 -- C belongs to the planner, who is also a guest.
-insert into public.households (id, display_name, contact_email, auth_user_id, plus_one_allowance, message_to_couple, notes, address) values
-  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', 'a@example.test', :'user_a', 2, null, 'staff-only note', '{"street": "1 Example Road"}'),
-  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', 'b@example.test', :'user_b', 0, null, null, null),
-  ('cccccccc-0000-0000-0000-00000000000c', 'Household C', 'c@example.test', :'planner_user', 0, null, null, null);
+insert into public.households (id, display_name, auth_user_id, plus_one_allowance, message_to_couple, notes, address) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', :'user_a', 2, null, 'staff-only note', '{"street": "1 Example Road"}'),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', :'user_b', 0, null, null, null),
+  ('cccccccc-0000-0000-0000-00000000000c', 'Household C', :'planner_user', 0, null, null, null);
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'a@example.test', false),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'email', 'b@example.test', false),
+  ('cccccccc-0000-0000-0000-00000000000c', 'email', 'c@example.test', false);
 insert into public.guests (id, household_id, first_name, last_name, is_placeholder, is_plus_one, notes) values
   ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Ada', 'Alpha', false, false, 'guest staff note'),
   ('aaaaaaaa-0000-0000-0000-0000000000a2', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Alan', 'Alpha', false, false, null),

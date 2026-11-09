@@ -12,8 +12,9 @@ select tests.create_user('staff@example.test') as staff_user \gset
 select tests.create_user('household-a@example.test') as user_a \gset
 
 insert into public.staff (user_id, role, display_name) values (:'staff_user', 'couple', 'Staff');
-insert into public.households (id, display_name, contact_email, auth_user_id)
-  values ('aaaaaaaa-0000-0000-0000-00000000000a', 'Existing Household', 'taken@example.test', :'user_a');
+insert into public.households (id, display_name, auth_user_id) values ('aaaaaaaa-0000-0000-0000-00000000000a', 'Existing Household', :'user_a');
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'taken@example.test', false);
 insert into public.events (slug, name, is_required, display_order) values
   ('welcome', 'Welcome', false, 1),
   ('ceremony', 'Ceremony', true, 2);
@@ -43,14 +44,14 @@ select tests.clear_auth();
 -- A good import by staff.
 select tests.authenticate_as(:'staff_user');
 select public.import_households($json$[
-  {"ref": "h1", "display_name": "Import One", "contact_email": "one@example.test",
+  {"ref": "h1", "display_name": "Import One", "contacts": ["one@example.test"],
    "paper_only": false, "plus_one_allowance": 1,
    "guests": [
      {"row": 2, "first_name": "Ann", "last_name": "One", "email": "ann@example.test",
       "dietary_notes": "no onions", "notes": "staff note", "events": ["welcome", "ceremony"]},
      {"row": 3, "first_name": "Ben", "last_name": "One", "events": ["ceremony"]}
    ]},
-  {"ref": "h2", "display_name": "Paper Household", "contact_email": null,
+  {"ref": "h2", "display_name": "Paper Household", "contacts": [],
    "paper_only": true, "plus_one_allowance": 0,
    "guests": [
      {"row": 4, "first_name": "Cat", "last_name": "Two", "events": []}
@@ -74,7 +75,8 @@ select is(
   1::smallint, 'plus-one allowance is stored'
 );
 select is(
-  (select contact_email is null from public.households where display_name = 'Paper Household'),
+  (select not exists (select 1 from public.household_contacts c where c.household_id = h.id)
+     from public.households h where h.display_name = 'Paper Household'),
   true, 'a paper-only household has no contact email'
 );
 select is(
@@ -108,10 +110,10 @@ select results_eq(
 -- A household with an invalid row is not created; valid ones in the same call are.
 select tests.authenticate_as(:'staff_user');
 select public.import_households($json$[
-  {"ref": "good", "display_name": "Good Household", "contact_email": "good@example.test",
+  {"ref": "good", "display_name": "Good Household", "contacts": ["good@example.test"],
    "paper_only": false, "plus_one_allowance": 0,
    "guests": [{"row": 10, "first_name": "Gus", "last_name": "Good", "events": ["ceremony"]}]},
-  {"ref": "bad", "display_name": "Bad Household", "contact_email": "bad@example.test",
+  {"ref": "bad", "display_name": "Bad Household", "contacts": ["bad@example.test"],
    "paper_only": false, "plus_one_allowance": 0,
    "guests": [
      {"row": 11, "first_name": "Fine", "last_name": "Bad", "events": ["ceremony"]},
@@ -143,27 +145,27 @@ select ok(
 -- Other validation, one household each so every case is reported.
 select tests.authenticate_as(:'staff_user');
 select public.import_households($json$[
-  {"ref": "e1", "display_name": "Bad Email", "contact_email": "not-an-email", "paper_only": false,
+  {"ref": "e1", "display_name": "Bad Email", "contacts": ["not-an-email"], "paper_only": false,
    "plus_one_allowance": 0, "guests": [{"row": 20, "first_name": "A", "last_name": "B", "events": []}]},
-  {"ref": "e2", "display_name": "Taken Email", "contact_email": "TAKEN@example.test", "paper_only": false,
+  {"ref": "e2", "display_name": "Taken Email", "contacts": ["TAKEN@example.test"], "paper_only": false,
    "plus_one_allowance": 0, "guests": [{"row": 21, "first_name": "A", "last_name": "C", "events": []}]},
-  {"ref": "e3", "display_name": "Negative", "contact_email": "neg@example.test", "paper_only": false,
+  {"ref": "e3", "display_name": "Negative", "contacts": ["neg@example.test"], "paper_only": false,
    "plus_one_allowance": -1, "guests": [{"row": 22, "first_name": "A", "last_name": "D", "events": []}]},
-  {"ref": "e4", "display_name": "Same Names", "contact_email": "same@example.test", "paper_only": false,
+  {"ref": "e4", "display_name": "Same Names", "contacts": ["same@example.test"], "paper_only": false,
    "plus_one_allowance": 0, "guests": [
      {"row": 23, "first_name": "Zed", "last_name": "Same", "events": []},
      {"row": 24, "first_name": "ZED", "last_name": "same", "events": []}]},
-  {"ref": "e5", "display_name": "Paper With Email", "contact_email": "paper@example.test", "paper_only": true,
+  {"ref": "e5", "display_name": "Paper With Email", "contacts": ["paper@example.test"], "paper_only": true,
    "plus_one_allowance": 0, "guests": [{"row": 25, "first_name": "A", "last_name": "E", "events": []}]},
-  {"ref": "e6", "display_name": "  ", "contact_email": null, "paper_only": true,
+  {"ref": "e6", "display_name": "  ", "contacts": [], "paper_only": true,
    "plus_one_allowance": 0, "guests": [{"row": 26, "first_name": "A", "last_name": "F", "events": []}]},
-  {"ref": "e7", "row": 27, "display_name": "No Guests", "contact_email": null, "paper_only": true,
+  {"ref": "e7", "row": 27, "display_name": "No Guests", "contacts": [], "paper_only": true,
    "plus_one_allowance": 0, "guests": []},
-  {"ref": "e8", "display_name": "Missing Name", "contact_email": null, "paper_only": true,
+  {"ref": "e8", "display_name": "Missing Name", "contacts": [], "paper_only": true,
    "plus_one_allowance": 0, "guests": [{"row": 28, "first_name": "", "last_name": "G", "events": []}]},
-  {"ref": "e9", "display_name": "Guest Bad Email", "contact_email": null, "paper_only": true,
+  {"ref": "e9", "display_name": "Guest Bad Email", "contacts": [], "paper_only": true,
    "plus_one_allowance": 0, "guests": [{"row": 29, "first_name": "A", "last_name": "H", "email": "nope", "events": []}]},
-  {"ref": "e10", "display_name": "Allowance Text", "contact_email": null, "paper_only": true,
+  {"ref": "e10", "display_name": "Allowance Text", "contacts": [], "paper_only": true,
    "plus_one_allowance": "two", "guests": [{"row": 30, "first_name": "A", "last_name": "I", "events": []}]}
 ]$json$::jsonb)::text as res \gset
 select tests.clear_auth();
@@ -192,9 +194,9 @@ select is(
 -- Two households in one call cannot share a contact email; the second is refused.
 select tests.authenticate_as(:'staff_user');
 select public.import_households($json$[
-  {"ref": "d1", "display_name": "First Twin", "contact_email": "twin@example.test", "paper_only": false,
+  {"ref": "d1", "display_name": "First Twin", "contacts": ["twin@example.test"], "paper_only": false,
    "plus_one_allowance": 0, "guests": [{"row": 40, "first_name": "A", "last_name": "T1", "events": []}]},
-  {"ref": "d2", "display_name": "Second Twin", "contact_email": "Twin@example.test", "paper_only": false,
+  {"ref": "d2", "display_name": "Second Twin", "contacts": ["Twin@example.test"], "paper_only": false,
    "plus_one_allowance": 0, "guests": [{"row": 41, "first_name": "A", "last_name": "T2", "events": []}]}
 ]$json$::jsonb)::text as res \gset
 select tests.clear_auth();
@@ -215,7 +217,7 @@ select ok(
 -- The service role (route handlers) may import, with no signed-in user.
 select tests.authenticate_service_role();
 select public.import_households($json$[
-  {"ref": "s1", "display_name": "Service Import", "contact_email": "service@example.test", "paper_only": false,
+  {"ref": "s1", "display_name": "Service Import", "contacts": ["service@example.test"], "paper_only": false,
    "plus_one_allowance": 0, "guests": [{"row": 50, "first_name": "Sam", "last_name": "Service", "events": ["ceremony"]}]}
 ]$json$::jsonb)::text as res \gset
 select tests.clear_auth();

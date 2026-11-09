@@ -15,8 +15,9 @@ select tests.create_user('household@example.test') as guest_user \gset
 insert into public.staff (user_id, role, display_name) values
   (:'couple_user', 'couple', 'Couple'),
   (:'planner_user', 'planner', 'Planner');
-insert into public.households (id, display_name, contact_email, auth_user_id)
-  values ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', 'a@example.test', :'guest_user');
+insert into public.households (id, display_name, auth_user_id) values ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', :'guest_user');
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'a@example.test', false);
 insert into public.guests (id, household_id, first_name, last_name)
   values ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Ada', 'Alpha');
 insert into public.events (id, slug, name, is_required)

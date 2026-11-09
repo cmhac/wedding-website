@@ -13,9 +13,12 @@ select tests.create_user('outsider@example.test') as outsider \gset
 select tests.create_user('couple@example.test') as couple_user \gset
 
 insert into public.staff (user_id, role, display_name) values (:'couple_user', 'couple', 'Couple');
-insert into public.households (id, display_name, contact_email, auth_user_id) values
-  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', 'a@example.test', :'user_a'),
-  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', 'b@example.test', :'user_b');
+insert into public.households (id, display_name, auth_user_id) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', :'user_a'),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', :'user_b');
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'a@example.test', false),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'email', 'b@example.test', false);
 
 select tests.authenticate_anon();
 select throws_ok($$select public.set_reminders_opt_out(true)$$, 'P0001', 'not_a_guest', 'anon gets not_a_guest');

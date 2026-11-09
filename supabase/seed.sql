@@ -1,7 +1,8 @@
 -- Local development data. Everything here is fake: addresses are on
 -- example.test, names are invented. Runs after the migrations on `db reset`.
 
--- Sign-in accounts: two staff and one per household.
+-- Sign-in accounts: two staff and one per household. A household's account has
+-- a synthetic address that is never mailed; its real addresses are contacts.
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
@@ -14,12 +15,12 @@ select
 from (values
   ('10000000-0000-0000-0000-000000000001'::uuid, 'couple@example.test'),
   ('10000000-0000-0000-0000-000000000002'::uuid, 'planner@example.test'),
-  ('20000000-0000-0000-0000-000000000001'::uuid, 'smith@example.test'),
-  ('20000000-0000-0000-0000-000000000002'::uuid, 'jones@example.test'),
-  ('20000000-0000-0000-0000-000000000003'::uuid, 'lee@example.test'),
-  ('20000000-0000-0000-0000-000000000004'::uuid, 'patel@example.test'),
-  ('20000000-0000-0000-0000-000000000005'::uuid, 'garcia@example.test'),
-  ('20000000-0000-0000-0000-000000000006'::uuid, 'novak@example.test')
+  ('20000000-0000-0000-0000-000000000001'::uuid, 'household-30000000-0000-0000-0000-000000000001@households.invalid'),
+  ('20000000-0000-0000-0000-000000000002'::uuid, 'household-30000000-0000-0000-0000-000000000002@households.invalid'),
+  ('20000000-0000-0000-0000-000000000003'::uuid, 'household-30000000-0000-0000-0000-000000000003@households.invalid'),
+  ('20000000-0000-0000-0000-000000000004'::uuid, 'household-30000000-0000-0000-0000-000000000004@households.invalid'),
+  ('20000000-0000-0000-0000-000000000005'::uuid, 'household-30000000-0000-0000-0000-000000000005@households.invalid'),
+  ('20000000-0000-0000-0000-000000000006'::uuid, 'household-30000000-0000-0000-0000-000000000006@households.invalid')
 ) as u (id, email);
 
 insert into public.staff (user_id, role, display_name) values
@@ -39,13 +40,23 @@ insert into public.events (slug, name, starts_at, venue_name, is_required, group
   ('reception',       'Reception',       '2027-06-12T18:00:00Z', 'Seed Venue Three', true,  'wedding-weekend', 4),
   ('farewell-brunch', 'Farewell brunch', '2027-06-13T10:00:00Z', 'Seed Venue Four',  false, 'wedding-weekend', 5);
 
-insert into public.households (id, display_name, contact_email, auth_user_id, plus_one_allowance) values
-  ('30000000-0000-0000-0000-000000000001', 'The Smiths',  'smith@example.test',  '20000000-0000-0000-0000-000000000001', 0),
-  ('30000000-0000-0000-0000-000000000002', 'The Joneses', 'jones@example.test',  '20000000-0000-0000-0000-000000000002', 0),
-  ('30000000-0000-0000-0000-000000000003', 'Frank Lee',   'lee@example.test',    '20000000-0000-0000-0000-000000000003', 1),
-  ('30000000-0000-0000-0000-000000000004', 'The Patels',  'patel@example.test',  '20000000-0000-0000-0000-000000000004', 0),
-  ('30000000-0000-0000-0000-000000000005', 'Ivan Garcia', 'garcia@example.test', '20000000-0000-0000-0000-000000000005', 0),
-  ('30000000-0000-0000-0000-000000000006', 'The Novaks',  'novak@example.test',  '20000000-0000-0000-0000-000000000006', 0);
+insert into public.households (id, display_name, auth_user_id, plus_one_allowance) values
+  ('30000000-0000-0000-0000-000000000001', 'The Smiths',  '20000000-0000-0000-0000-000000000001', 0),
+  ('30000000-0000-0000-0000-000000000002', 'The Joneses', '20000000-0000-0000-0000-000000000002', 0),
+  ('30000000-0000-0000-0000-000000000003', 'Frank Lee',   '20000000-0000-0000-0000-000000000003', 1),
+  ('30000000-0000-0000-0000-000000000004', 'The Patels',  '20000000-0000-0000-0000-000000000004', 0),
+  ('30000000-0000-0000-0000-000000000005', 'Ivan Garcia', '20000000-0000-0000-0000-000000000005', 0),
+  ('30000000-0000-0000-0000-000000000006', 'The Novaks',  '20000000-0000-0000-0000-000000000006', 0);
+
+-- Addresses. The Joneses share two, to show a household with several.
+insert into public.household_contacts (household_id, kind, value) values
+  ('30000000-0000-0000-0000-000000000001', 'email', 'smith@example.test'),
+  ('30000000-0000-0000-0000-000000000002', 'email', 'jones@example.test'),
+  ('30000000-0000-0000-0000-000000000002', 'email', 'jones.second@example.test'),
+  ('30000000-0000-0000-0000-000000000003', 'email', 'lee@example.test'),
+  ('30000000-0000-0000-0000-000000000004', 'email', 'patel@example.test'),
+  ('30000000-0000-0000-0000-000000000005', 'email', 'garcia@example.test'),
+  ('30000000-0000-0000-0000-000000000006', 'email', 'novak@example.test');
 
 insert into public.guests (household_id, first_name, last_name, is_placeholder, is_plus_one) values
   ('30000000-0000-0000-0000-000000000001', 'Alice', 'Smith', false, false),

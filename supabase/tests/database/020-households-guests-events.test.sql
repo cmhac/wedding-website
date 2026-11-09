@@ -15,9 +15,12 @@ select tests.create_user('staff@example.test') as staff_user \gset
 insert into public.staff (user_id, role, display_name) values (:'staff_user', 'couple', 'Staff');
 
 -- Fixtures, inserted as the test runner (bypasses row-level security).
-insert into public.households (id, display_name, contact_email, auth_user_id, plus_one_allowance) values
-  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', 'a@example.test', :'user_a', 0),
-  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', 'b@example.test', :'user_b', 0);
+insert into public.households (id, display_name, auth_user_id, plus_one_allowance) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', :'user_a', 0),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', :'user_b', 0);
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'a@example.test', false),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'email', 'b@example.test', false);
 
 insert into public.guests (id, household_id, first_name, last_name) values
   ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Ada', 'Alpha'),
@@ -118,7 +121,7 @@ select tests.clear_auth();
 -- Privileges: the sign-in account changes only through the admin API.
 select ok(not has_table_privilege('authenticated', 'public.households', 'INSERT'), 'authenticated cannot insert households');
 select ok(not has_table_privilege('authenticated', 'public.households', 'DELETE'), 'authenticated cannot delete households');
-select ok(not has_column_privilege('authenticated', 'public.households', 'contact_email', 'UPDATE'), 'authenticated cannot update contact_email');
+select ok(not has_table_privilege('anon', 'public.household_contacts', 'SELECT'), 'anon cannot read household contacts');
 select ok(not has_column_privilege('authenticated', 'public.households', 'auth_user_id', 'UPDATE'), 'authenticated cannot update auth_user_id');
 select ok(has_column_privilege('authenticated', 'public.households', 'display_name', 'UPDATE'), 'authenticated can update display_name');
 
@@ -134,9 +137,9 @@ select lives_ok(
   'staff can update household columns other than the protected ones'
 );
 select throws_ok(
-  $$update public.households set contact_email = 'x@example.test'
+  $$update public.households set auth_user_id = null
     where id = 'aaaaaaaa-0000-0000-0000-00000000000a'$$,
-  '42501', null, 'staff cannot update contact_email directly'
+  '42501', null, 'staff cannot update auth_user_id directly'
 );
 select throws_ok(
   $$insert into public.households (display_name) values ('New')$$, '42501', null,
@@ -185,8 +188,9 @@ select tests.clear_auth();
 
 -- Constraints.
 select throws_ok(
-  $$insert into public.households (display_name, contact_email) values ('Dup', 'A@EXAMPLE.TEST')$$,
-  '23505', null, 'contact_email is unique ignoring case'
+  $$insert into public.household_contacts (household_id, kind, value)
+    values ('bbbbbbbb-0000-0000-0000-00000000000b', 'email', 'A@EXAMPLE.TEST')$$,
+  '23505', null, 'a contact address is unique across households, ignoring case'
 );
 select throws_ok(
   $$insert into public.households (display_name, plus_one_allowance) values ('Neg', -1)$$,

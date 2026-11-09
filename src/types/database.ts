@@ -239,16 +239,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"households": {
+                },"household_contacts": {
                   Row: {
-                    "address": Json | null,"auth_user_id": string | null,"contact_email": string | null,"created_at": string,"delivery_problem": boolean,"display_name": string,"id": string,"message_to_couple": string | null,"notes": string | null,"plus_one_allowance": number,"reminders_opt_out": boolean,"rsvp_deadline_override": string | null,"updated_at": string
+                    "created_at": string,"delivery_problem": boolean,"household_id": string,"id": string,"kind": Database["public"]['Enums']["contact_kind"],"value": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address"?: Json | null,"auth_user_id"?: string | null,"contact_email"?: string | null,"created_at"?: string,"delivery_problem"?: boolean,"display_name": string,"id"?: string,"message_to_couple"?: string | null,"notes"?: string | null,"plus_one_allowance"?: number,"reminders_opt_out"?: boolean,"rsvp_deadline_override"?: string | null,"updated_at"?: string
+                    "created_at"?: string,"delivery_problem"?: boolean,"household_id": string,"id"?: string,"kind"?: Database["public"]['Enums']["contact_kind"],"value": string
                   }
                   Update: {
-                    "address"?: Json | null,"auth_user_id"?: string | null,"contact_email"?: string | null,"created_at"?: string,"delivery_problem"?: boolean,"display_name"?: string,"id"?: string,"message_to_couple"?: string | null,"notes"?: string | null,"plus_one_allowance"?: number,"reminders_opt_out"?: boolean,"rsvp_deadline_override"?: string | null,"updated_at"?: string
+                    "created_at"?: string,"delivery_problem"?: boolean,"household_id"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["contact_kind"],"value"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "household_contacts_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "household_rsvp_progress"
+      referencedColumns: ["household_id"]
+    },{
+      foreignKeyName: "household_contacts_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"households": {
+                  Row: {
+                    "address": Json | null,"auth_user_id": string | null,"created_at": string,"delivery_problem": boolean,"display_name": string,"id": string,"message_to_couple": string | null,"notes": string | null,"plus_one_allowance": number,"reminders_opt_out": boolean,"rsvp_deadline_override": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address"?: Json | null,"auth_user_id"?: string | null,"created_at"?: string,"delivery_problem"?: boolean,"display_name": string,"id"?: string,"message_to_couple"?: string | null,"notes"?: string | null,"plus_one_allowance"?: number,"reminders_opt_out"?: boolean,"rsvp_deadline_override"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "address"?: Json | null,"auth_user_id"?: string | null,"created_at"?: string,"delivery_problem"?: boolean,"display_name"?: string,"id"?: string,"message_to_couple"?: string | null,"notes"?: string | null,"plus_one_allowance"?: number,"reminders_opt_out"?: boolean,"rsvp_deadline_override"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -685,7 +711,10 @@ isOneToOne: true
                 }
           }
           Functions: {
-            "archive_dish":
+            "add_household_contact":
+{ Args: { "household_id": string,"value": string }; Returns: string
+                           },
+"archive_dish":
 { Args: { "dish_id": string }; Returns: {
               "guest_id": string,"household_id": string
             }[]
@@ -744,13 +773,13 @@ isOneToOne: true
 "record_message_event":
 { Args: { "occurred_at": string,"provider_event_id": string,"provider_message_id": string,"type": string }; Returns: string
                            },
+"remove_household_contact":
+{ Args: { "contact_id": string,"household_id": string }; Returns: Json
+                           },
 "resolve_audience":
 { Args: { "filter": Json,"message_type_key"?: string }; Returns: {
               "deliverable": boolean,"display_name": string,"household_id": string,"skip_reason": string
             }[]
-                           },
-"set_household_contact":
-{ Args: { "auth_user_id": string,"contact_email": string,"household_id": string }; Returns: Json
                            },
 "set_reminders_opt_out":
 { Args: { "opt_out": boolean }; Returns: boolean
@@ -779,7 +808,6 @@ isOneToOne: true
 { Args: Record<PropertyKey, never>; Returns: {
               "address": Json | null,
 "auth_user_id": string | null,
-"contact_email": string | null,
 "created_at": string,
 "delivery_problem": boolean,
 "display_name": string,
@@ -821,10 +849,13 @@ isOneToOne: true
                            },
 "submit_household_rsvp":
 { Args: { "payload": Json }; Returns: Json
+                           },
+"update_household_contact":
+{ Args: { "contact_id": string,"household_id": string,"value": string }; Returns: undefined
                            }
           }
           Enums: {
-            "campaign_status": "draft"|"scheduled"|"sending"|"done"|"cancelled","dietary_kind": "diet"|"allergen","menu_status": "draft"|"published"|"closed","message_status": "queued"|"sending"|"sent"|"delivered"|"bounced"|"complained"|"failed"|"skipped","rsvp_status": "pending"|"attending"|"declined","staff_role": "couple"|"planner"
+            "campaign_status": "draft"|"scheduled"|"sending"|"done"|"cancelled","contact_kind": "email","dietary_kind": "diet"|"allergen","menu_status": "draft"|"published"|"closed","message_status": "queued"|"sending"|"sent"|"delivered"|"bounced"|"complained"|"failed"|"skipped","rsvp_status": "pending"|"attending"|"declined","staff_role": "couple"|"planner"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -944,7 +975,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "campaign_status": ["draft", "scheduled", "sending", "done", "cancelled"],"dietary_kind": ["diet", "allergen"],"menu_status": ["draft", "published", "closed"],"message_status": ["queued", "sending", "sent", "delivered", "bounced", "complained", "failed", "skipped"],"rsvp_status": ["pending", "attending", "declined"],"staff_role": ["couple", "planner"]
+            "campaign_status": ["draft", "scheduled", "sending", "done", "cancelled"],"contact_kind": ["email"],"dietary_kind": ["diet", "allergen"],"menu_status": ["draft", "published", "closed"],"message_status": ["queued", "sending", "sent", "delivered", "bounced", "complained", "failed", "skipped"],"rsvp_status": ["pending", "attending", "declined"],"staff_role": ["couple", "planner"]
           }
         }
 } as const

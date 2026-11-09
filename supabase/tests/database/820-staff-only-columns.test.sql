@@ -18,9 +18,11 @@ select tests.create_user('household-a@example.test') as user_a \gset
 insert into public.staff (user_id, role, display_name) values
   (:'couple_user', 'couple', 'Couple'), (:'planner_user', 'planner', 'Planner');
 
-insert into public.households (id, display_name, contact_email, auth_user_id, notes, address, rsvp_deadline_override, delivery_problem) values
-  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', 'a@example.test', :'user_a',
+insert into public.households (id, display_name, auth_user_id, notes, address, rsvp_deadline_override, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', :'user_a',
    'private couple note', '{"street":"1 Example Road"}', now() + interval '3 days', true);
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'a@example.test', true);
 insert into public.guests (id, household_id, first_name, last_name, notes) values
   ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Ada', 'Alpha', 'private guest note');
 insert into public.events (id, slug, name, is_required) values
