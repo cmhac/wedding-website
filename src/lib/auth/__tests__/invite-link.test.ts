@@ -125,6 +125,12 @@ describe("inviteLinkUrl", () => {
     );
   });
 
+  it("can be built on another site address", () => {
+    expect(inviteLinkUrl(ID, 1, "https://other.example/")).toBe(
+      `https://other.example/i/${inviteToken(ID, 1)}`,
+    );
+  });
+
   it("does not double a trailing slash on the site address", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://wedding.example/";
     expect(inviteLinkUrl(ID, 1)).toMatch(

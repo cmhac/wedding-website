@@ -176,19 +176,19 @@ description: "Task list for personal invite links and shared household sign-in"
 
 ### Tests for User Story 5
 
-- [ ] T059 [P] [US5] Write `supabase/tests/database/550-messages-per-contact.test.sql`: `messages.contact_id` references `household_contacts` with `on delete set null`; unique nulls not distinct (`campaign_id`, `household_id`, `contact_id`); enqueue creates one `queued` row per contact of each deliverable household and one `skipped` row (`contact_id` null) for paper-only or opted-out households; re-running enqueue adds nothing; claiming a row whose contact was removed marks it `skipped` with `no_email`; `to_email` is the contact's current value at claim time
-- [ ] T060 [P] [US5] Update `src/lib/campaigns/__tests__/dispatch.test.ts` and `audience.test.ts`: per-address sends with `Idempotency-Key = message.id`; response counts `{ campaign_id, households, addresses, queued, sent, skipped: { no_email, opted_out, other }, failed }`
-- [ ] T061 [P] [US5] Update `src/lib/campaigns/__tests__/props.test.ts` and `src/lib/email/__tests__/templates.test.ts`: `CampaignProps.personal_link` is the household's `/i/<token>` URL for its current version; still no address, postal address, dietary data or notes in props
-- [ ] T062 [P] [US5] Write `emails/__tests__/invitation.test.tsx` and `emails/__tests__/rsvp-reminder.test.tsx`: each renders `{ subject, html, text }` from fixture props; `personal_link` appears in both bodies; `invitation` includes the household name, events and `respond_by`; `rsvp_reminder` includes `respond_by` and what is pending; no prop outside the contract is read
-- [ ] T063 [P] [US5] Update `src/components/admin/__tests__/` for `AudiencePreviewView.tsx` and `DeliveryView.tsx`: per-household email counts, per-address rows, skip reasons
+- [x] T059 [P] [US5] Write `supabase/tests/database/550-messages-per-contact.test.sql`: `messages.contact_id` references `household_contacts` with `on delete set null`; unique nulls not distinct (`campaign_id`, `household_id`, `contact_id`); enqueue creates one `queued` row per contact of each deliverable household and one `skipped` row (`contact_id` null) for paper-only or opted-out households; re-running enqueue adds nothing; claiming a row whose contact was removed marks it `skipped` with `no_email`; `to_email` is the contact's current value at claim time
+- [x] T060 [P] [US5] Update `src/lib/campaigns/__tests__/dispatch.test.ts` and `audience.test.ts`: per-address sends with `Idempotency-Key = message.id`; response counts `{ campaign_id, households, addresses, queued, sent, skipped: { no_email, opted_out, other }, failed }`
+- [x] T061 [P] [US5] Update `src/lib/campaigns/__tests__/props.test.ts` and `src/lib/email/__tests__/templates.test.ts`: `CampaignProps.personal_link` is the household's `/i/<token>` URL for its current version; still no address, postal address, dietary data or notes in props
+- [x] T062 [P] [US5] Write `emails/__tests__/invitation.test.tsx` and `emails/__tests__/rsvp-reminder.test.tsx`: each renders `{ subject, html, text }` from fixture props; `personal_link` appears in both bodies; `invitation` includes the household name, events and `respond_by`; `rsvp_reminder` includes `respond_by` and what is pending; no prop outside the contract is read
+- [x] T063 [P] [US5] Update `src/components/admin/__tests__/` for `AudiencePreviewView.tsx` and `DeliveryView.tsx`: per-household email counts, per-address rows, skip reasons
 
 ### Implementation for User Story 5
 
-- [ ] T064 [US5] Migration `supabase/migrations/<ts>_messages_per_contact.sql`: `messages.contact_id`, the new unique constraint, and changes to `resolve_audience`, the enqueue step and `claim_campaign_messages` (T059 passes)
-- [ ] T065 [US5] Update `src/lib/campaigns/dispatch.ts`, `src/lib/campaigns/audience.ts` and `src/app/api/admin/campaigns/[id]/send/route.ts` per T060
-- [ ] T066 [US5] Add `personal_link` to `CampaignProps`, `CampaignPropsSource` and `buildCampaignProps` in `src/lib/email/templates.ts`, and pass it from `src/lib/campaigns/props.ts` (T061)
-- [ ] T067 [P] [US5] Write first-draft plain templates `emails/invitation.tsx` and `emails/rsvp-reminder.tsx` with `@react-email/components` (wording for Chris to polish; no brand styling), and register `invitation` and `rsvp_reminder` in `emails/index.ts` (T062)
-- [ ] T068 [US5] Update `src/components/admin/AudiencePreviewView.tsx`, `src/components/admin/DeliveryView.tsx` and `src/lib/admin/data/campaigns.ts` per T063
+- [x] T064 [US5] Migration `supabase/migrations/<ts>_messages_per_contact.sql`: `messages.contact_id`, the new unique constraint, and changes to `resolve_audience`, the enqueue step and `claim_campaign_messages` (T059 passes)
+- [x] T065 [US5] Update `src/lib/campaigns/dispatch.ts`, `src/lib/campaigns/audience.ts` and `src/app/api/admin/campaigns/[id]/send/route.ts` per T060
+- [x] T066 [US5] Add `personal_link` to `CampaignProps`, `CampaignPropsSource` and `buildCampaignProps` in `src/lib/email/templates.ts`, and pass it from `src/lib/campaigns/props.ts` (T061)
+- [x] T067 [P] [US5] Write first-draft plain templates `emails/invitation.tsx` and `emails/rsvp-reminder.tsx` with `@react-email/components` (wording for Chris to polish; no brand styling), and register `invitation` and `rsvp_reminder` in `emails/index.ts` (T062)
+- [x] T068 [US5] Update `src/components/admin/AudiencePreviewView.tsx`, `src/components/admin/DeliveryView.tsx` and `src/lib/admin/data/campaigns.ts` per T063
 
 **Checkpoint**: invitations deliver personal links; together with US1 this is the guest-facing MVP.
 
@@ -202,14 +202,14 @@ description: "Task list for personal invite links and shared household sign-in"
 
 ### Tests for User Story 6
 
-- [ ] T069 [P] [US6] Write `emails/__tests__/magic-link.test.tsx`: renders `{ subject, html, text }`; `sign_in_url` appears in both bodies; wording differs for `audience: "guest"` and `"staff"`
-- [ ] T070 [P] [US6] Add to `src/app/api/auth/send-email/__tests__/route.test.ts`: with `magic_link` registered, a signed staff payload sends one email rendered with `audience: "staff"`; existing signature, missing-template and ignored-action cases still pass
+- [x] T069 [P] [US6] Write `emails/__tests__/magic-link.test.tsx`: renders `{ subject, html, text }`; `sign_in_url` appears in both bodies; wording differs for `audience: "guest"` and `"staff"`
+- [x] T070 [P] [US6] Add to `src/app/api/auth/send-email/__tests__/route.test.ts`: with `magic_link` registered, a signed staff payload sends one email rendered with `audience: "staff"`; existing signature, missing-template and ignored-action cases still pass
 
 ### Implementation for User Story 6
 
-- [ ] T071 [US6] Write the first-draft plain template `emails/magic-link.tsx` and register `magic_link` in `emails/index.ts` (T069, T070)
-- [ ] T072 [US6] Update `docs/manual-setup.md` with the switch-over in order (research R9 and quickstart.md section 4): set `SEND_EMAIL_HOOK_SECRET`; turn on the Send Email hook; prove a staff sign-in email arrives rendered from the template; only then remove custom SMTP; record what was done; and replace the "stopgap" entry accordingly
-- [ ] T073 [US6] Add a dated note to `docs/decisions/0004-auth-emails-via-resend.md`: guests' sign-in emails are now sent by the site's sign-in route (still the registered template and Resend); the hook carries staff sign-in email only
+- [x] T071 [US6] Write the first-draft plain template `emails/magic-link.tsx` and register `magic_link` in `emails/index.ts` (T069, T070)
+- [x] T072 [US6] Update `docs/manual-setup.md` with the switch-over in order (research R9 and quickstart.md section 4): set `SEND_EMAIL_HOOK_SECRET`; turn on the Send Email hook; prove a staff sign-in email arrives rendered from the template; only then remove custom SMTP; record what was done; and replace the "stopgap" entry accordingly
+- [x] T073 [US6] Add a dated note to `docs/decisions/0004-auth-emails-via-resend.md`: guests' sign-in emails are now sent by the site's sign-in route (still the registered template and Resend); the hook carries staff sign-in email only
 
 **Checkpoint**: all sign-in email comes from repository templates once the switch-over is done in production.
 

@@ -1,3 +1,4 @@
+import { inviteLinkUrl } from "@/lib/auth/invite-link";
 import { buildCampaignProps, type CampaignProps } from "@/lib/email/templates";
 
 /**
@@ -62,7 +63,7 @@ export async function loadCampaignProps(
 
   const { data: household } = await db
     .from("households")
-    .select("display_name, rsvp_deadline_override")
+    .select("display_name, rsvp_deadline_override, invite_link_version")
     .eq("id", householdId)
     .maybeSingle();
   if (!household) return null;
@@ -154,6 +155,11 @@ export async function loadCampaignProps(
       optional_events: progress?.pending_optional ?? 0,
       meals: progress?.pending_meals ?? 0,
     },
+    personal_link: inviteLinkUrl(
+      householdId,
+      Number(household.invite_link_version ?? 1),
+      options.siteUrl,
+    ),
     siteUrl: options.siteUrl,
     rsvpPath: options.rsvpPath,
   });

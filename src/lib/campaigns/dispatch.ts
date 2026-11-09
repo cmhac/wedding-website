@@ -10,9 +10,11 @@ import { audienceSchema } from "./audience";
 import { loadCampaignProps, type LooseDb } from "./props";
 
 /**
- * Sends a campaign (contracts/http-endpoints.md). Every step is safe to
- * repeat: messages are queued through the unique (campaign, household)
- * constraint, claimed with `claim_campaign_messages` so concurrent runs never
+ * Sends a campaign (contracts/http-endpoints.md). One message is
+ * queued per address of each deliverable household (a household with several
+ * addresses gets one email per address, each with the household's personal
+ * link), and every step is safe to repeat: messages are queued through the
+ * unique (campaign, household, address) constraint, claimed with `claim_campaign_messages` so concurrent runs never
  * double-send, and sent with the message id as the idempotency key.
  *
  * Only ids, counts and outcome codes are logged: never addresses or names.
@@ -35,6 +37,10 @@ export class DispatchError extends Error {
 
 export type DispatchResult = {
   campaign_id: string;
+  /** Households the campaign reached or considered. */
+  households: number;
+  /** Addresses a message was queued for (paper-only and skipped households have none). */
+  addresses: number;
   queued: number;
   sent: number;
   skipped: { no_email: number; opted_out: number; other: number };
@@ -160,7 +166,11 @@ export async function sendCampaign(
   return result;
 }
 
-/** Resolves the audience and inserts one message per household, once. */
+/**
+ * Resolves the audience and inserts one message per address of each deliverable
+ * household, and one skipped row (no address) for each household that cannot be
+ * emailed. Inserting is idempotent.
+ */
 async function queueMessages(
   db: LooseDb,
   campaignId: string,
@@ -192,25 +202,63 @@ async function queueMessages(
     );
   }
 
-  const rows = audienceRows.map((r) => {
+  const deliverable = audienceRows
+    .filter((r) => r.deliverable && !optedOut.has(r.household_id))
+    .map((r) => r.household_id);
+  const addressesByHousehold = new Map<string, string[]>();
+  if (deliverable.length > 0) {
+    const { data: contacts, error: contactError } = await db
+      .from("household_contacts")
+      .select("id, household_id")
+      .eq("kind", "email")
+      .in("household_id", deliverable)
+      .order("created_at", { ascending: true });
+    if (contactError) fail();
+    for (const c of (contacts ?? []) as Row[]) {
+      const key = c.household_id as string;
+      const list = addressesByHousehold.get(key) ?? [];
+      list.push(c.id as string);
+      addressesByHousehold.set(key, list);
+    }
+  }
+
+  const rows = audienceRows.flatMap<Row>((r) => {
+    const addresses = addressesByHousehold.get(r.household_id) ?? [];
     if (r.deliverable && !optedOut.has(r.household_id)) {
-      return {
+      // Deliverable but no address any more (removed since the audience was
+      // resolved): one skipped row.
+      if (addresses.length === 0) {
+        return [
+          {
+            campaign_id: campaignId,
+            household_id: r.household_id,
+            contact_id: null,
+            status: "skipped",
+            skip_reason: "no_email",
+          },
+        ];
+      }
+      return addresses.map((contactId) => ({
         campaign_id: campaignId,
         household_id: r.household_id,
+        contact_id: contactId,
         status: "queued",
-      };
+      }));
     }
-    return {
-      campaign_id: campaignId,
-      household_id: r.household_id,
-      status: "skipped",
-      skip_reason: r.deliverable ? "opted_out" : (r.skip_reason ?? "other"),
-    };
+    return [
+      {
+        campaign_id: campaignId,
+        household_id: r.household_id,
+        contact_id: null,
+        status: "skipped",
+        skip_reason: r.deliverable ? "opted_out" : (r.skip_reason ?? "other"),
+      },
+    ];
   });
   if (rows.length === 0) return;
 
   const { error: upsertError } = await db.from("messages").upsert(rows, {
-    onConflict: "campaign_id,household_id",
+    onConflict: "campaign_id,household_id,contact_id",
     ignoreDuplicates: true,
   });
   if (upsertError) fail();
@@ -274,17 +322,22 @@ async function deliver(
 async function tally(db: LooseDb, campaignId: string): Promise<DispatchResult> {
   const { data, error } = await db
     .from("messages")
-    .select("status, skip_reason")
+    .select("status, skip_reason, household_id, contact_id")
     .eq("campaign_id", campaignId);
   if (error) fail();
+  const households = new Set<string>();
   const result: DispatchResult = {
     campaign_id: campaignId,
+    households: 0,
+    addresses: 0,
     queued: 0,
     sent: 0,
     skipped: { no_email: 0, opted_out: 0, other: 0 },
     failed: 0,
   };
   for (const m of (data ?? []) as Row[]) {
+    if (m.household_id) households.add(m.household_id as string);
+    if (m.contact_id) result.addresses++;
     if (m.status === "skipped") {
       if (m.skip_reason === "no_email") result.skipped.no_email++;
       else if (m.skip_reason === "opted_out") result.skipped.opted_out++;
@@ -295,6 +348,7 @@ async function tally(db: LooseDb, campaignId: string): Promise<DispatchResult> {
     if (m.status === "failed") result.failed++;
     else if (SENT_STATUSES.includes(m.status as string)) result.sent++;
   }
+  result.households = households.size;
   return result;
 }
 

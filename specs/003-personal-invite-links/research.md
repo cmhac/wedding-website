@@ -59,6 +59,8 @@ Each item records the decision, why, and what else was considered. Items marked 
 - **Decision**: `messages` gains `contact_id` (references `household_contacts`, `on delete set null`). The uniqueness rule becomes one row per campaign, household and contact (`unique nulls not distinct`), so a skipped household still has one row with no contact. Enqueueing expands each deliverable household to one row per current contact; claiming re-reads the contact and skips with `no_email` if it was removed meanwhile. `record_message_event` flags the contact (and through the trigger, the household).
 - **Rationale**: FR-020 to FR-023 and SC-006 (exactly one email per address, also on retry).
 - **Alternatives**: one message row per household with several recipients (rejected: delivery status is per address).
+- **Deviation found while building (2026-11-09)**: `messages.contact_id` is a plain column, not a foreign key with `on delete set null`. With `unique nulls not distinct`, removing two addresses of one household after queueing would give two rows the same null address and make the delete fail. The id is kept instead; claiming looks the address up, and a row whose address no longer exists is skipped with `no_email`. The `household_contacts` trigger that flags delivery problems matches by address value, as designed.
+- **Also**: the staff-grant route and the importer refuse addresses in the other direction, as designed; `sign_in_attempts` has one policy that refuses every row (the repository's coverage test requires every public table to have a policy) rather than none.
 
 ## R9. Templates and the Send Email hook
 

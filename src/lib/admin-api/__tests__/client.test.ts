@@ -179,6 +179,8 @@ describe("admin API client", () => {
     const id = "10000000-0000-4000-8000-000000000001";
     const sent = {
       campaign_id: id,
+      households: 3,
+      addresses: 3,
       queued: 3,
       sent: 2,
       skipped: { no_email: 1, opted_out: 0, other: 0 },

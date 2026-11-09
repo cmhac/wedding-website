@@ -50,6 +50,11 @@ insert into public.messages (id, campaign_id, household_id, status) values
   ('a0000009-0000-0000-0000-000000000000', 'c0000004-0000-0000-0000-000000000000', '0000000d-0000-0000-0000-000000000000', 'queued'),
   ('a000000a-0000-0000-0000-000000000000', 'c0000004-0000-0000-0000-000000000000', '0000000a-0000-0000-0000-000000000000', 'queued');
 
+-- Each queued message is for the household's address (messages are per address).
+update public.messages m
+   set contact_id = (select c.id from public.household_contacts c where c.household_id = m.household_id order by c.created_at, c.id limit 1)
+ where m.status = 'queued';
+
 -- Things that change after queueing.
 update public.household_contacts set value = 'b-new@example.test' where household_id = '0000000b-0000-0000-0000-000000000000';
 delete from public.household_contacts where household_id = '0000000d-0000-0000-0000-000000000000';
@@ -173,6 +178,9 @@ insert into public.messages (id, campaign_id, household_id, status, to_email, cl
   ('a1000001-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000021-0000-0000-0000-000000000000', 'sending', 'old-address@example.test', now() - interval '20 minutes', null),
   ('a1000002-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000022-0000-0000-0000-000000000000', 'sending', 's2@example.test', now() - interval '5 minutes', null),
   ('a1000003-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000023-0000-0000-0000-000000000000', 'sending', 's3@example.test', now() - interval '20 minutes', 'prov-s3');
+update public.messages m
+   set contact_id = (select c.id from public.household_contacts c where c.household_id = m.household_id order by c.created_at, c.id limit 1)
+ where m.campaign_id = 'c0000006-0000-0000-0000-000000000000';
 select tests.authenticate_service_role();
 select results_eq(
   $$select id::text, to_email::text from public.claim_campaign_messages('c0000006-0000-0000-0000-000000000000', 10)$$,
@@ -217,6 +225,9 @@ insert into public.messages (id, campaign_id, household_id, status, to_email, pr
   ('b0000004-0000-0000-0000-000000000000', 'c0000005-0000-0000-0000-000000000000', '00000014-0000-0000-0000-000000000000', 'sending', 'old-s@example.test', 'prov-s'),
   ('b0000005-0000-0000-0000-000000000000', 'c0000005-0000-0000-0000-000000000000', '0000000a-0000-0000-0000-000000000000', 'skipped', null, null);
 update public.messages set provider_message_id = 'prov-skipped' where id = 'b0000005-0000-0000-0000-000000000000';
+update public.messages m
+   set contact_id = (select c.id from public.household_contacts c where c.household_id = m.household_id order by c.created_at, c.id limit 1)
+ where m.status = 'sending' and m.contact_id is null;
 update public.household_contacts set value = 's@example.test' where household_id = '00000014-0000-0000-0000-000000000000';
 
 select tests.authenticate_service_role();

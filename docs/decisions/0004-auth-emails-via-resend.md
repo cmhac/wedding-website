@@ -27,3 +27,17 @@ Supabase's own sign-in email wording (set in its auth settings) is what goes
 out. The hook stays off. When the template exists: register it, turn the hook
 on, and remove the custom SMTP settings. Until then, the sign-in email does not
 match the site and invitations.
+
+## Update 2026-11-09: guests' sign-in email is sent by the site; the hook carries staff email only
+
+The personal-invite-links work (`specs/003-personal-invite-links`) changed who
+sends what. A household has several email addresses and one shared sign-in
+account, so a guest who types an address now gets a link from the site itself:
+the sign-in route looks the address up, asks Supabase for a single-use token
+without sending anything, renders the registered `magic_link` template with
+`audience: "guest"`, and sends it through Resend to exactly the address typed.
+The Send Email hook therefore only ever carries **staff** sign-in email. The
+decision stands that all of it comes from templates in this repository and goes
+through Resend; the first-draft `magic_link`, `invitation` and `rsvp_reminder`
+templates are registered, and `docs/manual-setup.md` has the ordered switch-over
+from the temporary custom SMTP to the hook.

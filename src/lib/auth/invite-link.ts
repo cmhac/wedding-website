@@ -92,7 +92,11 @@ export function parseInviteToken(
 }
 
 /** The full personal link, as sent in an invitation or copied by staff. */
-export function inviteLinkUrl(householdId: string, version: number): string {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/+$/, "");
+export function inviteLinkUrl(
+  householdId: string,
+  version: number,
+  siteUrl: string = process.env.NEXT_PUBLIC_SITE_URL ?? "",
+): string {
+  const base = siteUrl.replace(/\/+$/, "");
   return `${base}/i/${inviteToken(householdId, version)}`;
 }
