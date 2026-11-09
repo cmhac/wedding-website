@@ -244,8 +244,8 @@ description: "Task list for personal invite links and shared household sign-in"
 - [x] T082 [P] Write the decision record for shared household access (several addresses, any signed-in member answers) as `docs/decisions/0012-shared-household-access.md`; add a note to `docs/decisions/0006-household-model.md` that its "exactly one responder" part is superseded, the rest stands; update `docs/architecture.md` items 2 and 3
 - [x] T083 [P] Update `docs/manual-setup.md`: `INVITE_LINK_SECRET` (sensitive, production), `HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN`, choosing the wedding event, the sign-in limits and their defaults, the conversion script and when to run it
 - [x] T084 [P] Update `CLAUDE.md` layout table entries for the new routes (`src/app/i`, `src/app/auth/confirm`) and `specs/001-guest-data-model/data-model.md` with a pointer to this feature's data model
-- [ ] T085 Run every scenario in `specs/003-personal-invite-links/quickstart.md` section 3 locally and record any deviation in `research.md`
-- [ ] T086 Final gate: `npm run format:check && npm run lint && npm run type-check && npm test && npm run test:db`, and `npm run build`
+- [x] T085 Run every scenario in `specs/003-personal-invite-links/quickstart.md` section 3 locally and record any deviation in `research.md`
+- [x] T086 Final gate: `npm run format:check && npm run lint && npm run type-check && npm test && npm run test:db`, and `npm run build`
 
 ---
 

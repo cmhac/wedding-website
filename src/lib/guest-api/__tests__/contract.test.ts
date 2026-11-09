@@ -1,5 +1,4 @@
 /** @jest-environment node */
-import { existsSync } from "node:fs";
 import {
   endpointsInMarkdown,
   endpointsOnDisk,

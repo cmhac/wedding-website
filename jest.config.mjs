@@ -10,6 +10,8 @@ const customJestConfig = {
   testEnvironment: "jest-environment-jsdom",
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    // See jest/react-email-render.cjs: the real render needs a dynamic import.
+    "^@react-email/render$": "<rootDir>/jest/react-email-render.cjs",
   },
   testMatch: ["**/__tests__/**/*.test.[jt]s?(x)"],
 };
