@@ -12,9 +12,10 @@ export type EmailTemplate<P> = (
   props: P,
 ) => RenderedEmail | Promise<RenderedEmail>;
 // emails/index.ts
-export default {
-  /* save_the_date: ..., invitation: ..., */
-} satisfies Record<string, EmailTemplate<never>>;
+export default {/* save_the_date: ..., invitation: ..., */} satisfies Record<
+  string,
+  EmailTemplate<never>
+>;
 ```
 
 `src/lib/email/templates.ts` provides `getTemplate(key)`, which returns the template or throws `template_missing`. A template that throws surfaces as `template_failed`. A template is a pure function: no network or database access, no logging, and no `from` address (the sender comes from `EMAIL_FROM`).
