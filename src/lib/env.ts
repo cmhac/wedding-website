@@ -15,6 +15,13 @@ const serverSchema = publicSchema.extend({
   SEND_EMAIL_HOOK_SECRET: required,
   RESEND_WEBHOOK_SECRET: required,
   CRON_SECRET: required,
+  // Keys personal invite links and sign-in attempt hashes. Never expose.
+  INVITE_LINK_SECRET: required,
+  // Domain of the synthetic, never-mailed address of each household's Auth user.
+  HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN: z
+    .string()
+    .min(1)
+    .default("households.invalid"),
   // A relative path served by the screen builders, used to build email links.
   GUEST_RSVP_PATH: z
     .string()

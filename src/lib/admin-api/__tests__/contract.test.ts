@@ -162,7 +162,7 @@ describe("admin API responses parse against the exported schemas", () => {
     const household = {
       id: ID,
       display_name: "The Fakes",
-      contact_email: null,
+      contact_count: 0,
       plus_one_allowance: 0,
       paper_only: true,
     };
@@ -185,6 +185,8 @@ describe("admin API responses parse against the exported schemas", () => {
     expect(
       sendCampaignResponseSchema.safeParse({
         campaign_id: ID,
+        households: 1,
+        addresses: 1,
         queued: 0,
         sent: 1,
         skipped: { no_email: 0, opted_out: 0, other: 0 },

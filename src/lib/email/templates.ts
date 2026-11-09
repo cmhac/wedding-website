@@ -18,6 +18,8 @@ export type MagicLinkProps = {
 
 export type CampaignProps = {
   household: { display_name: string };
+  /** The household's personal link: signs them in on any device. */
+  personal_link: string;
   rsvp_url: string;
   respond_by: string | null;
   events: {
@@ -95,6 +97,7 @@ export type CampaignPropsSource = {
   events: (CampaignProps["events"][number] & Record<string, unknown>)[];
   respond_by: string | null;
   pending: CampaignProps["pending"];
+  personal_link: string;
   siteUrl: string;
   rsvpPath?: string;
 };
@@ -108,6 +111,7 @@ export function buildCampaignProps(source: CampaignPropsSource): CampaignProps {
   const base = source.siteUrl.replace(/\/+$/, "");
   return {
     household: { display_name: source.household.display_name },
+    personal_link: source.personal_link,
     rsvp_url: `${base}${source.rsvpPath ?? "/rsvp"}`,
     respond_by: source.respond_by,
     events: source.events.map((e) => ({

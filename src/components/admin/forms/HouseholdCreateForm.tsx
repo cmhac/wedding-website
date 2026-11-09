@@ -9,7 +9,8 @@ import { messageFor } from "@/lib/admin/messages";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { Alert, Field } from "../primitives";
 
-const EMAIL_IN_USE = "That contact email already belongs to another household.";
+const EMAIL_IN_USE =
+  "One of those email addresses already belongs to another household.";
 
 type GuestRow = { key: number; first: string; last: string; email: string };
 
@@ -21,6 +22,20 @@ const blank = (key: number): GuestRow => ({
   last: "",
   email: "",
 });
+
+/** The addresses typed in the box: separated by new lines, commas or semicolons; blanks and repeats dropped. */
+const addressesFrom = (value: FormDataEntryValue | null): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of String(value ?? "").split(/[\n,;]+/)) {
+    const address = part.trim().toLowerCase();
+    if (address !== "" && !seen.has(address)) {
+      seen.add(address);
+      out.push(address);
+    }
+  }
+  return out;
+};
 
 const orNull = (value: FormDataEntryValue | null) => {
   const text = String(value ?? "").trim();
@@ -94,7 +109,10 @@ export function HouseholdCreateForm({ events }: { events: InviteEvent[] }) {
     setPending(true);
     const result = await createHousehold({
       display_name: displayName,
-      contact_email: orNull(data.get("contact_email")),
+      contacts: addressesFrom(data.get("contacts")).map((value) => ({
+        kind: "email" as const,
+        value,
+      })),
       plus_one_allowance: allowance,
       address: Object.keys(address).length > 0 ? address : null,
       notes: orNull(data.get("notes")),
@@ -154,14 +172,14 @@ export function HouseholdCreateForm({ events }: { events: InviteEvent[] }) {
             <input id="display-name" name="display_name" type="text" />
           </Field>
           <Field
-            id="contact-email"
-            label="Contact email"
-            hint="Also their sign-in address. Leave empty for a paper-only household."
+            id="contact-emails"
+            label="Email addresses"
+            hint="One per line. Each gets the invitation and reaches the same household. Leave empty for a paper-only household."
           >
-            <input
-              id="contact-email"
-              name="contact_email"
-              type="email"
+            <textarea
+              id="contact-emails"
+              name="contacts"
+              rows={3}
               autoComplete="off"
             />
           </Field>

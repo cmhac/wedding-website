@@ -1,7 +1,14 @@
 import Link from "next/link";
 import type { OverviewData, OverviewEvent } from "@/lib/admin/data/overview";
 import { formatPacific } from "@/lib/admin/time";
-import { Badge, Card, EmptyState, PageHeader, StatTile } from "./primitives";
+import {
+  Alert,
+  Badge,
+  Card,
+  EmptyState,
+  PageHeader,
+  StatTile,
+} from "./primitives";
 import { DataTable, type Column } from "./DataTable";
 
 const EVENT_COLUMNS: Column<OverviewEvent>[] = [
@@ -101,6 +108,13 @@ export function OverviewView({ data }: { data: OverviewData }) {
           </>
         }
       />
+
+      {data.weddingEventChosen ? null : (
+        <Alert variant="warn">
+          No wedding event is chosen, so personal links never close.{" "}
+          <Link href="/admin/settings">Choose it in Settings</Link>.
+        </Alert>
+      )}
 
       <div className="stats">
         <StatTile value={data.householdCount} label="Households" />

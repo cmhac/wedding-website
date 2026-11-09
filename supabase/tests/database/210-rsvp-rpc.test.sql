@@ -6,7 +6,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(46);
+select plan(48);
 
 select tests.create_user('couple@example.test') as couple_user \gset
 select tests.create_user('planner@example.test') as planner_user \gset
@@ -21,10 +21,14 @@ update public.settings set default_rsvp_deadline = now() + interval '30 days', r
 
 -- Household A allows two plus-ones. Household B is another responder. Household
 -- C belongs to the planner, who is also a guest.
-insert into public.households (id, display_name, contact_email, auth_user_id, plus_one_allowance, message_to_couple, notes, address) values
-  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', 'a@example.test', :'user_a', 2, null, 'staff-only note', '{"street": "1 Example Road"}'),
-  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', 'b@example.test', :'user_b', 0, null, null, null),
-  ('cccccccc-0000-0000-0000-00000000000c', 'Household C', 'c@example.test', :'planner_user', 0, null, null, null);
+insert into public.households (id, display_name, auth_user_id, plus_one_allowance, message_to_couple, notes, address) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', :'user_a', 2, null, 'staff-only note', '{"street": "1 Example Road"}'),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', :'user_b', 0, null, null, null),
+  ('cccccccc-0000-0000-0000-00000000000c', 'Household C', :'planner_user', 0, null, null, null);
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'a@example.test', false),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'email', 'b@example.test', false),
+  ('cccccccc-0000-0000-0000-00000000000c', 'email', 'c@example.test', false);
 insert into public.guests (id, household_id, first_name, last_name, is_placeholder, is_plus_one, notes) values
   ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Ada', 'Alpha', false, false, 'guest staff note'),
   ('aaaaaaaa-0000-0000-0000-0000000000a2', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Alan', 'Alpha', false, false, null),
@@ -279,6 +283,36 @@ select throws_ok(
   'P0001', 'invalid_payload', 'a blank name is invalid'
 );
 select tests.clear_auth();
+
+-- Two sessions of the same household (two people, two devices) each save
+-- answers: both are accepted, the last save wins per field, and every change is
+-- attributed to the household's account in the history.
+select count(*) as history_before from public.rsvp_history \gset
+select tests.authenticate_as(:'user_a');
+select public.submit_household_rsvp($json$
+  {"guests": [{"guest_id": "aaaaaaaa-0000-0000-0000-0000000000a1",
+     "responses": [{"event_id": "eeeeeeee-0000-0000-0000-000000000001", "status": "declined"}]}]}$json$::jsonb);
+select tests.clear_auth();
+select tests.authenticate_as(:'user_a');
+select public.submit_household_rsvp($json$
+  {"guests": [{"guest_id": "aaaaaaaa-0000-0000-0000-0000000000a1",
+     "responses": [{"event_id": "eeeeeeee-0000-0000-0000-000000000001", "status": "attending"}]},
+    {"guest_id": "aaaaaaaa-0000-0000-0000-0000000000a2",
+     "responses": [{"event_id": "eeeeeeee-0000-0000-0000-000000000001", "status": "declined"}]}]}$json$::jsonb);
+select tests.clear_auth();
+select results_eq(
+  $$select guest_id::text, status::text from public.invitations
+     where event_id = 'eeeeeeee-0000-0000-0000-000000000001'
+       and guest_id in ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-0000000000a2')
+     order by guest_id$$,
+  $$values ('aaaaaaaa-0000-0000-0000-0000000000a1'::text, 'attending'::text),
+           ('aaaaaaaa-0000-0000-0000-0000000000a2', 'declined')$$,
+  'two sessions of one household leave a consistent state: the last save wins per field'
+);
+select is(
+  (select count(*) from public.rsvp_history) - :history_before,
+  3::bigint, 'every real change from either session is in the history, once'
+);
 
 -- RSVPs switched off for everyone.
 update public.settings set rsvp_open = false;

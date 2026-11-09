@@ -19,7 +19,7 @@ describe("parseGuestImport", () => {
     expect(r.households).toHaveLength(1);
     const h = r.households[0];
     expect(h.display_name).toBe("Test Household");
-    expect(h.contact_email).toBe("test@example.com");
+    expect(h.contacts).toEqual(["test@example.com"]);
     expect(h.paper_only).toBe(false);
     expect(h.plus_one_allowance).toBe(1);
     expect(h.guests.map((g) => g.first_name)).toEqual(["Ann", "Bob"]);
@@ -32,7 +32,7 @@ describe("parseGuestImport", () => {
   it("accepts a household with no email and marks it paper-only", () => {
     const r = parse(`${HEADER}\nh1,Test Household,,0,Ann,Example,,`);
     expect(r.errors).toEqual([]);
-    expect(r.households[0].contact_email).toBeNull();
+    expect(r.households[0].contacts).toEqual([]);
     expect(r.households[0].paper_only).toBe(true);
   });
 
@@ -160,5 +160,70 @@ describe("scale (SC-001)", () => {
     expect(r.errors).toEqual([]);
     expect(r.counts.households).toBe(50);
     expect(r.counts.guests).toBe(150);
+  });
+});
+
+describe("several addresses per household", () => {
+  const MULTI =
+    "household_ref,household_name,contact_email,contact_email_2,contact_email_3,first_name,last_name";
+
+  it("reads contact_email and every contact_email_N column, lower-cased, in column order", () => {
+    const r = parse(
+      `${MULTI}\nh1,Test,A@Example.com,b@example.com,,Ann,Example\nh1,Test,a@example.com,B@example.com,,Bob,Example`,
+    );
+    expect(r.errors).toEqual([]);
+    expect(r.households[0].contacts).toEqual([
+      "a@example.com",
+      "b@example.com",
+    ]);
+    expect(r.households[0].paper_only).toBe(false);
+  });
+
+  it("reads an address that sits only in a later column", () => {
+    const r = parse(`${MULTI}\nh1,Test,,,c@example.com,Ann,Example`);
+    expect(r.households[0].contacts).toEqual(["c@example.com"]);
+  });
+
+  it("reports an invalid address by row and column and skips the household", () => {
+    const r = parse(
+      `${MULTI}\nh1,Test,a@example.com,nope,,Ann,Example\nh2,Fine,f@example.com,,,Cy,Example`,
+    );
+    expect(r.households.map((h) => h.display_name)).toEqual(["Fine"]);
+    expect(r.errors).toEqual([
+      expect.objectContaining({ row: 2, field: "contact_email_2" }),
+    ]);
+  });
+
+  it("reports an address repeated within a row", () => {
+    const r = parse(
+      `${MULTI}\nh1,Test,a@example.com,A@example.com,,Ann,Example`,
+    );
+    expect(r.households).toEqual([]);
+    expect(r.errors).toEqual([
+      expect.objectContaining({ row: 2, field: "contact_email_2" }),
+    ]);
+  });
+
+  it("reports an address used by two households in the file, skipping the second", () => {
+    const r = parse(
+      `${MULTI}\nh1,One,a@example.com,,,Ann,Example\nh2,Two,x@example.com,A@example.com,,Cy,Example`,
+    );
+    expect(r.households.map((h) => h.display_name)).toEqual(["One"]);
+    expect(r.errors).toEqual([
+      expect.objectContaining({ row: 3, field: "contact_email_2" }),
+    ]);
+  });
+
+  it("reports different address sets across rows of one household", () => {
+    const r = parse(
+      `${MULTI}\nh1,Test,a@example.com,b@example.com,,Ann,Example\nh1,Test,a@example.com,,,Bob,Example`,
+    );
+    expect(r.households).toEqual([]);
+    expect(r.errors[0]).toMatchObject({ row: 3, field: "contact_email" });
+  });
+
+  it("never repeats an address in an error message", () => {
+    const r = parse(`${MULTI}\nh1,Test,a@example.com,leak-me,,Ann,Example`);
+    expect(JSON.stringify(r.errors)).not.toContain("leak-me");
   });
 });

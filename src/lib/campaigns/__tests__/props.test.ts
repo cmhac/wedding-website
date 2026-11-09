@@ -1,3 +1,4 @@
+import { inviteLinkUrl } from "@/lib/auth/invite-link";
 import { loadCampaignProps } from "../props";
 import { createFakeDb } from "./fixtures/fake-db";
 
@@ -10,7 +11,7 @@ function seed(overrides: Record<string, Record<string, unknown>[]> = {}) {
       {
         id: HOUSEHOLD,
         display_name: "Test Household",
-        contact_email: "test@example.com",
+        invite_link_version: 2,
         address: { line1: "1 Test Street" },
         notes: "private note",
         rsvp_deadline_override: null,
@@ -84,11 +85,32 @@ const options = {
   now: NOW,
 };
 
+beforeEach(() => {
+  process.env.INVITE_LINK_SECRET =
+    "test-invite-secret-long-enough-for-hmac-0123456789";
+});
+
 describe("loadCampaignProps", () => {
   it("builds the display name and RSVP link", async () => {
     const props = await loadCampaignProps(seed(), HOUSEHOLD, options);
     expect(props?.household).toEqual({ display_name: "Test Household" });
     expect(props?.rsvp_url).toBe("https://example.test/rsvp");
+  });
+
+  it("gives the household's personal link for its current version, on the site address given", async () => {
+    process.env.INVITE_LINK_SECRET =
+      "test-invite-secret-long-enough-for-hmac-0123456789";
+    const props = await loadCampaignProps(seed(), HOUSEHOLD, options);
+    expect(props?.personal_link).toBe(
+      inviteLinkUrl(HOUSEHOLD, 2, "https://example.test"),
+    );
+    expect(props?.personal_link).toMatch(/^https:\/\/example\.test\/i\//);
+    // Reissuing changes it.
+    const reissued = seed();
+    reissued.tables.households[0].invite_link_version = 3;
+    expect(
+      (await loadCampaignProps(reissued, HOUSEHOLD, options))?.personal_link,
+    ).not.toBe(props?.personal_link);
   });
 
   it("lists only events the household's guests are invited to, in date order", async () => {
@@ -208,6 +230,7 @@ describe("loadCampaignProps", () => {
       "events",
       "household",
       "pending",
+      "personal_link",
       "respond_by",
       "rsvp_url",
     ]);

@@ -1,3 +1,4 @@
+import { maskEmail } from "@/lib/guest-api/mask";
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { log } from "@/lib/log";
@@ -34,7 +35,10 @@ export type HouseholdRow = {
   guestNames: string[];
   /** Unnamed plus-one seats. */
   unnamedSeats: number;
-  contactEmail: string | null;
+  /** Every address, oldest first. */
+  contacts: string[];
+  /** Addresses with a delivery problem, masked (first character and domain only). */
+  problemAddresses: string[];
   plusOnesAllowed: number;
   plusOnesNamed: number;
   outstanding: { required: number; optional: number; meals: number };
@@ -91,7 +95,7 @@ export type HouseholdAddress = {
 export type HouseholdDetail = {
   id: string;
   displayName: string;
-  contactEmail: string | null;
+  contacts: { id: string; value: string; deliveryProblem: boolean }[];
   plusOneAllowance: number;
   address: HouseholdAddress | null;
   notes: string | null;
@@ -183,26 +187,40 @@ export async function loadHouseholdList(
 ): Promise<HouseholdList> {
   const db = await client(supabase);
   const needInvitations = query.invited !== "";
-  const [households, guests, progress, duplicates, eventRows, invitations] =
-    await Promise.all([
-      rows("staff_households", db.rpc("staff_households")),
-      rows("staff_guests", db.rpc("staff_guests")),
-      rows(
-        "household_rsvp_progress",
-        db
-          .from("household_rsvp_progress")
-          .select(
-            "household_id, pending_required, pending_optional, pending_meals",
-          ),
-      ),
-      rows("find_duplicate_households", db.rpc("find_duplicate_households")),
-      needInvitations
-        ? rows("events", db.from("events").select("id, slug"))
-        : Promise.resolve([] as Row[]),
-      needInvitations
-        ? rows("staff_invitations", db.rpc("staff_invitations"))
-        : Promise.resolve([] as Row[]),
-    ]);
+  const [
+    households,
+    guests,
+    contacts,
+    progress,
+    duplicates,
+    eventRows,
+    invitations,
+  ] = await Promise.all([
+    rows("staff_households", db.rpc("staff_households")),
+    rows("staff_guests", db.rpc("staff_guests")),
+    rows(
+      "household_contacts",
+      db
+        .from("household_contacts")
+        .select("household_id, value, delivery_problem, created_at")
+        .order("created_at", { ascending: true }),
+    ),
+    rows(
+      "household_rsvp_progress",
+      db
+        .from("household_rsvp_progress")
+        .select(
+          "household_id, pending_required, pending_optional, pending_meals",
+        ),
+    ),
+    rows("find_duplicate_households", db.rpc("find_duplicate_households")),
+    needInvitations
+      ? rows("events", db.from("events").select("id, slug"))
+      : Promise.resolve([] as Row[]),
+    needInvitations
+      ? rows("staff_invitations", db.rpc("staff_invitations"))
+      : Promise.resolve([] as Row[]),
+  ]);
 
   const guestsByHousehold = new Map<string, Row[]>();
   for (const g of guests) {
@@ -210,6 +228,19 @@ export async function loadHouseholdList(
     const list = guestsByHousehold.get(key) ?? [];
     list.push(g);
     guestsByHousehold.set(key, list);
+  }
+  const contactsByHousehold = new Map<string, string[]>();
+  const problemsByHousehold = new Map<string, string[]>();
+  for (const c of contacts) {
+    const key = c.household_id as string;
+    const list = contactsByHousehold.get(key) ?? [];
+    list.push(String(c.value));
+    contactsByHousehold.set(key, list);
+    if (c.delivery_problem === true) {
+      const problems = problemsByHousehold.get(key) ?? [];
+      problems.push(maskEmail(String(c.value)));
+      problemsByHousehold.set(key, problems);
+    }
   }
   const progressByHousehold = new Map(
     progress.map((p) => [p.household_id as string, p]),
@@ -240,13 +271,14 @@ export async function loadHouseholdList(
     const id = h.id as string;
     const members = guestsByHousehold.get(id) ?? [];
     const p = progressByHousehold.get(id);
-    const contactEmail = text(h.contact_email) || null;
+    const addresses = contactsByHousehold.get(id) ?? [];
     return {
       id,
       displayName: h.display_name as string,
       guestNames: members.map(fullName).filter((n): n is string => n !== null),
       unnamedSeats: members.filter((g) => g.is_placeholder).length,
-      contactEmail,
+      contacts: addresses,
+      problemAddresses: problemsByHousehold.get(id) ?? [],
       plusOnesAllowed: num(h.plus_one_allowance),
       plusOnesNamed: members.filter((g) => g.is_plus_one && !g.is_placeholder)
         .length,
@@ -256,7 +288,7 @@ export async function loadHouseholdList(
         meals: num(p?.pending_meals),
       },
       deliveryProblem: Boolean(h.delivery_problem),
-      paperOnly: contactEmail === null,
+      paperOnly: addresses.length === 0,
       possibleDuplicate: duplicateIds.has(id),
     };
   });
@@ -337,10 +369,18 @@ export async function loadHouseholdDetail(
   supabase?: SupabaseClient,
 ): Promise<HouseholdDetail | null> {
   const db = await client(supabase);
-  const [households, guests, categories, dietary, settings] = await Promise.all(
-    [
+  const [households, guests, contacts, categories, dietary, settings] =
+    await Promise.all([
       rows("staff_households", db.rpc("staff_households")),
       rows("staff_guests", db.rpc("staff_guests")),
+      rows(
+        "household_contacts",
+        db
+          .from("household_contacts")
+          .select("id, household_id, value, delivery_problem, created_at")
+          .eq("household_id", id)
+          .order("created_at", { ascending: true }),
+      ),
       rows(
         "dietary_categories",
         db
@@ -355,8 +395,7 @@ export async function loadHouseholdDetail(
           .select("guest_id, category_key, severity, details"),
       ),
       rows("settings", db.from("settings").select("default_rsvp_deadline")),
-    ],
-  );
+    ]);
 
   const h = households.find((row) => row.id === id);
   if (!h) return null;
@@ -384,7 +423,11 @@ export async function loadHouseholdDetail(
   return {
     id,
     displayName: h.display_name as string,
-    contactEmail: text(h.contact_email) || null,
+    contacts: contacts.map((c) => ({
+      id: c.id as string,
+      value: String(c.value),
+      deliveryProblem: Boolean(c.delivery_problem),
+    })),
     plusOneAllowance: num(h.plus_one_allowance),
     address: asAddress(h.address),
     notes: text(h.notes),

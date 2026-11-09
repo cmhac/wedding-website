@@ -18,7 +18,7 @@ import { POST } from "../route";
 
 const body = {
   display_name: "Test Household",
-  contact_email: "test@example.com",
+  contacts: [{ kind: "email", value: "test@example.com" }],
   plus_one_allowance: 1,
   guests: [{ first_name: "Ann", last_name: "Example" }],
 };
@@ -33,9 +33,9 @@ const request = (b: unknown) =>
 const household = {
   id: "5f1c2b8e-1111-4222-8333-944455556666",
   display_name: "Test Household",
-  contact_email: "test@example.com",
   auth_user_id: "user-1",
   plus_one_allowance: 1,
+  contact_count: 1,
   paper_only: false,
 };
 
@@ -72,7 +72,7 @@ describe("POST /api/admin/households", () => {
       staffClient,
       expect.objectContaining({
         display_name: "Test Household",
-        contact_email: "test@example.com",
+        contacts: body.contacts,
         guests: body.guests,
       }),
     );

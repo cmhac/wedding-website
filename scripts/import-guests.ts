@@ -12,7 +12,6 @@
 import { readFile } from "node:fs/promises";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../src/types/database.ts";
-import { linkHouseholdAccounts } from "../src/lib/guests/household-access.ts";
 import {
   runGuestImport,
   type RunImportResult,
@@ -43,12 +42,11 @@ export async function importGuestsFromFile(
   read: (path: string) => Promise<string> = (p) => readFile(p, "utf8"),
 ): Promise<string> {
   const csv = await read(path);
-  const result = await runGuestImport(admin, csv);
+  const result = await runGuestImport(admin, csv, admin);
   const lines = [formatReport(result)];
   if (result.kind === "done" && result.created.households > 0) {
-    const link = await linkHouseholdAccounts(admin, result.householdIds);
     lines.push(
-      `Sign-in accounts: ${link.linked} linked, ${link.failed} failed.`,
+      `Sign-in accounts: ${result.accounts.linked} linked, ${result.accounts.failed} failed.`,
     );
   }
   return lines.join("\n");

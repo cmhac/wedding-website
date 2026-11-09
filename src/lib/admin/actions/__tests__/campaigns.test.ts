@@ -31,7 +31,13 @@ function setup(
 ) {
   const auth = fakeSupabase({ user: { id: "user-1" }, staffRole: "planner" });
   const db = createAdminFakeDb(
-    { campaigns },
+    {
+      campaigns,
+      household_contacts: [
+        { id: "c1", household_id: "h1", value: "a@example.test" },
+        { id: "c2", household_id: "h1", value: "b@example.test" },
+      ],
+    },
     { rpcResults: { resolve_audience: { data: rpcData } } },
   );
   const client = {
@@ -98,7 +104,7 @@ describe("previewAudience", () => {
     expect(result).toEqual({
       ok: true,
       data: {
-        willSend: [{ householdId: "h1", name: "The Examples" }],
+        willSend: [{ householdId: "h1", name: "The Examples", addresses: 2 }],
         skipped: [
           { householdId: "h2", name: "Exampleton family", reason: "no_email" },
           { householdId: "h3", name: "Test, Pat and Lee", reason: "opted_out" },

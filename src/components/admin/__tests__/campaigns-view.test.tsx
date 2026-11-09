@@ -250,7 +250,7 @@ describe("CampaignEditor", () => {
     previewAudience.mockResolvedValue({
       ok: true,
       data: {
-        willSend: [{ householdId: "h1", name: "The Examples" }],
+        willSend: [{ householdId: "h1", name: "The Examples", addresses: 1 }],
         skipped: [],
       },
     });
@@ -312,6 +312,7 @@ describe("AudiencePreviewView", () => {
     willSend: Array.from({ length: 21 }, (_, i) => ({
       householdId: `w${i}`,
       name: `Family ${i}`,
+      addresses: i === 0 ? 2 : 1,
     })),
     skipped: [
       { householdId: "s1", name: "Exampleton family", reason: "no_email" },
@@ -332,13 +333,22 @@ describe("AudiencePreviewView", () => {
     ).toBeInTheDocument();
   });
 
+  it("counts the emails as well as the households, one per address", () => {
+    render(<AudiencePreviewView preview={preview} />);
+    expect(screen.getByText(/22 emails in all/)).toBeInTheDocument();
+    const two = screen.getByRole("row", { name: /Family 0/ });
+    expect(within(two).getByText("Will send 2 emails")).toBeInTheDocument();
+    const one = screen.getByRole("row", { name: /Family 1$|Family 1 / });
+    expect(within(one).getByText("Will send")).toBeInTheDocument();
+  });
+
   it("lists each household with a badge and a link", () => {
     render(<AudiencePreviewView preview={preview} />);
-    const will = screen.getByRole("row", { name: /Family 0/ });
+    const will = screen.getByRole("row", { name: /Family 1$|Family 1 / });
     expect(within(will).getByText("Will send")).toBeInTheDocument();
     expect(
-      within(will).getByRole("link", { name: "Family 0" }),
-    ).toHaveAttribute("href", "/admin/households/w0");
+      within(will).getByRole("link", { name: "Family 1" }),
+    ).toHaveAttribute("href", "/admin/households/w1");
     const none = screen.getByRole("row", { name: /Exampleton family/ });
     expect(within(none).getByText("No email")).toBeInTheDocument();
     const out = screen.getByRole("row", { name: /Test, Pat and Lee/ });
@@ -349,7 +359,7 @@ describe("AudiencePreviewView", () => {
     render(
       <AudiencePreviewView
         preview={{
-          willSend: [{ householdId: "w", name: "One" }],
+          willSend: [{ householdId: "w", name: "One", addresses: 1 }],
           skipped: [],
         }}
       />,
@@ -434,6 +444,7 @@ describe("DeliveryView", () => {
         id: "m1",
         householdId: "h1",
         householdName: "The Examples",
+        address: "ada@example.test",
         status: "delivered",
         detail: "",
         at: "Aug 2, 9:02 AM PT",
@@ -442,6 +453,7 @@ describe("DeliveryView", () => {
         id: "m2",
         householdId: "h2",
         householdName: "Exampleton family",
+        address: null,
         status: "skipped",
         detail: "No email on file",
         at: "Aug 2, 9:00 AM PT",
@@ -450,6 +462,7 @@ describe("DeliveryView", () => {
         id: "m3",
         householdId: null,
         householdName: "Deleted household",
+        address: null,
         status: "bounced",
         detail: "Household flagged with a delivery problem",
         at: "Aug 2, 9:03 AM PT",
@@ -464,6 +477,15 @@ describe("DeliveryView", () => {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
     expect(screen.queryByText("Queued")).toBeNull();
+  });
+
+  it("shows the address each message went to, one row per address", () => {
+    render(<DeliveryView delivery={delivery} />);
+    expect(
+      screen.getByRole("columnheader", { name: "Address" }),
+    ).toBeInTheDocument();
+    const row = screen.getByRole("row", { name: /The Examples/ });
+    expect(within(row).getByText("ada@example.test")).toBeInTheDocument();
   });
 
   it("shows rows with household link, status, detail and time", () => {

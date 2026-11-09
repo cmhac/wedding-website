@@ -48,6 +48,7 @@ describe("runGuestImport", () => {
       created: { households: 1, guests: 2, invitations: 2 },
       errors: [],
       householdIds: ["hh-1"],
+      accounts: { linked: 0, failed: 0 },
     });
   });
 
@@ -100,5 +101,88 @@ describe("runGuestImport", () => {
     await expect(runGuestImport(client, valid)).rejects.toThrow(
       "The import could not be completed.",
     );
+  });
+});
+
+describe("runGuestImport sign-in accounts", () => {
+  function fakeAdmin(
+    options: { createFails?: boolean; updateFails?: boolean } = {},
+  ) {
+    let n = 1;
+    const createUser = jest.fn(async (_attrs: { email: string }) =>
+      options.createFails
+        ? { data: { user: null }, error: { code: "x" } }
+        : { data: { user: { id: `user-${n++}` } }, error: null },
+    );
+    const deleteUser = jest.fn(async (_id: string) => ({ error: null }));
+    const eq = jest.fn(async (_c: string, _v: string) => ({
+      error: options.updateFails ? { message: "boom" } : null,
+    }));
+    const update = jest.fn((_values: object) => ({ eq }));
+    const from = jest.fn((_table: string) => ({ update }));
+    return {
+      admin: { auth: { admin: { createUser, deleteUser } }, from } as never,
+      createUser,
+      deleteUser,
+      update,
+      eq,
+      from,
+    };
+  }
+
+  it("gives every imported household a synthetic sign-in account and links it", async () => {
+    const { client } = fakeClient();
+    const a = fakeAdmin();
+    const res = await runGuestImport(client, valid, a.admin);
+    expect(a.createUser).toHaveBeenCalledTimes(1);
+    expect(a.createUser.mock.calls[0][0].email).toBe(
+      "household-hh-1@households.invalid",
+    );
+    expect(a.from).toHaveBeenCalledWith("households");
+    expect(a.update).toHaveBeenCalledWith({ auth_user_id: "user-1" });
+    expect(a.eq).toHaveBeenCalledWith("id", "hh-1");
+    expect(res.kind === "done" && res.accounts).toEqual({
+      linked: 1,
+      failed: 0,
+    });
+  });
+
+  it("returns counts only, never an address", async () => {
+    const { client } = fakeClient();
+    const a = fakeAdmin();
+    const res = await runGuestImport(client, valid, a.admin);
+    expect(JSON.stringify(res)).not.toContain("test@example.com");
+  });
+
+  it("counts a failed account and removes any account it could not link", async () => {
+    const { client } = fakeClient();
+    const a = fakeAdmin({ updateFails: true });
+    const res = await runGuestImport(client, valid, a.admin);
+    expect(a.deleteUser).toHaveBeenCalledWith("user-1");
+    expect(res.kind === "done" && res.accounts).toEqual({
+      linked: 0,
+      failed: 1,
+    });
+  });
+
+  it("counts a failure when the account cannot be created", async () => {
+    const { client } = fakeClient();
+    const a = fakeAdmin({ createFails: true });
+    const res = await runGuestImport(client, valid, a.admin);
+    expect(res.kind === "done" && res.accounts).toEqual({
+      linked: 0,
+      failed: 1,
+    });
+  });
+
+  it("creates no accounts when nothing was imported", async () => {
+    const { client } = fakeClient();
+    const a = fakeAdmin();
+    await runGuestImport(
+      client,
+      [HEADER, "h1,Test,bad-email,Ann,Example,"].join("\n"),
+      a.admin,
+    );
+    expect(a.createUser).not.toHaveBeenCalled();
   });
 });

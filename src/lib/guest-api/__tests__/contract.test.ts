@@ -1,5 +1,4 @@
 /** @jest-environment node */
-import { existsSync } from "node:fs";
 import {
   endpointsInMarkdown,
   endpointsOnDisk,
@@ -70,19 +69,43 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
   mockSignInWithOtp.mockResolvedValue({ data: {}, error: null });
   mockRequireGuest.mockResolvedValue({ supabase: { rpc: mockRpc } });
-  mockRpc.mockResolvedValue({ data: RSVP, error: null });
+  mockRpc.mockImplementation(async (fn: string) =>
+    fn === "get_my_contacts"
+      ? { data: [{ kind: "email", value: "ada@example.test" }], error: null }
+      : { data: RSVP, error: null },
+  );
 });
 
 describe("guest API documentation matches the route handlers", () => {
   const onDisk = endpointsOnDisk("app/api/guest");
 
-  it("the contract table lists exactly the guest routes on disk, plus the callback", () => {
+  // Routes outside /api/guest that the guest endpoint table also covers.
+  const sessionRoutes = [
+    "GET /auth/callback",
+    "GET /auth/confirm",
+    "POST /auth/confirm",
+    "GET /i/[token]",
+  ];
+
+  it("the contract table lists exactly the guest routes on disk, plus the sign-in routes", () => {
     const listed = endpointsInMarkdown(CONTRACT).filter(
-      (e) => e !== "GET /auth/callback",
+      (e) => !sessionRoutes.includes(e),
     );
     expect(listed).toEqual(onDisk);
-    expect(endpointsInMarkdown(CONTRACT)).toContain("GET /auth/callback");
-    expect(existsSync("src/app/auth/callback/route.ts")).toBe(true);
+    for (const route of sessionRoutes) {
+      expect(endpointsInMarkdown(CONTRACT)).toContain(route);
+    }
+  });
+
+  it("the sign-in routes the table lists exist on disk", () => {
+    expect(endpointsOnDisk("app/auth")).toEqual(
+      expect.arrayContaining([
+        "GET /auth/callback",
+        "GET /auth/confirm",
+        "POST /auth/confirm",
+      ]),
+    );
+    expect(endpointsOnDisk("app/i")).toEqual(["GET /i/[token]"]);
   });
 
   it("the published document lists the same endpoints as the contract", () => {

@@ -150,9 +150,23 @@ export function HouseholdsListView({
             },
             {
               key: "email",
-              header: "Contact email",
+              header: "Email addresses",
               cell: (row) =>
-                row.contactEmail ?? <span className="muted">None</span>,
+                row.contacts.length === 0 ? (
+                  <span className="muted">None</span>
+                ) : (
+                  <>
+                    <span className="muted">
+                      {row.contacts.length}{" "}
+                      {row.contacts.length === 1 ? "address" : "addresses"}
+                    </span>
+                    <ul className="plain">
+                      {row.contacts.map((address) => (
+                        <li key={address}>{address}</li>
+                      ))}
+                    </ul>
+                  </>
+                ),
             },
             {
               key: "outstanding",
@@ -165,7 +179,11 @@ export function HouseholdsListView({
               cell: (row) => (
                 <div className="row">
                   {row.deliveryProblem ? (
-                    <Badge variant="bad">Delivery problem</Badge>
+                    <Badge variant="bad">
+                      {row.problemAddresses.length > 0
+                        ? `Delivery problem: ${row.problemAddresses.join(", ")}`
+                        : "Delivery problem"}
+                    </Badge>
                   ) : null}
                   {row.paperOnly ? (
                     <Badge variant="warn">Paper only</Badge>

@@ -11,12 +11,18 @@ select tests.create_user('staff@example.test') as staff_user \gset
 select tests.create_user('household-a@example.test') as user_a \gset
 
 insert into public.staff (user_id, role, display_name) values (:'staff_user', 'couple', 'Staff');
-insert into public.households (id, display_name, contact_email, auth_user_id) values
-  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', 'a@example.test', :'user_a'),
-  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', 'b@example.test', null),
-  ('cccccccc-0000-0000-0000-00000000000c', 'Household C', 'c@example.test', null),
-  ('dddddddd-0000-0000-0000-00000000000d', 'Household D', 'd@example.test', null),
-  ('eeeeeeee-0000-0000-0000-00000000000e', 'Household E', 'e@example.test', null);
+insert into public.households (id, display_name, auth_user_id) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', :'user_a'),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', null),
+  ('cccccccc-0000-0000-0000-00000000000c', 'Household C', null),
+  ('dddddddd-0000-0000-0000-00000000000d', 'Household D', null),
+  ('eeeeeeee-0000-0000-0000-00000000000e', 'Household E', null);
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'a@example.test', false),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'email', 'b@example.test', false),
+  ('cccccccc-0000-0000-0000-00000000000c', 'email', 'c@example.test', false),
+  ('dddddddd-0000-0000-0000-00000000000d', 'email', 'd@example.test', false),
+  ('eeeeeeee-0000-0000-0000-00000000000e', 'email', 'e@example.test', false);
 insert into public.guests (id, household_id, first_name, last_name) values
   ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Ada', 'Alpha'),
   ('aaaaaaaa-0000-0000-0000-0000000000a2', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Alan', 'Alpha'),

@@ -1,6 +1,12 @@
 /** @jest-environment node */
 /* eslint-disable @typescript-eslint/no-unused-vars -- typed mock parameters */
 import {
+  addContact,
+  getInviteLink,
+  reissueInviteLink,
+  removeContact,
+  signOutHousehold,
+  updateContact,
   createHousehold,
   deleteHousehold,
   grantStaff,
@@ -15,7 +21,7 @@ import {
 const household = {
   id: "h1",
   display_name: "Test Household",
-  contact_email: null,
+  contact_count: 0,
   plus_one_allowance: 0,
   paper_only: true,
 };
@@ -36,6 +42,7 @@ describe("admin API client", () => {
     const f = mockFetch(201, { household, guest_ids: ["g1"] });
     const res = await createHousehold({
       display_name: "Test Household",
+      contacts: [],
       plus_one_allowance: 0,
       guests: [{ first_name: "Ann", last_name: "Example" }],
     });
@@ -49,7 +56,7 @@ describe("admin API client", () => {
 
   it("returns the error body on a failure", async () => {
     mockFetch(409, { error: { code: "email_in_use", message: "In use." } });
-    const res = await updateHousehold("h1", { contact_email: "a@example.com" });
+    const res = await updateHousehold("h1", { display_name: "New name" });
     expect(res).toEqual({
       ok: false,
       status: 409,
@@ -59,7 +66,7 @@ describe("admin API client", () => {
 
   it("sends a PATCH to the household path", async () => {
     const f = mockFetch(200, { household });
-    await updateHousehold("h1", { contact_email: null });
+    await updateHousehold("h1", { notes: null });
     expect(f.mock.calls[0][0]).toBe("/api/admin/households/h1");
     expect(f.mock.calls[0][1]?.method).toBe("PATCH");
   });
@@ -172,6 +179,8 @@ describe("admin API client", () => {
     const id = "10000000-0000-4000-8000-000000000001";
     const sent = {
       campaign_id: id,
+      households: 3,
+      addresses: 3,
       queued: 3,
       sent: 2,
       skipped: { no_email: 1, opted_out: 0, other: 0 },
@@ -252,5 +261,66 @@ describe("admin API client", () => {
         error: { code: "network" },
       });
     });
+  });
+});
+
+describe("admin API client: addresses, links and sign-out", () => {
+  const contact = {
+    contact: { id: "c1", kind: "email", value: "a@example.test" },
+  };
+
+  it("adds an address with a POST to the contacts path", async () => {
+    const f = mockFetch(201, contact);
+    const res = await addContact("h1", "a@example.test");
+    expect(f.mock.calls[0][0]).toBe("/api/admin/households/h1/contacts");
+    expect(f.mock.calls[0][1]?.method).toBe("POST");
+    expect(JSON.parse(String(f.mock.calls[0][1]?.body))).toEqual({
+      kind: "email",
+      value: "a@example.test",
+    });
+    expect(res).toEqual({ ok: true, data: contact });
+  });
+
+  it("changes an address with a PATCH", async () => {
+    const f = mockFetch(200, contact);
+    await updateContact("h1", "c1", "a@example.test");
+    expect(f.mock.calls[0][0]).toBe("/api/admin/households/h1/contacts/c1");
+    expect(f.mock.calls[0][1]?.method).toBe("PATCH");
+  });
+
+  it("removes an address and returns paper_only", async () => {
+    const f = mockFetch(200, { paper_only: true });
+    const res = await removeContact("h1", "c1");
+    expect(f.mock.calls[0][1]?.method).toBe("DELETE");
+    expect(res).toEqual({ ok: true, data: { paper_only: true } });
+  });
+
+  it("returns the error body when an address is in use", async () => {
+    mockFetch(409, { error: { code: "email_in_use", message: "In use." } });
+    expect(await addContact("h1", "a@example.test")).toEqual({
+      ok: false,
+      status: 409,
+      error: { code: "email_in_use", message: "In use." },
+    });
+  });
+
+  it("reads and reissues the personal link", async () => {
+    const link = {
+      url: "https://x.example/i/t",
+      issued_at: "2027-01-01T00:00:00Z",
+    };
+    const f = mockFetch(200, link);
+    expect(await getInviteLink("h1")).toEqual({ ok: true, data: link });
+    expect(f.mock.calls[0][0]).toBe("/api/admin/households/h1/invite-link");
+    expect(f.mock.calls[0][1]?.method).toBe("GET");
+    await reissueInviteLink("h1");
+    expect(f.mock.calls[1][1]?.method).toBe("POST");
+  });
+
+  it("signs a household out everywhere", async () => {
+    const f = mockFetch(204);
+    expect(await signOutHousehold("h1")).toEqual({ ok: true, data: null });
+    expect(f.mock.calls[0][0]).toBe("/api/admin/households/h1/sign-out");
+    expect(f.mock.calls[0][1]?.method).toBe("POST");
   });
 });

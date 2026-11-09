@@ -102,31 +102,26 @@ const households = [
   {
     id: "h1",
     display_name: "The Examples",
-    contact_email: "a@example.test",
     delivery_problem: false,
   },
   {
     id: "h2",
     display_name: "Sample Family",
-    contact_email: "b@example.test",
     delivery_problem: true,
   },
   {
     id: "h3",
     display_name: "Exampleton Family",
-    contact_email: null,
     delivery_problem: true,
   },
   {
     id: "h4",
     display_name: "Done Household",
-    contact_email: "",
     delivery_problem: false,
   },
   {
     id: "h5",
     display_name: "Tiny Household",
-    contact_email: "e@example.test",
     delivery_problem: false,
   },
 ];
@@ -137,11 +132,19 @@ function makeDb(overrides: Record<string, unknown[]> = {}) {
       events,
       event_counts: eventCounts,
       household_rsvp_progress: progress,
+      // h3 and h4 have no address: they need paper.
+      household_contacts: [
+        { id: "c1", household_id: "h1", value: "a@example.test" },
+        { id: "c2", household_id: "h1", value: "a2@example.test" },
+        { id: "c3", household_id: "h2", value: "b@example.test" },
+        { id: "c4", household_id: "h5", value: "e@example.test" },
+      ],
       settings: [
         {
           id: true,
           rsvp_open: true,
           default_rsvp_deadline: "2027-09-02T06:59:00Z",
+          wedding_event_id: "e-ceremony",
         },
       ],
       ...overrides,
@@ -189,7 +192,7 @@ describe("loadOverview", () => {
   it("counts delivery problems, paper-only households and duplicate pairs", async () => {
     const data = await load();
     expect(data.deliveryProblems).toBe(2);
-    expect(data.paperOnly).toBe(2); // null and empty email
+    expect(data.paperOnly).toBe(2); // households with no address
     expect(data.possibleDuplicates).toBe(2);
   });
 
@@ -246,6 +249,23 @@ describe("loadOverview", () => {
     );
     expect(closed.rsvpOpen).toBe(false);
     expect(closed.defaultDeadline).toBeNull();
+  });
+
+  it("says whether a wedding event is chosen (personal links close on its date)", async () => {
+    expect((await load()).weddingEventChosen).toBe(true);
+    const none = await load(
+      makeDb({
+        settings: [
+          {
+            id: true,
+            rsvp_open: true,
+            default_rsvp_deadline: null,
+            wedding_event_id: null,
+          },
+        ],
+      }),
+    );
+    expect(none.weddingEventChosen).toBe(false);
   });
 
   it("has no ceremony total when there is no ceremony event", async () => {

@@ -103,6 +103,28 @@ describe("POST /api/auth/send-email", () => {
     });
   });
 
+  it("sends one staff email rendered from the real magic_link template", async () => {
+    const { default: realMagicLink } = jest.requireActual(
+      "../../../../../../emails/magic-link",
+    );
+    mockRegistry.magic_link = realMagicLink;
+    const res = await POST(
+      request(
+        payload(
+          "magiclink",
+          "http://localhost:3000/auth/callback?audience=staff",
+        ),
+      ),
+    );
+    expect(res.status).toBe(200);
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const sent = mockSend.mock.calls[0][0];
+    expect(sent.to).toBe("test@example.com");
+    expect(sent.subject).toMatch(/admin/i);
+    expect(sent.html).toContain("/auth/v1/verify?token=hash");
+    expect(sent.text).toContain("/auth/v1/verify?token=hash");
+  });
+
   it("marks the staff sign-in redirect as the staff audience", async () => {
     mockRegistry.magic_link = template;
     await POST(

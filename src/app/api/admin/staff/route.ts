@@ -24,6 +24,27 @@ export async function POST(request: Request) {
   if (!parsed.success) return validationError(parsed.error);
 
   const admin = createAdminSupabase();
+
+  // An address that reaches a household cannot also be a staff sign-in: the
+  // database refuses the reverse (a household contact that is a staff address).
+  const clash = await admin
+    .from("household_contacts")
+    .select("id")
+    .eq("kind", "email")
+    .eq("value", parsed.data.email.trim().toLowerCase())
+    .maybeSingle();
+  if (clash.error) {
+    log.error("staff_grant_failed", { step: "check_contacts" });
+    return errorResponse(500, "server_error", "Access was not granted.");
+  }
+  if (clash.data) {
+    return errorResponse(
+      409,
+      "household_contact",
+      "That email address belongs to a household. Use a different address for staff access.",
+    );
+  }
+
   const created = await admin.auth.admin.createUser({
     email: parsed.data.email,
     email_confirm: true,

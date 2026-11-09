@@ -13,7 +13,8 @@ const row = (over: Partial<HouseholdRow> = {}): HouseholdRow => ({
   displayName: "The Examples",
   guestNames: ["Sam Example", "Alex Example"],
   unnamedSeats: 0,
-  contactEmail: "household@example.test",
+  contacts: ["household@example.test"],
+  problemAddresses: [],
   plusOnesAllowed: 1,
   plusOnesNamed: 0,
   outstanding: { required: 2, optional: 2, meals: 2 },
@@ -125,7 +126,7 @@ describe("HouseholdsListView", () => {
     for (const name of [
       "Household",
       "Guests",
-      "Contact email",
+      "Email addresses",
       "Outstanding",
       "Status",
     ]) {
@@ -161,12 +162,39 @@ describe("HouseholdsListView", () => {
     expect(screen.getByText("All answered")).toBeInTheDocument();
   });
 
+  it("shows how many addresses a household has, listing each", () => {
+    renderList([
+      row({ contacts: ["a@example.test", "b@example.test"] }),
+      row({
+        id: "h2",
+        displayName: "One address",
+        contacts: ["c@example.test"],
+      }),
+    ]);
+    expect(screen.getByText("2 addresses")).toBeInTheDocument();
+    expect(screen.getByText("1 address")).toBeInTheDocument();
+    expect(screen.getByText("b@example.test")).toBeInTheDocument();
+  });
+
+  it("says which address had the delivery problem, masked", () => {
+    renderList([
+      row({
+        deliveryProblem: true,
+        contacts: ["ann@example.test", "bob@example.test"],
+        problemAddresses: ["b•••@example.test"],
+      }),
+    ]);
+    expect(
+      screen.getByText("Delivery problem: b•••@example.test"),
+    ).toBeInTheDocument();
+  });
+
   it("shows None for a household with no email, and its unnamed plus-one", () => {
     renderList([
       row({
         id: "h3",
         displayName: "Exampleton family",
-        contactEmail: null,
+        contacts: [],
         paperOnly: true,
         unnamedSeats: 1,
         possibleDuplicate: true,

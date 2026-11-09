@@ -37,6 +37,8 @@ export type DeliveryRow = {
   id: string;
   householdId: string | null;
   householdName: string;
+  /** The address this message was sent to (one row per address), or null when skipped. */
+  address: string | null;
   status: string;
   /** Plain-English detail, or "" when there is nothing to add. */
   detail: string;
@@ -234,7 +236,7 @@ export async function loadDelivery(
       client
         .from("messages")
         .select(
-          "id, household_id, status, skip_reason, error_code, queued_at, sent_at, last_event_at",
+          "id, household_id, to_email, status, skip_reason, error_code, queued_at, sent_at, last_event_at",
         )
         .eq("campaign_id", id)
         .order("queued_at", { ascending: true }),
@@ -255,12 +257,17 @@ export async function loadDelivery(
       householdName: householdId
         ? (names.get(householdId) ?? "Unknown household")
         : "Deleted household",
+      address: (m.to_email as string | null) ?? null,
       status,
       detail: messageDetail(m),
       at: formatPacific(moment),
     };
   });
-  rows.sort((a, b) => a.householdName.localeCompare(b.householdName));
+  rows.sort(
+    (a, b) =>
+      a.householdName.localeCompare(b.householdName) ||
+      (a.address ?? "").localeCompare(b.address ?? ""),
+  );
 
   return {
     campaign: {

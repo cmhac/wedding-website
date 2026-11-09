@@ -42,9 +42,12 @@ insert into public.staff (user_id, role, display_name) values
   (:'couple_user', 'couple', 'Couple'), (:'planner_user', 'planner', 'Planner');
 update public.settings set default_rsvp_deadline = now() + interval '30 days', rsvp_open = true;
 
-insert into public.households (id, display_name, contact_email, auth_user_id) values
-  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', 'a@example.test', :'user_a'),
-  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', 'b@example.test', :'user_b');
+insert into public.households (id, display_name, auth_user_id) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'Household A', :'user_a'),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'Household B', :'user_b');
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('aaaaaaaa-0000-0000-0000-00000000000a', 'email', 'a@example.test', false),
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'email', 'b@example.test', false);
 insert into public.guests (id, household_id, first_name, last_name) values
   ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Ada', 'Alpha'),
   ('aaaaaaaa-0000-0000-0000-0000000000a2', 'aaaaaaaa-0000-0000-0000-00000000000a', 'Alan', 'Alpha'),
@@ -175,8 +178,8 @@ select lives_ok(stmt, 'staff can call ' || label) from rpcs order by n;
 
 -- But not the sign-in columns of a household, nor create or delete households directly.
 select throws_ok(
-  $$update public.households set contact_email = 'changed@example.test' where id = 'aaaaaaaa-0000-0000-0000-00000000000a'$$,
-  '42501', null, 'staff cannot write households.contact_email'
+  $$update public.households set auth_user_id = null where id = 'aaaaaaaa-0000-0000-0000-00000000000a'$$,
+  '42501', null, 'staff cannot write households.auth_user_id'
 );
 select throws_ok(
   format($$update public.households set auth_user_id = %L where id = 'bbbbbbbb-0000-0000-0000-00000000000b'$$, :'couple_user'),

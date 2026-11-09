@@ -1,4 +1,5 @@
 import { AccessDenied } from "@/components/admin/AccessDenied";
+import { ImportHelp } from "@/components/admin/ImportHelp";
 import { ImportForm } from "@/components/admin/forms/ImportForm";
 import { PageHeader } from "@/components/admin/primitives";
 import { isForbidden, requireStaffPage } from "@/lib/admin/session";
@@ -12,7 +13,10 @@ export default async function ImportPage() {
         title="Import guest list"
         description="Upload a CSV or Excel file with one row per guest."
       />
-      <ImportForm />
+      <div className="stack">
+        <ImportHelp />
+        <ImportForm />
+      </div>
     </>
   );
 }

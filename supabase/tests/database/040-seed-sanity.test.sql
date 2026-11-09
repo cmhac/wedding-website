@@ -7,12 +7,12 @@ select plan(26);
 
 -- Fake data only: every seeded email is on example.test.
 select is(
-  (select count(*) from auth.users where email not like '%@example.test'),
-  0::bigint, 'every seeded sign-in address is on example.test'
+  (select count(*) from auth.users where email not like '%@example.test' and email not like 'household-%@households.invalid'),
+  0::bigint, 'every seeded sign-in address is on example.test or a synthetic household address'
 );
 select is(
-  (select count(*) from public.households where contact_email is not null and contact_email::text not like '%@example.test'),
-  0::bigint, 'every household contact_email is on example.test'
+  (select count(*) from public.household_contacts where value::text not like '%@example.test'),
+  0::bigint, 'every household contact address is on example.test'
 );
 select is(
   (select count(*) from public.guests where email is not null and email::text not like '%@example.test'),
@@ -27,8 +27,10 @@ select isnt((select default_rsvp_deadline from public.settings), null, 'settings
 -- Households and guests.
 select is((select count(*) from public.households), 6::bigint, 'six households');
 select is(
-  (select count(*) from public.households where contact_email is not null and auth_user_id is not null),
-  6::bigint, 'every household has an email and a sign-in account'
+  (select count(*) from public.households h
+    where auth_user_id is not null
+      and exists (select 1 from public.household_contacts c where c.household_id = h.id)),
+  6::bigint, 'every household has an address and a sign-in account'
 );
 select is((select count(*) from public.guests), 12::bigint, 'twelve guests');
 select is((select count(*) from public.guests where is_placeholder), 1::bigint, 'one placeholder plus-one');

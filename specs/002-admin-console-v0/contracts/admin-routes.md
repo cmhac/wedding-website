@@ -30,36 +30,39 @@ Phone layout is the same pages at narrow width (research R5); the `Mobile-*` wir
 
 **Server actions** (direct staff data access; each checks the session, validates the form, runs as the staff member, then refreshes the page). Failures return a plain message and keep what the person typed.
 
-| Action                             | Does                                                                                                     | Underlying call                             |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `signOut`                          | Ends the session and goes to `/admin/sign-in`                                                            | Supabase auth sign out                      |
-| `updateHouseholdFields`            | Saves everything except contact email: name, address, allowance, deadline override, opt-out, staff notes | `update` on `households` (no row read back) |
-| `saveGuest`, `removeGuest`         | Add, edit, name a plus-one, or remove a guest; dietary notes; staff notes                                | `insert`/`update`/`delete` on `guests`      |
-| `setGuestDietary`                  | Add or remove a guest's dietary category with severity                                                   | `guest_dietary`                             |
-| `inviteGuests`, `removeInvitation` | Invite chosen guests to an event (no email sent); remove an invitation                                   | RPC `invite`; `delete` on `invitations`     |
-| `recordRsvp`                       | Set a guest's answer for an event on their behalf (recorded as staff)                                    | RPC `staff_set_rsvp`                        |
-| `recordMeal`                       | Set or clear a guest's dish for a course on their behalf (recorded as staff)                             | RPC `staff_set_meal`                        |
-| `saveEvent`, `deleteEvent`         | Create or edit an event; delete one                                                                      | `events`                                    |
-| `setMenuStatus`                    | Draft, published or closed                                                                               | `menus`                                     |
-| `saveCourse`, `saveDish`           | Add or edit a course or a dish, with its dietary tags                                                    | `courses`, `dishes`, `dish_tags`            |
-| `archiveDish`, `restoreDish`       | Retire a dish and report affected guests; bring one back                                                 | RPC `archive_dish`; `update` on `dishes`    |
-| `saveCategory`                     | Add a dietary category                                                                                   | `dietary_categories`                        |
-| `previewAudience`                  | Shows who a campaign would reach and who is skipped, without saving                                      | RPC `resolve_audience`                      |
-| `saveCampaign`, `cancelCampaign`   | Save a draft or scheduled campaign (only while draft or scheduled); cancel one                           | `campaigns`                                 |
-| `saveSettings`                     | Default RSVP deadline, RSVPs open                                                                        | `settings`                                  |
+| Action                             | Does                                                                                                                                          | Underlying call                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `signOut`                          | Ends the session and goes to `/admin/sign-in`                                                                                                 | Supabase auth sign out                      |
+| `updateHouseholdFields`            | Saves everything except the email addresses (they have their own controls): name, address, allowance, deadline override, opt-out, staff notes | `update` on `households` (no row read back) |
+| `saveGuest`, `removeGuest`         | Add, edit, name a plus-one, or remove a guest; dietary notes; staff notes                                                                     | `insert`/`update`/`delete` on `guests`      |
+| `setGuestDietary`                  | Add or remove a guest's dietary category with severity                                                                                        | `guest_dietary`                             |
+| `inviteGuests`, `removeInvitation` | Invite chosen guests to an event (no email sent); remove an invitation                                                                        | RPC `invite`; `delete` on `invitations`     |
+| `recordRsvp`                       | Set a guest's answer for an event on their behalf (recorded as staff)                                                                         | RPC `staff_set_rsvp`                        |
+| `recordMeal`                       | Set or clear a guest's dish for a course on their behalf (recorded as staff)                                                                  | RPC `staff_set_meal`                        |
+| `saveEvent`, `deleteEvent`         | Create or edit an event; delete one                                                                                                           | `events`                                    |
+| `setMenuStatus`                    | Draft, published or closed                                                                                                                    | `menus`                                     |
+| `saveCourse`, `saveDish`           | Add or edit a course or a dish, with its dietary tags                                                                                         | `courses`, `dishes`, `dish_tags`            |
+| `archiveDish`, `restoreDish`       | Retire a dish and report affected guests; bring one back                                                                                      | RPC `archive_dish`; `update` on `dishes`    |
+| `saveCategory`                     | Add a dietary category                                                                                                                        | `dietary_categories`                        |
+| `previewAudience`                  | Shows who a campaign would reach and who is skipped, without saving                                                                           | RPC `resolve_audience`                      |
+| `saveCampaign`, `cancelCampaign`   | Save a draft or scheduled campaign (only while draft or scheduled); cancel one                                                                | `campaigns`                                 |
+| `saveSettings`                     | Default RSVP deadline, RSVPs open                                                                                                             | `settings`                                  |
 
 **Existing route handlers**, called by small client components through the typed wrappers in `src/lib/admin-api/client.ts` (these need the server secret):
 
-| Used for                       | Handler                                                     | Wrapper                                  |
-| ------------------------------ | ----------------------------------------------------------- | ---------------------------------------- |
-| Staff sign-in link             | `POST /api/admin/sign-in`                                   | `requestStaffSignIn` (new)               |
-| Create a household with guests | `POST /api/admin/households`                                | `createHousehold`                        |
-| Change contact email           | `PATCH /api/admin/households/[id]`                          | `updateHousehold`                        |
-| Delete a household             | `DELETE /api/admin/households/[id]`                         | `deleteHousehold`                        |
-| Import CSV or Excel            | `POST /api/admin/guests/import`                             | `importGuests`, `importGuestsFile` (new) |
-| Send a campaign now            | `POST /api/admin/campaigns/[id]/send`                       | `sendCampaign` (new)                     |
-| Exports                        | `GET /api/admin/exports/[kind]`                             | plain links (download)                   |
-| Grant or revoke planner access | `POST /api/admin/staff`, `DELETE /api/admin/staff/[userId]` | `grantStaff`, `revokeStaff` (new)        |
+| Used for                          | Handler                                                             | Wrapper                                        |
+| --------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------- |
+| Staff sign-in link                | `POST /api/admin/sign-in`                                           | `requestStaffSignIn` (new)                     |
+| Create a household with guests    | `POST /api/admin/households`                                        | `createHousehold`                              |
+| Add, change, remove an address    | `POST`, `PATCH`, `DELETE /api/admin/households/[id]/contacts[/cid]` | `addContact`, `updateContact`, `removeContact` |
+| Copy or reissue the personal link | `GET`, `POST /api/admin/households/[id]/invite-link`                | `getInviteLink`, `reissueInviteLink`           |
+| Sign a household out everywhere   | `POST /api/admin/households/[id]/sign-out`                          | `signOutHousehold`                             |
+| Change household fields           | `PATCH /api/admin/households/[id]`                                  | `updateHousehold`                              |
+| Delete a household                | `DELETE /api/admin/households/[id]`                                 | `deleteHousehold`                              |
+| Import CSV or Excel               | `POST /api/admin/guests/import`                                     | `importGuests`, `importGuestsFile` (new)       |
+| Send a campaign now               | `POST /api/admin/campaigns/[id]/send`                               | `sendCampaign` (new)                           |
+| Exports                           | `GET /api/admin/exports/[kind]`                                     | plain links (download)                         |
+| Grant or revoke planner access    | `POST /api/admin/staff`, `DELETE /api/admin/staff/[userId]`         | `grantStaff`, `revokeStaff` (new)              |
 
 The "new" wrappers do not change any route handler; they only call it. The one route handler that changes is the import (see [import-excel.md](./import-excel.md)).
 

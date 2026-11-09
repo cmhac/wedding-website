@@ -6,6 +6,8 @@ import { Badge, Card, EmptyState } from "./primitives";
 type PreviewRow = {
   householdId: string;
   name: string;
+  /** Emails this household will get (one per address); absent when skipped. */
+  addresses?: number;
   /** Absent for a household that will be emailed. */
   reason?: string;
 };
@@ -49,7 +51,11 @@ const COLUMNS: Column<PreviewRow>[] = [
     header: "Result",
     cell: (r) =>
       r.reason === undefined ? (
-        <Badge variant="ok">Will send</Badge>
+        <Badge variant="ok">
+          {(r.addresses ?? 1) > 1
+            ? `Will send ${r.addresses} emails`
+            : "Will send"}
+        </Badge>
       ) : (
         <Badge variant="warn">{REASON_BADGE[r.reason] ?? "Skipped"}</Badge>
       ),
@@ -66,6 +72,7 @@ export function AudiencePreviewView({ preview }: { preview: PreviewData }) {
     );
   }
   const rows: PreviewRow[] = [...willSend, ...skipped];
+  const emails = willSend.reduce((n, r) => n + r.addresses, 0);
   return (
     <Card heading="Audience preview">
       <div className="stack-sm">
@@ -73,6 +80,9 @@ export function AudiencePreviewView({ preview }: { preview: PreviewData }) {
           {willSend.length} {plural(willSend.length, "household", "households")}{" "}
           will be emailed
         </p>
+        {emails > willSend.length ? (
+          <p>{`${emails} emails in all, one per address`}</p>
+        ) : null}
         {skipped.length ? <p>{skippedLine(skipped)}</p> : null}
         <DataTable
           columns={COLUMNS}

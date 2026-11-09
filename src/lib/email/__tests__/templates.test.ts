@@ -26,10 +26,15 @@ describe("templates", () => {
     expect(() => getTemplate("toString", registry)).toThrow(TemplateError);
   });
 
-  it("treats the shipped registry as empty", () => {
-    expect(() => getTemplate("magic_link")).toThrow(
-      expect.objectContaining({ code: "template_missing" }),
-    );
+  it("registers the three first-draft templates and still refuses the others", () => {
+    for (const key of ["magic_link", "invitation", "rsvp_reminder"]) {
+      expect(typeof getTemplate(key)).toBe("function");
+    }
+    for (const key of ["save_the_date", "optional_events_reminder", "update"]) {
+      expect(() => getTemplate(key)).toThrow(
+        expect.objectContaining({ code: "template_missing" }),
+      );
+    }
   });
 
   it("surfaces a throwing template as template_failed without its message", async () => {
@@ -49,6 +54,7 @@ describe("templates", () => {
       } as { display_name: string },
       respond_by: "2026-12-01T00:00:00Z",
       pending: { required_events: 1, optional_events: 0, meals: 2 },
+      personal_link: "https://site.example/i/fake-token",
       siteUrl: "https://site.example/",
       events: [
         {
@@ -69,9 +75,11 @@ describe("templates", () => {
       "events",
       "household",
       "pending",
+      "personal_link",
       "respond_by",
       "rsvp_url",
     ]);
+    expect(seen.personal_link).toBe("https://site.example/i/fake-token");
     expect(Object.keys(seen.household)).toEqual(["display_name"]);
     expect(Object.keys(seen.events[0]).sort()).toEqual([
       "is_required",
@@ -104,6 +112,7 @@ describe("templates", () => {
       household: { display_name: "Test Household" },
       respond_by: null,
       pending: { required_events: 0, optional_events: 0, meals: 0 },
+      personal_link: "https://site.example/i/fake-token",
       siteUrl: "https://site.example",
       events: [
         {
@@ -125,6 +134,7 @@ describe("templates", () => {
       household: { display_name: "H" },
       respond_by: null,
       pending: { required_events: 0, optional_events: 0, meals: 0 },
+      personal_link: "https://site.example/i/fake-token",
       siteUrl: "https://site.example",
       rsvpPath: "/r",
       events: [],

@@ -78,6 +78,7 @@ const messages = [
     id: "m1",
     campaign_id: CAMPAIGN_C,
     household_id: "h1",
+    to_email: "ada@example.test",
     status: "delivered",
     skip_reason: null,
     error_code: null,
@@ -252,9 +253,12 @@ describe("loadDelivery", () => {
       householdId: "h1",
       householdName: "The Examples",
       status: "delivered",
+      address: "ada@example.test",
       detail: "",
       at: "Aug 2, 9:02 AM PT",
     });
+    // A skipped row has no address.
+    expect(byId.m2.address).toBeNull();
     expect(byId.m2.detail).toBe("No email on file");
     expect(byId.m3.detail).toBe("Opted out of reminders");
     expect(byId.m4.detail).toBe("Household flagged with a delivery problem");

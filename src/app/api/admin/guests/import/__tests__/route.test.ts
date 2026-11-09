@@ -5,12 +5,18 @@ jest.mock("@/lib/auth/guards", () => ({
   ...jest.requireActual("@/lib/auth/guards"),
   requireStaff: () => mockRequireStaff(),
 }));
+const createUser = jest.fn();
+const updateHousehold = jest.fn();
+const adminClient = {
+  auth: { admin: { createUser: (...a: unknown[]) => createUser(...a) } },
+  from: () => ({
+    update: (values: unknown) => ({
+      eq: async (...a: unknown[]) => updateHousehold(values, ...a),
+    }),
+  }),
+};
 jest.mock("@/lib/supabase/admin", () => ({
-  createAdminSupabase: () => ({ fake: "admin" }),
-}));
-const mockLink = jest.fn();
-jest.mock("@/lib/guests/household-access", () => ({
-  linkHouseholdAccounts: (...a: unknown[]) => mockLink(...a),
+  createAdminSupabase: () => adminClient,
 }));
 
 import { AuthError } from "@/lib/auth/guards";
@@ -66,7 +72,11 @@ beforeEach(() => {
     },
     error: null,
   });
-  mockLink.mockResolvedValue({ linked: 1, failed: 0 });
+  createUser.mockResolvedValue({
+    data: { user: { id: "user-1" } },
+    error: null,
+  });
+  updateHousehold.mockResolvedValue({ error: null });
 });
 
 describe("POST /api/admin/guests/import", () => {
@@ -94,11 +104,20 @@ describe("POST /api/admin/guests/import", () => {
     );
   });
 
-  it("links sign-in accounts for the new households only, attributed to the staff member", async () => {
+  it("gives the new households (only) a synthetic sign-in account, using the service role", async () => {
     await POST(request(valid));
-    expect(mockLink).toHaveBeenCalledWith({ fake: "admin" }, ["hh-1"], {
-      staff: sessionClient,
-    });
+    expect(createUser).toHaveBeenCalledTimes(1);
+    expect(createUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "household-hh-1@households.invalid",
+        email_confirm: true,
+      }),
+    );
+    expect(updateHousehold).toHaveBeenCalledWith(
+      { auth_user_id: "user-1" },
+      "id",
+      "hh-1",
+    );
   });
 
   it("returns the bad row's error and still creates the valid households", async () => {

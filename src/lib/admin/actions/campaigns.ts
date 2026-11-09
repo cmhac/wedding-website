@@ -15,7 +15,8 @@ const EDITABLE = ["draft", "scheduled"];
 type Options = { supabase?: SupabaseClient; now?: Date };
 
 export type PreviewData = {
-  willSend: { householdId: string; name: string }[];
+  /** `addresses` is how many emails the household will get (one per address). */
+  willSend: { householdId: string; name: string; addresses: number }[];
   skipped: { householdId: string; name: string; reason: string }[];
 };
 
@@ -134,12 +135,27 @@ export async function previewAudience(
           deliverable: boolean;
           skip_reason: string | null;
         }>;
+        const ids = rows
+          .filter((r) => r.deliverable)
+          .map((r) => r.household_id);
+        const counts = new Map<string, number>();
+        if (ids.length > 0) {
+          const contacts = await supabase
+            .from("household_contacts")
+            .select("household_id")
+            .in("household_id", ids);
+          if (contacts.error) return { error: contacts.error };
+          for (const c of (contacts.data ?? []) as { household_id: string }[]) {
+            counts.set(c.household_id, (counts.get(c.household_id) ?? 0) + 1);
+          }
+        }
         const preview: PreviewData = { willSend: [], skipped: [] };
         for (const row of rows) {
           if (row.deliverable) {
             preview.willSend.push({
               householdId: row.household_id,
               name: row.display_name,
+              addresses: counts.get(row.household_id) ?? 0,
             });
           } else {
             preview.skipped.push({

@@ -21,6 +21,8 @@ import { POST } from "../route";
 const ID = "5f1c2b8e-1111-4222-8333-944455556666";
 const result = {
   campaign_id: ID,
+  households: 3,
+  addresses: 3,
   queued: 3,
   sent: 2,
   skipped: { no_email: 1, opted_out: 0, other: 0 },

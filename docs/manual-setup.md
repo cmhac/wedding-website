@@ -7,15 +7,15 @@ Never put a secret in this repository.
 
 ## Supabase Auth
 
-| Setting                    | Where                                          | Value                                                                                                                                                                                                                                                                          |
-| -------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Email provider             | Dashboard, Authentication, Providers           | **Enabled and must stay enabled.** If it is turned off, magic links stop working.                                                                                                                                                                                              |
-| Allow new users to sign up | Dashboard, Authentication, Sign In / Providers | **Off.** Locally this is `[auth] enable_signup = false` in `supabase/config.toml`.                                                                                                                                                                                             |
-| Per-request guard          | `signInWithOtp` calls in the sign-in routes    | `shouldCreateUser: false` (already in code), so a sign-in request can never create a user.                                                                                                                                                                                     |
-| Confirm email              | Authentication, Providers, Email               | Off (`enable_confirmations = false`); users are created by server code, not by sign-up.                                                                                                                                                                                        |
-| Site URL                   | Authentication, URL Configuration              | The production site URL.                                                                                                                                                                                                                                                       |
-| Redirect URLs              | Authentication, URL Configuration              | The production `/auth/callback` URL **and** `/auth/callback?audience=staff` (the staff sign-in link; Supabase matches the allow-list exactly, query string included). Locally both are in `additional_redirect_urls` in `supabase/config.toml`.                                |
-| Send Email hook            | Authentication, Hooks, Send Email              | HTTPS hook pointing at `<site>/api/auth/send-email`, with its secret saved as `SEND_EMAIL_HOOK_SECRET` on the host. Enable it only after a `magic_link` template is registered in `emails/index.ts`; until then Supabase's built-in email is used. Locally the hook stays off. |
+| Setting                    | Where                                          | Value                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Email provider             | Dashboard, Authentication, Providers           | **Enabled and must stay enabled.** If it is turned off, magic links stop working.                                                                                                                                                                                                                                                                                                                     |
+| Allow new users to sign up | Dashboard, Authentication, Sign In / Providers | **Off.** Locally this is `[auth] enable_signup = false` in `supabase/config.toml`.                                                                                                                                                                                                                                                                                                                    |
+| Per-request guard          | `signInWithOtp` calls in the sign-in routes    | `shouldCreateUser: false` (already in code), so a sign-in request can never create a user.                                                                                                                                                                                                                                                                                                            |
+| Confirm email              | Authentication, Providers, Email               | Off (`enable_confirmations = false`); users are created by server code, not by sign-up.                                                                                                                                                                                                                                                                                                               |
+| Site URL                   | Authentication, URL Configuration              | The production site URL.                                                                                                                                                                                                                                                                                                                                                                              |
+| Redirect URLs              | Authentication, URL Configuration              | The production `/auth/callback` URL **and** `/auth/callback?audience=staff` (the staff sign-in link; Supabase matches the allow-list exactly, query string included). Locally both are in `additional_redirect_urls` in `supabase/config.toml`.                                                                                                                                                       |
+| Send Email hook            | Authentication, Hooks, Send Email              | HTTPS hook pointing at `<site>/api/auth/send-email`, with its secret saved as `SEND_EMAIL_HOOK_SECRET` on the host. Now that `magic_link` is registered in `emails/index.ts`, turn it on following "Switching sign-in email to the repository's template" below. It carries **staff** sign-in email only: guests' links are sent by the site (see Sign-in rate limiting). Locally the hook stays off. |
 
 Why the email provider stays on while sign-ups are off: in Supabase the
 `[auth.email] enable_signup` flag switches the email provider itself on or off
@@ -25,22 +25,70 @@ together mean only server code (the household create endpoint and
 `scripts/create-staff-user.ts`) creates users. See
 `docs/decisions/0003-guest-identity.md` and `docs/decisions/0004-auth-emails-via-resend.md`.
 
+## Household sessions stay signed in
+
+Guests open their personal link once and stay signed in on that device, so the
+Supabase Auth session limits must stay **unset** (dashboard, Authentication,
+Sessions): no "time-box user sessions" and no "inactivity timeout". Setting
+either would sign guests out and force them to ask for a new link. Staff
+sessions follow the same project settings.
+
+Check it through the Management API (needs a personal access token with
+`auth_config_read`; the token is never stored in the repository):
+
+```bash
+curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  "https://api.supabase.com/v1/projects/<project-ref>/config/auth" \
+  | jq '{sessions_timebox, sessions_inactivity_timeout}'
+```
+
+Both fields must be empty or zero. Supabase documents both settings, and says
+sessions are not ended the moment a limit is reached, in
+[its sessions guide](https://supabase.com/docs/guides/auth/sessions) and the
+[auth config reference](https://supabase.com/docs/reference/api/v1-get-auth-service-config).
+Record the date you checked here: _not checked yet_.
+
 ## Sign-in rate limiting
 
-The sign-in routes (`/api/guest/sign-in`, `/api/admin/sign-in`) keep an
-in-memory limiter per client address and per email address. It is **best
-effort only**: it lives in one server instance's memory, so it resets on a
-restart and is not shared between instances or serverless invocations. The
-client address comes from `x-real-ip`, then the rightmost `x-forwarded-for`
-hop (never the leftmost, which a caller can forge); check that the host
-overwrites or appends these headers. A request over the per-email limit still
-gets the same neutral `202` answer, without calling Supabase.
+Two layers sit in front of sign-in:
 
-The real control is Supabase's own per-email limit on sending sign-in links
+- **Guest sign-in (`/api/guest/sign-in`).** The site sends the emailed link
+  itself, so Supabase's per-email limit no longer applies to guests. A durable
+  limit in the database does the job instead: by default 3 links per address per
+  10 minutes and 60 links an hour overall, kept in `sign_in_attempts` (only a
+  keyed hash of the address, never the address; rows older than a day are
+  cleared by the scheduled job). Change the three numbers in the admin console,
+  Settings, "Limits on sign-in emails", with no code change. A request over a
+  limit gets the same neutral `202` answer and sends nothing. The hash is keyed
+  with `INVITE_LINK_SECRET`, so changing that secret resets the per-address
+  counts.
+- **Per client address, in memory.** Both sign-in routes (`/api/guest/sign-in`,
+  `/api/admin/sign-in`) keep an in-memory limiter per client address. It is
+  **best effort only**: it lives in one server instance's memory, so it resets
+  on a restart and is not shared between instances or serverless invocations.
+  The client address comes from `x-real-ip`, then the rightmost
+  `x-forwarded-for` hop (never the leftmost, which a caller can forge); check
+  that the host overwrites or appends these headers.
+
+**Staff sign-in** is still sent by Supabase, so its own per-email limit
 (Authentication, Rate Limits; locally `[auth.email] max_frequency` and
-`[auth.rate_limit]` in `supabase/config.toml`). Keep it on, and review it
-before launch. Every valid sign-in request also takes at least 1.5 seconds, so
-the response time does not reveal whether an address is known.
+`[auth.rate_limit]` in `supabase/config.toml`) is the control there. Keep it on,
+and review it before launch. Every valid sign-in request also takes at least
+1.5 seconds, so the response time does not reveal whether an address is known.
+
+## Personal invite links
+
+| Item                             | Where                                   | Value                                                                                                                                                                                                                                                             |
+| -------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `INVITE_LINK_SECRET`             | Vercel, Environment Variables           | A long random string, **sensitive**, production and preview. It keys every personal link and the sign-in limit hashes. Changing it breaks every link already sent, so set it once, before invitations go out, and keep a copy in the couple's password manager.   |
+| `HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN` | Vercel, Environment Variables           | Optional; default `households.invalid`. Each household's sign-in account has the address `household-<household id>@<domain>`, which is never mailed. If Supabase ever refuses `.invalid`, use a subdomain of the site that has no mail records.                   |
+| Wedding event                    | Admin console, Settings                 | **Choose it.** Personal links stop working on that event's date (Pacific time); typed-address sign-in and sessions already open keep working. Until it is chosen the links never close, and the overview shows a warning.                                         |
+| Sign-in limits                   | Admin console, Settings                 | Defaults above; change them there.                                                                                                                                                                                                                                |
+| Converting existing accounts     | `scripts/convert-household-accounts.ts` | Only if any household was created before this feature: `node --env-file=.env.local scripts/convert-household-accounts.ts` renames each household's sign-in account to the synthetic address. It is safe to run twice and prints counts only. Production had none. |
+
+A household's personal link is shown (to copy) and can be reissued on its page
+in the admin console. "Sign out everywhere" there ends every session of the
+household at once.
 
 ## Resend
 
@@ -51,7 +99,51 @@ the response time does not reveal whether an address is known.
 | From address   | n/a              | `EMAIL_FROM`, an address on the verified domain.                                                                                                                 |
 | Webhook        | Resend, Webhooks | Endpoint `<site>/api/webhooks/resend` for `email.sent`, `email.delivered`, `email.bounced`, `email.complained`. Signing secret saved as `RESEND_WEBHOOK_SECRET`. |
 
+### Production state (set 2026-10-29)
+
+- Sending domain `updates.hannahandchris.wedding` (region `us-east-1`), verified
+  2026-10-29. DNS records live in Vercel DNS: a DKIM text record on
+  `resend._domainkey.updates`, a mail-exchange and an SPF text record on
+  `send.updates`, and a tracking CNAME on `rsend.updates`.
+- Webhook created for the production endpoint with the four events above.
+- Production variables set as sensitive: `RESEND_API_KEY` (a sending-only key
+  made for the verified domain), `RESEND_WEBHOOK_SECRET`, `EMAIL_FROM`
+  (`Chris & Hannah <hello@updates.hannahandchris.wedding>`) and `CRON_SECRET`.
+  They take effect after the next production redeploy.
+- **Stopgap, to be retired** (see the switch-over below): Supabase Auth sends
+  its sign-in emails through Resend over custom SMTP (host `smtp.resend.com`,
+  port 465, username `resend`, the sending-only key as the password), from
+  `Chris & Hannah <hello@updates.hannahandchris.wedding>`. The hourly cap on
+  emails sent is 30 (it was 2 with the built-in sender). The sign-in email
+  wording is the one already set in Supabase's auth settings.
+- Still off: the Supabase Send Email hook, and so `SEND_EMAIL_HOOK_SECRET`,
+  until the switch-over below is done.
+
+### Switching sign-in email to the repository's template
+
+The `magic_link` template is now registered (a first draft for Chris to polish),
+so the temporary custom SMTP can be retired. Do these in order, so there is no
+gap in sign-in email:
+
+1. Deploy with `magic_link` registered and `INVITE_LINK_SECRET` set.
+2. In Vercel, set `SEND_EMAIL_HOOK_SECRET` (the secret Supabase shows when the
+   hook is created) and redeploy.
+3. In Supabase, Authentication, Hooks, turn on **Send Email**, pointing at
+   `<site>/api/auth/send-email`.
+4. Sign in to `/admin` once. The email must arrive rendered from the repository's
+   template (its subject mentions the admin console), not Supabase's wording.
+   Do not go on until it does.
+5. Only then remove the custom SMTP settings from Supabase Auth.
+6. Record what was done and when: _not done yet_.
+
+After this, guests' sign-in emails (typed address) are sent by the site through
+Resend and staff sign-in emails go through the hook; Supabase's own email
+wording is never sent.
+
 ## Supabase Vault (scheduled sends)
+
+Created in production on 2026-10-29: `site_url` (the production site address)
+and `cron_secret` (the same value as `CRON_SECRET`).
 
 The five-minute `pg_cron` job reads two secrets from Vault; if either is absent
 the job skips quietly (local development). In the SQL editor of the production

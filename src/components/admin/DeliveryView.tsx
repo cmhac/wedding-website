@@ -28,6 +28,11 @@ const COLUMNS: Column<DeliveryRow>[] = [
       ),
   },
   {
+    key: "address",
+    header: "Address",
+    cell: (r) => r.address ?? <span className="muted">None</span>,
+  },
+  {
     key: "status",
     header: "Status",
     cell: (r) => {

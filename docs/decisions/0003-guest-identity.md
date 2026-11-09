@@ -1,6 +1,6 @@
 # 0003: Guest identity model
 
-Status: accepted (2026-10-19)
+Status: accepted (2026-10-19). **Superseded 2026-11-09** by [0011](./0011-household-sign-in-and-invite-links.md): the household's account now has a synthetic address and guests sign in by personal link or typed address. The text below is the original decision, kept for history.
 
 One Supabase Auth user is created per household (the responder) by server code
 using the service-role key, and linked as `households.auth_user_id`. Guests sign

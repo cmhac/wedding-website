@@ -11,7 +11,9 @@ const MESSAGES = {
   not_found: "That could not be found. It may have been deleted.",
   email_in_use: "That email address already belongs to another household.",
   staff_account:
-    "This household is linked to a staff sign-in, so its email cannot be changed here.",
+    "That email address belongs to a staff sign-in, so it cannot be used for a household.",
+  household_contact:
+    "That email address belongs to a household, so it cannot also be a staff sign-in.",
   last_couple: "The last couple member cannot be removed.",
   campaign_not_sendable:
     "This campaign cannot be sent now. Only a draft or scheduled campaign can be sent.",
@@ -61,6 +63,7 @@ const DB_PATTERNS: Array<[RegExp, MessageCode]> = [
   [/invalid_status_transition/i, "invalid_status_transition"],
   [/email_in_use/i, "email_in_use"],
   [/staff_account/i, "staff_account"],
+  [/household_contact/i, "household_contact"],
   [/\bforbidden\b/i, "forbidden"],
   [/\bnot_found\b/i, "not_found"],
   [/invalid_payload/i, "invalid_payload"],

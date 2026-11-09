@@ -15,6 +15,11 @@ export type SettingsData = {
   /** A Pacific `datetime-local` value, or "" when no default is set. */
   default_rsvp_deadline: string;
   rsvp_open: boolean;
+  /** The event whose date closes personal links, or "" when none is chosen. */
+  wedding_event_id: string;
+  sign_in_limit_per_address: number;
+  sign_in_window_minutes: number;
+  sign_in_limit_global_per_hour: number;
   row: SettingsRow;
 };
 
@@ -40,6 +45,12 @@ export async function loadSettings(
   return {
     default_rsvp_deadline: isoToPacificLocal(row.default_rsvp_deadline),
     rsvp_open: Boolean(row.rsvp_open),
+    wedding_event_id: (row.wedding_event_id as string | null) ?? "",
+    sign_in_limit_per_address: Number(row.sign_in_limit_per_address ?? 3),
+    sign_in_window_minutes: Number(row.sign_in_window_minutes ?? 10),
+    sign_in_limit_global_per_hour: Number(
+      row.sign_in_limit_global_per_hour ?? 60,
+    ),
     row,
   };
 }

@@ -17,13 +17,20 @@ insert into public.message_types (key, label, is_essential, template_key) values
 
 -- Households: A, B and C are ordinary; D's email is cleared after queueing; X is
 -- deleted after queueing; O opts out after queueing.
-insert into public.households (id, display_name, contact_email) values
-  ('0000000a-0000-0000-0000-000000000000', 'Household A', 'a@example.test'),
-  ('0000000b-0000-0000-0000-000000000000', 'Household B', 'b@example.test'),
-  ('0000000c-0000-0000-0000-000000000000', 'Household C', 'c@example.test'),
-  ('0000000d-0000-0000-0000-000000000000', 'Household D', 'd@example.test'),
-  ('0000000e-0000-0000-0000-000000000000', 'Household X', 'x@example.test'),
-  ('0000000f-0000-0000-0000-000000000000', 'Household O', 'o@example.test');
+insert into public.households (id, display_name) values
+  ('0000000a-0000-0000-0000-000000000000', 'Household A'),
+  ('0000000b-0000-0000-0000-000000000000', 'Household B'),
+  ('0000000c-0000-0000-0000-000000000000', 'Household C'),
+  ('0000000d-0000-0000-0000-000000000000', 'Household D'),
+  ('0000000e-0000-0000-0000-000000000000', 'Household X'),
+  ('0000000f-0000-0000-0000-000000000000', 'Household O');
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('0000000a-0000-0000-0000-000000000000', 'email', 'a@example.test', false),
+  ('0000000b-0000-0000-0000-000000000000', 'email', 'b@example.test', false),
+  ('0000000c-0000-0000-0000-000000000000', 'email', 'c@example.test', false),
+  ('0000000d-0000-0000-0000-000000000000', 'email', 'd@example.test', false),
+  ('0000000e-0000-0000-0000-000000000000', 'email', 'x@example.test', false),
+  ('0000000f-0000-0000-0000-000000000000', 'email', 'o@example.test', false);
 
 insert into public.campaigns (id, message_type_key, name, audience, status, scheduled_for) values
   ('c0000001-0000-0000-0000-000000000000', 'rsvp_reminder', 'Reminder', '{"scope":"all"}', 'sending', null),
@@ -43,9 +50,14 @@ insert into public.messages (id, campaign_id, household_id, status) values
   ('a0000009-0000-0000-0000-000000000000', 'c0000004-0000-0000-0000-000000000000', '0000000d-0000-0000-0000-000000000000', 'queued'),
   ('a000000a-0000-0000-0000-000000000000', 'c0000004-0000-0000-0000-000000000000', '0000000a-0000-0000-0000-000000000000', 'queued');
 
+-- Each queued message is for the household's address (messages are per address).
+update public.messages m
+   set contact_id = (select c.id from public.household_contacts c where c.household_id = m.household_id order by c.created_at, c.id limit 1)
+ where m.status = 'queued';
+
 -- Things that change after queueing.
-update public.households set contact_email = 'b-new@example.test' where id = '0000000b-0000-0000-0000-000000000000';
-update public.households set contact_email = null where id = '0000000d-0000-0000-0000-000000000000';
+update public.household_contacts set value = 'b-new@example.test' where household_id = '0000000b-0000-0000-0000-000000000000';
+delete from public.household_contacts where household_id = '0000000d-0000-0000-0000-000000000000';
 delete from public.households where id = '0000000e-0000-0000-0000-000000000000';
 update public.households set reminders_opt_out = true where id = '0000000f-0000-0000-0000-000000000000';
 
@@ -152,16 +164,23 @@ select is(
 
 -- Stale claims: a message stuck in sending for over 15 minutes (a worker that
 -- died) is claimed again, unless the provider already accepted it.
-insert into public.households (id, display_name, contact_email) values
-  ('00000021-0000-0000-0000-000000000000', 'Household S1', 's1@example.test'),
-  ('00000022-0000-0000-0000-000000000000', 'Household S2', 's2@example.test'),
-  ('00000023-0000-0000-0000-000000000000', 'Household S3', 's3@example.test');
+insert into public.households (id, display_name) values
+  ('00000021-0000-0000-0000-000000000000', 'Household S1'),
+  ('00000022-0000-0000-0000-000000000000', 'Household S2'),
+  ('00000023-0000-0000-0000-000000000000', 'Household S3');
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('00000021-0000-0000-0000-000000000000', 'email', 's1@example.test', false),
+  ('00000022-0000-0000-0000-000000000000', 'email', 's2@example.test', false),
+  ('00000023-0000-0000-0000-000000000000', 'email', 's3@example.test', false);
 insert into public.campaigns (id, message_type_key, name, audience, status) values
   ('c0000006-0000-0000-0000-000000000000', 'rsvp_reminder', 'Stale', '{"scope":"all"}', 'sending');
 insert into public.messages (id, campaign_id, household_id, status, to_email, claimed_at, provider_message_id) values
   ('a1000001-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000021-0000-0000-0000-000000000000', 'sending', 'old-address@example.test', now() - interval '20 minutes', null),
   ('a1000002-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000022-0000-0000-0000-000000000000', 'sending', 's2@example.test', now() - interval '5 minutes', null),
   ('a1000003-0000-0000-0000-000000000000', 'c0000006-0000-0000-0000-000000000000', '00000023-0000-0000-0000-000000000000', 'sending', 's3@example.test', now() - interval '20 minutes', 'prov-s3');
+update public.messages m
+   set contact_id = (select c.id from public.household_contacts c where c.household_id = m.household_id order by c.created_at, c.id limit 1)
+ where m.campaign_id = 'c0000006-0000-0000-0000-000000000000';
 select tests.authenticate_service_role();
 select results_eq(
   $$select id::text, to_email::text from public.claim_campaign_messages('c0000006-0000-0000-0000-000000000000', 10)$$,
@@ -187,11 +206,16 @@ select is(
 );
 
 -- Events. Messages already sent by the provider.
-insert into public.households (id, display_name, contact_email) values
-  ('00000011-0000-0000-0000-000000000000', 'Household P', 'p@example.test'),
-  ('00000012-0000-0000-0000-000000000000', 'Household Q', 'q@example.test'),
-  ('00000013-0000-0000-0000-000000000000', 'Household R', 'r@example.test'),
-  ('00000014-0000-0000-0000-000000000000', 'Household S', 'old-s@example.test');
+insert into public.households (id, display_name) values
+  ('00000011-0000-0000-0000-000000000000', 'Household P'),
+  ('00000012-0000-0000-0000-000000000000', 'Household Q'),
+  ('00000013-0000-0000-0000-000000000000', 'Household R'),
+  ('00000014-0000-0000-0000-000000000000', 'Household S');
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('00000011-0000-0000-0000-000000000000', 'email', 'p@example.test', false),
+  ('00000012-0000-0000-0000-000000000000', 'email', 'q@example.test', false),
+  ('00000013-0000-0000-0000-000000000000', 'email', 'r@example.test', false),
+  ('00000014-0000-0000-0000-000000000000', 'email', 'old-s@example.test', false);
 insert into public.campaigns (id, message_type_key, name, audience, status) values
   ('c0000005-0000-0000-0000-000000000000', 'rsvp_reminder', 'Events', '{"scope":"all"}', 'sending');
 insert into public.messages (id, campaign_id, household_id, status, to_email, provider_message_id) values
@@ -201,7 +225,10 @@ insert into public.messages (id, campaign_id, household_id, status, to_email, pr
   ('b0000004-0000-0000-0000-000000000000', 'c0000005-0000-0000-0000-000000000000', '00000014-0000-0000-0000-000000000000', 'sending', 'old-s@example.test', 'prov-s'),
   ('b0000005-0000-0000-0000-000000000000', 'c0000005-0000-0000-0000-000000000000', '0000000a-0000-0000-0000-000000000000', 'skipped', null, null);
 update public.messages set provider_message_id = 'prov-skipped' where id = 'b0000005-0000-0000-0000-000000000000';
-update public.households set contact_email = 's@example.test' where id = '00000014-0000-0000-0000-000000000000';
+update public.messages m
+   set contact_id = (select c.id from public.household_contacts c where c.household_id = m.household_id order by c.created_at, c.id limit 1)
+ where m.status = 'sending' and m.contact_id is null;
+update public.household_contacts set value = 's@example.test' where household_id = '00000014-0000-0000-0000-000000000000';
 
 select tests.authenticate_service_role();
 
@@ -266,16 +293,16 @@ select results_eq(
 );
 select tests.clear_auth();
 
--- Changing the contact email clears the delivery problem, by any path.
-update public.households set delivery_problem = true where id in ('0000000a-0000-0000-0000-000000000000', '0000000b-0000-0000-0000-000000000000', '0000000c-0000-0000-0000-000000000000');
+-- Changing an address clears its delivery problem (and the household's).
+update public.household_contacts set delivery_problem = true where household_id in ('0000000a-0000-0000-0000-000000000000', '0000000b-0000-0000-0000-000000000000', '0000000c-0000-0000-0000-000000000000');
 update public.households set display_name = 'Household A renamed' where id = '0000000a-0000-0000-0000-000000000000';
 select is((select delivery_problem from public.households where id = '0000000a-0000-0000-0000-000000000000'), true, 'editing other fields keeps the delivery problem');
-update public.households set contact_email = 'a-new@example.test' where id = '0000000a-0000-0000-0000-000000000000';
-select is((select delivery_problem from public.households where id = '0000000a-0000-0000-0000-000000000000'), false, 'a plain update of contact_email clears the delivery problem');
-update public.households set contact_email = 'B-NEW@example.test' where id = '0000000b-0000-0000-0000-000000000000';
+update public.household_contacts set value = 'a-new@example.test' where household_id = '0000000a-0000-0000-0000-000000000000';
+select is((select delivery_problem from public.households where id = '0000000a-0000-0000-0000-000000000000'), false, 'a plain update of the address clears the delivery problem');
+update public.household_contacts set value = 'B-NEW@example.test' where household_id = '0000000b-0000-0000-0000-000000000000';
 select is((select delivery_problem from public.households where id = '0000000b-0000-0000-0000-000000000000'), true, 'a change of letter case only is not a new address');
-update public.households set contact_email = null where id = '0000000c-0000-0000-0000-000000000000';
-select is((select delivery_problem from public.households where id = '0000000c-0000-0000-0000-000000000000'), false, 'removing the email clears the delivery problem');
+delete from public.household_contacts where household_id = '0000000c-0000-0000-0000-000000000000';
+select is((select delivery_problem from public.households where id = '0000000c-0000-0000-0000-000000000000'), false, 'removing the address clears the delivery problem');
 
 select * from finish();
 rollback;

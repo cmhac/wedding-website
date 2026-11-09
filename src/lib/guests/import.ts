@@ -6,7 +6,8 @@ import { z } from "zod";
  *
  * One row per guest. Required columns: `household_name`, `first_name`,
  * `last_name`. Optional: `household_ref` (groups rows into a household; without
- * it rows are grouped by household name plus contact email), `contact_email`,
+ * it rows are grouped by household name plus contact email), `contact_email` (and
+ * `contact_email_2`, `contact_email_3`, ... for a household's further addresses),
  * `plus_one_allowance` (integer >= 0, default 0), `guest_email`,
  * `dietary_notes`, `notes`, and one `event:<slug>` column per event, holding
  * yes/true/1/x to invite the guest or no/false/0 or blank.
@@ -29,7 +30,8 @@ export type ImportGuest = {
 export type ImportHousehold = {
   ref: string;
   display_name: string;
-  contact_email: string | null;
+  /** Every address of the household, lower-cased, in column order. */
+  contacts: string[];
   /** True when the household has no email and needs a paper invitation. */
   paper_only: boolean;
   plus_one_allowance: number;
@@ -99,6 +101,12 @@ export function parseGuestImport(
   }
   if (errors.length > 0) return empty();
 
+  const contactColumns = header
+    .map((h, i) => ({ h, i, m: /^contact_email(?:_(\d+))?$/.exec(h) }))
+    .filter(({ m }) => m !== null)
+    .map(({ h, i, m }) => ({ field: h, i, n: Number(m![1] ?? 1) }))
+    .sort((a, b) => a.n - b.n);
+
   const known = new Set(options.eventSlugs);
   const eventColumns = header
     .map((h, i) => ({ h, i }))
@@ -109,6 +117,9 @@ export function parseGuestImport(
     household: ImportHousehold;
     invalid: boolean;
     seen: Set<string>;
+    firstRow: number;
+    /** Which column each address came from, for errors. */
+    contactFields: Map<string, string>;
   };
   const groups = new Map<string, Group>();
   const order: Group[] = [];
@@ -132,15 +143,24 @@ export function parseGuestImport(
     if (!firstName) fail("first_name", "Required");
     if (!lastName) fail("last_name", "Required");
 
-    const emailRaw = get("contact_email");
-    let contactEmail: string | null = null;
-    if (emailRaw) {
-      if (emailSchema.safeParse(emailRaw).success) {
-        contactEmail = emailRaw.toLowerCase();
+    const contacts: string[] = [];
+    const contactFields = new Map<string, string>();
+    for (const { field, i } of contactColumns) {
+      const raw = (cells[i] ?? "").trim();
+      if (!raw) continue;
+      if (!emailSchema.safeParse(raw).success) {
+        fail(field, "Not a valid email address");
+      } else if (contacts.includes(raw.toLowerCase())) {
+        fail(field, "Repeats another address of this household");
       } else {
-        fail("contact_email", "Not a valid email address");
+        contacts.push(raw.toLowerCase());
+        contactFields.set(raw.toLowerCase(), field);
       }
     }
+    const hasContactCells = contactColumns.some(
+      ({ i }) => (cells[i] ?? "").trim() !== "",
+    );
+    const contactKey = [...contacts].sort().join(",");
 
     const guestEmailRaw = get("guest_email");
     let guestEmail: string | null = null;
@@ -177,20 +197,22 @@ export function parseGuestImport(
     const ref = get("household_ref");
     const key = ref
       ? `ref:${ref}`
-      : `name:${displayName.toLowerCase()}|${contactEmail ?? ""}`;
+      : `name:${displayName.toLowerCase()}|${contactKey}`;
     let group = groups.get(key);
     if (!group) {
       group = {
         household: {
           ref: ref || key,
           display_name: displayName,
-          contact_email: contactEmail,
-          paper_only: contactEmail === null,
+          contacts,
+          paper_only: contacts.length === 0,
           plus_one_allowance: allowance,
           guests: [],
         },
         invalid: false,
         seen: new Set(),
+        firstRow: row,
+        contactFields,
       };
       groups.set(key, group);
       order.push(group);
@@ -199,8 +221,11 @@ export function parseGuestImport(
       if (displayName && displayName !== h.display_name) {
         fail("household_name", "Differs from earlier rows of this household");
       }
-      if (emailRaw !== "" && contactEmail !== h.contact_email) {
-        fail("contact_email", "Differs from earlier rows of this household");
+      if (hasContactCells && contactKey !== [...h.contacts].sort().join(",")) {
+        fail(
+          contactColumns[0]?.field ?? "contact_email",
+          "Differs from earlier rows of this household",
+        );
       }
       if (allowanceRaw && allowance !== h.plus_one_allowance) {
         fail(
@@ -233,6 +258,25 @@ export function parseGuestImport(
       events,
     });
   });
+
+  // An address can belong to only one household, also within one file.
+  const owner = new Map<string, Group>();
+  for (const group of order) {
+    if (group.invalid) continue;
+    for (const address of group.household.contacts) {
+      const first = owner.get(address);
+      if (first && first !== group) {
+        group.invalid = true;
+        errors.push({
+          row: group.firstRow,
+          field: group.contactFields.get(address) ?? "contact_email",
+          message: "Used by another household in this file",
+        });
+        break;
+      }
+      owner.set(address, group);
+    }
+  }
 
   const households = order.filter((g) => !g.invalid).map((g) => g.household);
   errors.sort((a, b) => a.row - b.row);

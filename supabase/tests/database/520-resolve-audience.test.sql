@@ -21,14 +21,21 @@ insert into public.staff (user_id, role, display_name) values (:'couple_user', '
 --   E  opted out, delivery problem, ceremony pending
 --   F  rehearsal pending only, invitation sent
 --   G  ceremony attending (meal chosen), invitation delivered
-insert into public.households (id, display_name, contact_email, auth_user_id, reminders_opt_out, delivery_problem) values
-  ('00000001-0000-0000-0000-000000000000', 'Household A', 'a@example.test', :'user_a', false, false),
-  ('00000002-0000-0000-0000-000000000000', 'Household B', 'b@example.test', null, false, false),
-  ('00000003-0000-0000-0000-000000000000', 'Household C', 'c@example.test', null, false, false),
-  ('00000004-0000-0000-0000-000000000000', 'Household D', null, null, false, false),
-  ('00000005-0000-0000-0000-000000000000', 'Household E', 'e@example.test', null, true, true),
-  ('00000006-0000-0000-0000-000000000000', 'Household F', 'f@example.test', null, false, false),
-  ('00000007-0000-0000-0000-000000000000', 'Household G', 'g@example.test', null, false, false);
+insert into public.households (id, display_name, auth_user_id, reminders_opt_out, delivery_problem) values
+  ('00000001-0000-0000-0000-000000000000', 'Household A', :'user_a', false, false),
+  ('00000002-0000-0000-0000-000000000000', 'Household B', null, false, false),
+  ('00000003-0000-0000-0000-000000000000', 'Household C', null, false, false),
+  ('00000004-0000-0000-0000-000000000000', 'Household D', null, false, false),
+  ('00000005-0000-0000-0000-000000000000', 'Household E', null, true, true),
+  ('00000006-0000-0000-0000-000000000000', 'Household F', null, false, false),
+  ('00000007-0000-0000-0000-000000000000', 'Household G', null, false, false);
+insert into public.household_contacts (household_id, kind, value, delivery_problem) values
+  ('00000001-0000-0000-0000-000000000000', 'email', 'a@example.test', false),
+  ('00000002-0000-0000-0000-000000000000', 'email', 'b@example.test', false),
+  ('00000003-0000-0000-0000-000000000000', 'email', 'c@example.test', false),
+  ('00000005-0000-0000-0000-000000000000', 'email', 'e@example.test', true),
+  ('00000006-0000-0000-0000-000000000000', 'email', 'f@example.test', false),
+  ('00000007-0000-0000-0000-000000000000', 'email', 'g@example.test', false);
 insert into public.guests (household_id, first_name, last_name)
 select h.id, 'Guest' || right(h.display_name, 1), 'Fixture' from public.households h;
 insert into public.events (id, slug, name, is_required, display_order) values

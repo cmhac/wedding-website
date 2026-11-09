@@ -38,6 +38,8 @@ export type OverviewData = {
   mostOutstanding: OutstandingHousehold[];
   rsvpOpen: boolean;
   defaultDeadline: string | null;
+  /** False until the wedding event is chosen: personal links then never close. */
+  weddingEventChosen: boolean;
 };
 
 const MOST_OUTSTANDING_LIMIT = 3;
@@ -71,6 +73,7 @@ export async function loadOverview(
     countRows,
     progressRows,
     householdRows,
+    contactRows,
     duplicateRows,
     settingsRows,
   ] = await Promise.all([
@@ -97,15 +100,22 @@ export async function loadOverview(
     ),
     rows("staff_households", supabase.rpc("staff_households")),
     rows(
+      "household_contacts",
+      supabase.from("household_contacts").select("household_id"),
+    ),
+    rows(
       "find_duplicate_households",
       supabase.rpc("find_duplicate_households"),
     ),
     rows(
       "settings",
-      supabase.from("settings").select("rsvp_open, default_rsvp_deadline"),
+      supabase
+        .from("settings")
+        .select("rsvp_open, default_rsvp_deadline, wedding_event_id"),
     ),
   ]);
 
+  const withAddress = new Set(contactRows.map((c) => c.household_id as string));
   const countsByEvent = new Map(
     countRows.map((c) => [c.event_id as string, c]),
   );
@@ -153,10 +163,12 @@ export async function loadOverview(
     mealsOutstanding: outstanding.filter((h) => h.meals > 0).length,
     deliveryProblems: householdRows.filter((h) => h.delivery_problem === true)
       .length,
-    paperOnly: householdRows.filter((h) => !h.contact_email).length,
+    paperOnly: householdRows.filter((h) => !withAddress.has(h.id as string))
+      .length,
     possibleDuplicates: duplicateRows.length,
     mostOutstanding,
     rsvpOpen: settings ? settings.rsvp_open !== false : true,
     defaultDeadline: (settings?.default_rsvp_deadline as string | null) ?? null,
+    weddingEventChosen: Boolean(settings?.wedding_event_id),
   };
 }

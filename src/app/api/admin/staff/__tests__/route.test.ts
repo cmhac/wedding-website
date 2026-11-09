@@ -8,9 +8,18 @@ jest.mock("@/lib/auth/guards", () => ({
 const createUser = jest.fn();
 const deleteUser = jest.fn();
 const insert = jest.fn();
+const contactMaybeSingle = jest.fn();
 const adminClient = {
   auth: { admin: { createUser, deleteUser } },
-  from: jest.fn(() => ({ insert })),
+  from: jest.fn((table: string) =>
+    table === "household_contacts"
+      ? {
+          select: () => ({
+            eq: () => ({ eq: () => ({ maybeSingle: contactMaybeSingle }) }),
+          }),
+        }
+      : { insert },
+  ),
 };
 jest.mock("@/lib/supabase/admin", () => ({
   createAdminSupabase: () => adminClient,
@@ -35,6 +44,7 @@ beforeEach(() => {
   mockRequireCouple.mockResolvedValue({ kind: "staff", role: "couple" });
   createUser.mockResolvedValue({ data: { user: { id: USER } }, error: null });
   insert.mockResolvedValue({ error: null });
+  contactMaybeSingle.mockResolvedValue({ data: null, error: null });
   deleteUser.mockResolvedValue({ error: null });
 });
 
@@ -50,6 +60,26 @@ describe("POST /api/admin/staff", () => {
       expect(createUser).not.toHaveBeenCalled();
     },
   );
+
+  it("refuses an address that is a household's contact with 409 household_contact, creating nothing", async () => {
+    contactMaybeSingle.mockResolvedValue({ data: { id: "c1" }, error: null });
+    const res = await post(valid);
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.error.code).toBe("household_contact");
+    expect(JSON.stringify(json)).not.toContain("@");
+    expect(createUser).not.toHaveBeenCalled();
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("refuses with a server error when it cannot check the household contacts", async () => {
+    contactMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: "x" },
+    });
+    expect((await post(valid)).status).toBe(500);
+    expect(createUser).not.toHaveBeenCalled();
+  });
 
   it("creates the Auth user and a planner staff row", async () => {
     const res = await post(valid);

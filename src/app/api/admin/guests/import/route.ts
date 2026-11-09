@@ -1,6 +1,5 @@
 import { authErrorResponse, requireStaff } from "@/lib/auth/guards";
 import { errorResponse } from "@/lib/api-errors";
-import { linkHouseholdAccounts } from "@/lib/guests/household-access";
 import { runGuestImport } from "@/lib/guests/run-import";
 import { SpreadsheetError, xlsxToCsv } from "@/lib/guests/spreadsheet";
 import { log } from "@/lib/log";
@@ -28,8 +27,7 @@ type Source =
  * bytes of an .xlsx file when the Content-Type is the spreadsheet type (the
  * first sheet is converted to the same CSV; any other type is CSV). Runs as the
  * signed-in staff member so the import is attributed to them; the sign-in
- * accounts for the new households are then created with the service-role key
- * and linked through the staff member's session.
+ * accounts for the new households are then created with the service-role key.
  */
 export async function POST(request: Request) {
   let session;
@@ -81,7 +79,11 @@ export async function POST(request: Request) {
   const sheetRow = (row: number) => row + rowOffset;
 
   try {
-    const result = await runGuestImport(session.supabase, csv);
+    const result = await runGuestImport(
+      session.supabase,
+      csv,
+      createAdminSupabase(),
+    );
     if (result.kind === "invalid") {
       return errorResponse(
         422,
@@ -94,14 +96,9 @@ export async function POST(request: Request) {
       );
     }
     if (result.created.households > 0) {
-      const link = await linkHouseholdAccounts(
-        createAdminSupabase(),
-        result.householdIds,
-        { staff: session.supabase },
-      );
       log.info("guest_import_accounts_linked", {
-        linked: link.linked,
-        failed: link.failed,
+        linked: result.accounts.linked,
+        failed: result.accounts.failed,
       });
     }
     log.info("guest_import_done", {

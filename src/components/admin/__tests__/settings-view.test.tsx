@@ -23,7 +23,18 @@ const staff = [
   { user_id: "u2", display_name: "Hannah", role: "couple" as const },
   { user_id: "u3", display_name: "Pat Planner", role: "planner" as const },
 ];
-const settings = { default_rsvp_deadline: "2027-05-01T23:59", rsvp_open: true };
+const settings = {
+  default_rsvp_deadline: "2027-05-01T23:59",
+  rsvp_open: true,
+  wedding_event_id: "e2",
+  sign_in_limit_per_address: 3,
+  sign_in_window_minutes: 10,
+  sign_in_limit_global_per_hour: 60,
+};
+const events = [
+  { id: "e1", name: "Welcome party" },
+  { id: "e2", name: "Ceremony" },
+];
 
 beforeEach(() => {
   refresh.mockClear();
@@ -38,6 +49,7 @@ describe("SettingsView for a couple member", () => {
         role="couple"
         currentUserId="u1"
         settings={settings}
+        events={events}
         staff={staff}
       />,
     );
@@ -51,6 +63,25 @@ describe("SettingsView for a couple member", () => {
     expect(
       screen.getByRole("button", { name: "Save settings" }),
     ).toBeInTheDocument();
+  });
+
+  it("lets the wedding event be chosen, with the current one selected", () => {
+    const select = screen.getByLabelText(/Wedding event/);
+    expect(select).toHaveValue("e2");
+    expect(
+      within(select).getByRole("option", { name: "Not chosen" }),
+    ).toHaveValue("");
+    expect(
+      within(select).getByRole("option", { name: "Welcome party" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the sign-in limits with their current values", () => {
+    expect(screen.getByLabelText(/Sign-in links per address/)).toHaveValue(3);
+    expect(screen.getByLabelText(/Window \(minutes\)/)).toHaveValue(10);
+    expect(
+      screen.getByLabelText(/Sign-in links per hour, all addresses/),
+    ).toHaveValue(60);
   });
 
   it("lists staff with Remove access on other people but not on yourself", () => {
@@ -85,6 +116,7 @@ describe("SettingsView for a planner", () => {
         role="planner"
         currentUserId="u3"
         settings={settings}
+        events={events}
         staff={staff}
       />,
     );

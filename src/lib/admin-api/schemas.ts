@@ -37,21 +37,52 @@ export const newGuestSchema = z.object({
   notes: z.string().max(2000).nullish(),
 });
 
-export const createHouseholdRequestSchema = z.object({
-  display_name: z.string().trim().min(1).max(200),
-  contact_email: email.nullish(),
-  plus_one_allowance: z.number().int().min(0).max(20).default(0),
-  address: addressSchema.nullish(),
-  notes: z.string().max(2000).nullish(),
-  guests: z.array(newGuestSchema).min(1).max(30),
+export const contactSchema = z.object({
+  kind: z.literal("email"),
+  value: email,
 });
+export type ContactInput = z.infer<typeof contactSchema>;
+
+export const updateContactRequestSchema = z.object({ value: email }).strict();
+export type UpdateContactRequest = z.infer<typeof updateContactRequestSchema>;
+
+export const contactResponseSchema = z.object({
+  contact: z.object({
+    id: z.string(),
+    kind: z.literal("email"),
+    value: z.string(),
+  }),
+});
+export type ContactResponse = z.infer<typeof contactResponseSchema>;
+
+export const removeContactResponseSchema = z.object({
+  paper_only: z.boolean(),
+});
+export type RemoveContactResponse = z.infer<typeof removeContactResponseSchema>;
+
+export const inviteLinkResponseSchema = z.object({
+  url: z.string(),
+  issued_at: z.string(),
+});
+export type InviteLinkResponse = z.infer<typeof inviteLinkResponseSchema>;
+
+export const createHouseholdRequestSchema = z
+  .object({
+    display_name: z.string().trim().min(1).max(200),
+    /** The household's addresses; none means paper only. */
+    contacts: z.array(contactSchema).max(20).default([]),
+    plus_one_allowance: z.number().int().min(0).max(20).default(0),
+    address: addressSchema.nullish(),
+    notes: z.string().max(2000).nullish(),
+    guests: z.array(newGuestSchema).min(1).max(30),
+  })
+  .strict();
 export type CreateHouseholdRequest = z.infer<
   typeof createHouseholdRequestSchema
 >;
 
 export const updateHouseholdRequestSchema = z
   .object({
-    contact_email: email.nullable(),
     display_name: z.string().trim().min(1).max(200),
     plus_one_allowance: z.number().int().min(0).max(20),
     address: addressSchema.nullable(),
@@ -69,9 +100,9 @@ export type UpdateHouseholdRequest = z.infer<
 export const householdSchema = z.object({
   id: z.string(),
   display_name: z.string(),
-  contact_email: z.string().nullable(),
+  contact_count: z.number().int(),
   plus_one_allowance: z.number(),
-  /** True when there is no contact email, so the household needs paper. */
+  /** True when the household has no addresses, so it needs paper. */
   paper_only: z.boolean(),
 });
 export type HouseholdResponse = z.infer<typeof householdSchema>;

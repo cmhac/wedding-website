@@ -5,10 +5,7 @@ import {
   householdSchema,
   updateHouseholdRequestSchema,
 } from "@/lib/admin-api/schemas";
-import {
-  deleteHouseholdWithAccess,
-  updateHouseholdContactEmail,
-} from "@/lib/guests/household-access";
+import { deleteHouseholdWithAccess } from "@/lib/guests/household-access";
 import type { Session } from "@/lib/auth/session";
 import { log } from "@/lib/log";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -28,19 +25,7 @@ async function guard(): Promise<{ session: Session } | { denied: Response }> {
   }
 }
 
-function invalid() {
-  return errorResponse(422, "invalid_payload", "The request is not valid.");
-}
-
-function emailInUse() {
-  return errorResponse(
-    409,
-    "email_in_use",
-    "That email address is already used by another household. Use a different address.",
-  );
-}
-
-/** PATCH /api/admin/households/[id]: change the contact email and other fields. */
+/** PATCH /api/admin/households/[id]: change the household's own fields (addresses have their own routes). */
 export async function PATCH(request: Request, { params }: Context) {
   const guarded = await guard();
   if ("denied" in guarded) return guarded.denied;
@@ -58,70 +43,36 @@ export async function PATCH(request: Request, { params }: Context) {
   const parsed = updateHouseholdRequestSchema.safeParse(json);
   if (!parsed.success) return validationError(parsed.error);
 
-  const admin = createAdminSupabase();
-  const { contact_email, ...others } = parsed.data;
-
-  let household: Record<string, unknown> | null = null;
-  if (contact_email !== undefined) {
-    const result = await updateHouseholdContactEmail(
-      admin,
-      staff,
-      id,
-      contact_email,
-    );
-    if (!result.ok) {
-      if (result.code === "email_in_use") return emailInUse();
-      if (result.code === "staff_account") {
-        return errorResponse(
-          409,
-          "staff_account",
-          "This household is linked to a staff member's sign-in account, so its email cannot be changed here.",
-        );
-      }
-      if (result.code === "not_found") return notFound();
-      if (result.code === "invalid_payload") return invalid();
-      log.error("household_update_failed", { code: result.code });
-      return errorResponse(
-        500,
-        "server_error",
-        "The household was not updated.",
-      );
-    }
-    household = result.household;
+  // Staff may update these columns directly; their own session keeps the audit trail theirs.
+  // Only the id comes back from the write: the staff-only columns cannot be read from the table.
+  const written = await staff
+    .from("households")
+    .update(parsed.data)
+    .eq("id", id)
+    .select("id")
+    .single();
+  if (written.error || !written.data) {
+    if (written.error?.code === "PGRST116") return notFound();
+    log.error("household_update_failed", { code: "update" });
+    return errorResponse(500, "server_error", "The household was not updated.");
   }
-
-  if (Object.keys(others).length > 0) {
-    // Staff may update these columns directly; their own session keeps the audit trail theirs.
-    // Only the id comes back from the write: the staff-only columns cannot be read from the table.
-    const written = await staff
-      .from("households")
-      .update(others)
-      .eq("id", id)
-      .select("id")
-      .single();
-    if (written.error || !written.data) {
-      if (written.error?.code === "PGRST116") return notFound();
-      log.error("household_update_failed", { code: "update" });
-      return errorResponse(
-        500,
-        "server_error",
-        "The household was not updated.",
-      );
-    }
-    const saved = await staff.rpc("staff_households").eq("id", id).single();
-    if (saved.error || !saved.data) {
-      log.error("household_update_failed", { code: "read_back" });
-      return errorResponse(
-        500,
-        "server_error",
-        "The household was not updated.",
-      );
-    }
-    const row = saved.data as Record<string, unknown>;
-    household = { ...row, paper_only: row.contact_email === null };
+  const saved = await staff.rpc("staff_households").eq("id", id).single();
+  const contacts = await staff
+    .from("household_contacts")
+    .select("id", { count: "exact", head: true })
+    .eq("household_id", id);
+  if (saved.error || !saved.data || contacts.error) {
+    log.error("household_update_failed", { code: "read_back" });
+    return errorResponse(500, "server_error", "The household was not updated.");
   }
-
-  return Response.json({ household: householdSchema.parse(household) });
+  const count = contacts.count ?? 0;
+  return Response.json({
+    household: householdSchema.parse({
+      ...(saved.data as Record<string, unknown>),
+      contact_count: count,
+      paper_only: count === 0,
+    }),
+  });
 }
 
 /** DELETE /api/admin/households/[id]: the household, its guests, and its sign-in account. */
