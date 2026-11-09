@@ -8,6 +8,12 @@
 
 **Input**: User description: "Placeholder homepage at "/" (currently 404s on hannahandchris.wedding) to demonstrate that production deployments work, using the real sign-in flows. If the visitor is not signed in, prompt them to sign in and go through the normal auth flow. If signed in (including admins signed in to the admin panel, who must also get access to the guest-facing site), show an empty page with a system-theme-aware light/dark toggle and a single line of text, in a basic sans-serif font, centered vertically and horizontally, reading "Coming soon 👀". Temporary placeholder; not the designer's guest-facing frontend."
 
+## Clarifications
+
+### Session 2026-11-09
+
+- Q: After a couple or planner member signs in from the prompt at `/` using their staff email link, which page do they land on? → A: The admin console, as staff sign-in works today. The admin console gets a button at the very top of its sidebar, visible to staff only, that opens the home page in a new browser tab.
+
 ## Background
 
 Today the site's front door, `hannahandchris.wedding/`, answers "not found". The sign-in flows (guest personal links, guest typed-address links, and staff sign-in) all work behind the scenes, but there is no public page that shows them working, and a signed-in guest is sent to the RSVP page, which has not been built.
@@ -42,7 +48,7 @@ A guest who has opened their personal invite link or a typed-address sign-in lin
 
 ### User Story 2 - Visitor who is not signed in is prompted to sign in (Priority: P1)
 
-A visitor who is not signed in opens `/` and is prompted to sign in. They go through the normal flow: type an email address, receive the sign-in email, open its link, and arrive at the placeholder page signed in. A couple or planner member uses the same prompt with their staff email address and is signed in through the staff process, with no separate staff link to find.
+A visitor who is not signed in opens `/` and is prompted to sign in. They go through the normal flow: type an email address, receive the sign-in email, open its link, and arrive at the placeholder page signed in. A couple or planner member uses the same prompt with their staff email address, is signed in through the staff process, and lands on the admin console, with no separate staff link to find.
 
 **Why this priority**: without it the placeholder cannot demonstrate the real sign-in flows, which is the point of the feature.
 
@@ -54,7 +60,7 @@ A visitor who is not signed in opens `/` and is prompted to sign in. They go thr
 2. **Given** the sign-in prompt, **When** the visitor submits an email address, **Then** they are shown the same neutral message whether or not the address is on the guest list ("If that address is on the guest list, a link is on its way."), so the page never reveals who is invited.
 3. **Given** a household's email address was submitted, **When** the visitor opens the emailed link, **Then** they are signed in and land on the placeholder page.
 4. **Given** a visitor with no session who opens a household's personal invite link, **When** the link is valid, **Then** they are signed in and land on the placeholder page.
-5. **Given** the sign-in prompt, **When** someone submits the email address of a couple or planner account, **Then** they are shown the same neutral message and receive the staff sign-in email (not a guest one); opening it signs them in as staff, and they can open `/` and see the placeholder page and the admin console.
+5. **Given** the sign-in prompt, **When** someone submits the email address of a couple or planner account, **Then** they are shown the same neutral message and receive the staff sign-in email (not a guest one); opening it signs them in as staff and takes them to the admin console, from where they can open `/` and see the placeholder page.
 6. **Given** the sign-in prompt, **When** the visitor submits the address of a staff account and, separately, one that is on neither list, **Then** the message shown and the time taken to show it look the same, so the page never reveals who is staff.
 7. **Given** an invalid, cancelled or expired link, **When** a visitor opens it, **Then** they see the existing plain sign-in failure page, and can get back to the sign-in prompt from there.
 
@@ -75,6 +81,25 @@ On the placeholder page, the page starts in whichever theme the visitor's device
 3. **Given** the visitor has pressed the toggle, **When** they reload or return later on the same device, **Then** their choice is kept, including over a device-theme change.
 4. **Given** the visitor can operate only a keyboard or screen reader, **When** they use the toggle, **Then** it is reachable by keyboard and has an accessible name and state.
 5. **Given** a saved choice that cannot be read (for example, browser storage is blocked), **When** the page opens, **Then** it follows the device theme and the toggle still works for the current visit.
+
+---
+
+---
+
+### User Story 4 - Staff open the home page from the admin console (Priority: P2)
+
+A couple or planner member in the admin console sees a button at the very top of the sidebar that opens the home page (`/`) in a new browser tab, so they can check what guests see without leaving the console.
+
+**Why this priority**: it makes the staff view of the placeholder one click away, but the placeholder works without it.
+
+**Independent Test**: sign in as staff, press the button, and confirm the home page opens in a new tab showing the placeholder page while the console stays open.
+
+**Acceptance Scenarios**:
+
+1. **Given** a signed-in couple or planner member on any admin console page, **When** they look at the sidebar, **Then** the first item at the top is a button labelled for the home page.
+2. **Given** that button, **When** they press it, **Then** the home page opens in a new tab and shows the placeholder page, and the console page stays as it was.
+3. **Given** the admin console's sign-in page or error page (no sidebar), **Then** no such button is shown.
+4. **Given** a guest session, **When** the visitor looks for the button, **Then** it does not exist for them (guests cannot open the admin console).
 
 ---
 
@@ -111,7 +136,9 @@ On the placeholder page, the page starts in whichever theme the visitor's device
 - **FR-015**: Signing out, an expired session or a revoked staff role MUST return the visitor to the sign-in prompt at `/`, not to an error.
 - **FR-016**: The feature MUST be marked temporary in the repository's documents, so the designer's guest-facing site is understood to replace the page, and it MUST add no design system, theming library or component library.
 - **FR-017**: The page MUST NOT be offered to search engines for indexing while it is a placeholder.
-- **FR-018**: The existing admin console, guest API, and sign-in flows MUST keep working unchanged.
+- **FR-018**: Apart from the sidebar button in FR-020, the existing admin console, guest API, and sign-in flows MUST keep working unchanged.
+- **FR-019**: After a staff member signs in from the prompt at `/`, they MUST land on the admin console, the same page as when they sign in from the admin sign-in page.
+- **FR-020**: The admin console's sidebar MUST show, as its first item at the very top, a button that opens the home page (`/`) in a new browser tab. It MUST be shown to staff only, and MUST open without a second sign-in.
 
 ### Key Entities
 
@@ -127,6 +154,7 @@ On the placeholder page, the page starts in whichever theme the visitor's device
 - **SC-003**: A couple or planner member already signed in to the admin console sees the placeholder page at `/` on the first try, with no second sign-in, in 100% of checks.
 - **SC-004**: In every check that uses an address on neither list, the message shown and the response time are indistinguishable from those for a household address and for a staff address.
 - **SC-004a**: A couple or planner member can go from the sign-in prompt to the admin console signed in, using only their staff email address, with no other page visited, in under 2 minutes.
+- **SC-004b**: From any admin console page with a sidebar, a staff member reaches the placeholder page in one press, in a new tab, in 100% of checks.
 - **SC-005**: The placeholder page contains one line of text and one control; the line stays centered within 1% of the window's center at phone, tablet and desktop sizes.
 - **SC-006**: In light and dark device settings, the page loads with no visible flash of the wrong theme, and text meets standard accessible contrast in both themes.
 - **SC-007**: The couple can use this page, unaided, to show family or the designer that the production deployment and the real sign-in flows work.
@@ -140,6 +168,7 @@ On the placeholder page, the page starts in whichever theme the visitor's device
 - **Where signed-in guests land.** The guest sign-in routes currently send guests to `/rsvp`, which is not built. Until the designer's RSVP exists, this feature makes those landings reach the placeholder page instead. Changing where the sign-in routes redirect to is therefore in scope; when the RSVP page is built it will take that back.
 - **Theme.** The saved choice is a per-device convenience only; with nothing saved, the device's light/dark setting applies. The toggle is on the placeholder page; the sign-in prompt follows the device setting without a toggle.
 - **Search engines.** The placeholder is marked as not to be indexed; this is revisited when the real homepage replaces it.
+- **Admin console change.** The sidebar button changes the existing admin console, which stays temporary and plain; it uses the console's one stylesheet and adds no design system.
 - **Staff access.** "Signed in to the admin panel" means a current couple or planner session; a guest session does not grant admin access, and the placeholder page grants nothing beyond the placeholder.
 - **Font.** "Basic sans-serif" means the device's standard sans-serif font; no web font is downloaded.
 - **Emoji.** The 👀 emoji is rendered by the device's own emoji font.
