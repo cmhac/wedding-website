@@ -15,7 +15,7 @@ export type Session = {
 /**
  * Works out who is calling. Staff status is read from the `staff` table on
  * every call and never cached, so revocation applies on the next request.
- * A user who is both staff and a household responder is staff (the planner
+ * A user who is both staff and signed in to a household is staff (the planner
  * may also be a guest).
  */
 export async function getSession(

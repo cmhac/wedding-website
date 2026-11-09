@@ -6,7 +6,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(46);
+select plan(48);
 
 select tests.create_user('couple@example.test') as couple_user \gset
 select tests.create_user('planner@example.test') as planner_user \gset
@@ -283,6 +283,36 @@ select throws_ok(
   'P0001', 'invalid_payload', 'a blank name is invalid'
 );
 select tests.clear_auth();
+
+-- Two sessions of the same household (two people, two devices) each save
+-- answers: both are accepted, the last save wins per field, and every change is
+-- attributed to the household's account in the history.
+select count(*) as history_before from public.rsvp_history \gset
+select tests.authenticate_as(:'user_a');
+select public.submit_household_rsvp($json$
+  {"guests": [{"guest_id": "aaaaaaaa-0000-0000-0000-0000000000a1",
+     "responses": [{"event_id": "eeeeeeee-0000-0000-0000-000000000001", "status": "declined"}]}]}$json$::jsonb);
+select tests.clear_auth();
+select tests.authenticate_as(:'user_a');
+select public.submit_household_rsvp($json$
+  {"guests": [{"guest_id": "aaaaaaaa-0000-0000-0000-0000000000a1",
+     "responses": [{"event_id": "eeeeeeee-0000-0000-0000-000000000001", "status": "attending"}]},
+    {"guest_id": "aaaaaaaa-0000-0000-0000-0000000000a2",
+     "responses": [{"event_id": "eeeeeeee-0000-0000-0000-000000000001", "status": "declined"}]}]}$json$::jsonb);
+select tests.clear_auth();
+select results_eq(
+  $$select guest_id::text, status::text from public.invitations
+     where event_id = 'eeeeeeee-0000-0000-0000-000000000001'
+       and guest_id in ('aaaaaaaa-0000-0000-0000-0000000000a1', 'aaaaaaaa-0000-0000-0000-0000000000a2')
+     order by guest_id$$,
+  $$values ('aaaaaaaa-0000-0000-0000-0000000000a1'::text, 'attending'::text),
+           ('aaaaaaaa-0000-0000-0000-0000000000a2', 'declined')$$,
+  'two sessions of one household leave a consistent state: the last save wins per field'
+);
+select is(
+  (select count(*) from public.rsvp_history) - :history_before,
+  3::bigint, 'every real change from either session is in the history, once'
+);
 
 -- RSVPs switched off for everyone.
 update public.settings set rsvp_open = false;

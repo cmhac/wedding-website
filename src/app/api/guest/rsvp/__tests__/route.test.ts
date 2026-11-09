@@ -3,6 +3,9 @@ import { AuthError } from "@/lib/auth/guards";
 
 const mockRpc = jest.fn();
 const mockRequireGuest = jest.fn();
+/** Addresses get_my_contacts returns for the guest's own household. */
+let contactRows: { kind: string; value: string }[] = [];
+let contactsError: { message: string } | null = null;
 jest.mock("@/lib/auth/guards", () => ({
   ...jest.requireActual("@/lib/auth/guards"),
   requireGuest: () => mockRequireGuest(),
@@ -30,8 +33,14 @@ function put(body: unknown, raw = false) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  contactRows = [];
+  contactsError = null;
   mockRequireGuest.mockResolvedValue({ supabase: { rpc: mockRpc } });
-  mockRpc.mockResolvedValue({ data: RSVP, error: null });
+  mockRpc.mockImplementation(async (fn: string) =>
+    fn === "get_my_contacts"
+      ? { data: contactsError ? null : contactRows, error: contactsError }
+      : { data: RSVP, error: null },
+  );
 });
 
 describe.each([
@@ -65,7 +74,87 @@ describe("GET /api/guest/rsvp", () => {
     const res = await GET();
     expect(mockRpc).toHaveBeenCalledWith("get_my_rsvp");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual(RSVP);
+    expect(await res.json()).toEqual({
+      ...RSVP,
+      contacts: [],
+      deadline_passed: false,
+    });
+  });
+});
+
+describe("GET /api/guest/rsvp: contacts", () => {
+  it("lists the household's addresses, masked", async () => {
+    contactRows = [
+      { kind: "email", value: "ada.fake@example.test" },
+      { kind: "email", value: "b@example.test" },
+    ];
+    const body = await (await GET()).json();
+    expect(mockRpc).toHaveBeenCalledWith("get_my_contacts");
+    expect(body.contacts).toEqual([
+      { kind: "email", masked: "a•••@example.test" },
+      { kind: "email", masked: "b•••@example.test" },
+    ]);
+  });
+
+  it("never puts an unmasked address anywhere in the body", async () => {
+    contactRows = [{ kind: "email", value: "ada.fake@example.test" }];
+    const text = JSON.stringify(await (await GET()).json());
+    expect(text).not.toContain("ada.fake");
+  });
+
+  it("returns an empty list for a paper-only household", async () => {
+    expect((await (await GET()).json()).contacts).toEqual([]);
+  });
+
+  it("answers with the database error when the addresses cannot be read", async () => {
+    contactsError = { message: "not_a_guest" };
+    expect((await GET()).status).toBe(403);
+  });
+});
+
+const invited = (...closed: boolean[]) => ({
+  household: { display_name: "The Fakes" },
+  guests: [
+    {
+      invitations: closed.map((c) => ({
+        status: "pending",
+        event: { closed: c },
+      })),
+    },
+  ],
+});
+
+describe("GET /api/guest/rsvp: deadline_passed", () => {
+  it("is false while any invited event is still open", async () => {
+    mockRpc.mockImplementation(async (fn: string) =>
+      fn === "get_my_contacts"
+        ? { data: [], error: null }
+        : { data: invited(true, false), error: null },
+    );
+    expect((await (await GET()).json()).deadline_passed).toBe(false);
+  });
+
+  it("is true when every invited event is closed (the deadline passed, or RSVPs are closed globally)", async () => {
+    mockRpc.mockImplementation(async (fn: string) =>
+      fn === "get_my_contacts"
+        ? { data: [], error: null }
+        : { data: invited(true, true), error: null },
+    );
+    expect((await (await GET()).json()).deadline_passed).toBe(true);
+  });
+
+  it("is false for a household with no invitations", async () => {
+    expect((await (await GET()).json()).deadline_passed).toBe(false);
+  });
+
+  it("still refuses a save after the deadline with 409 rsvp_closed", async () => {
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { message: "rsvp_closed" },
+    });
+    const res = await PUT(put(PAYLOAD));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error.code).toBe("rsvp_closed");
   });
 });
 
@@ -145,8 +234,12 @@ describe("PUT /api/guest/rsvp meals and dietary", () => {
         },
       ],
     };
-    mockRpc.mockResolvedValue({ data: withMenu, error: null });
-    expect(await (await GET()).json()).toEqual(withMenu);
+    mockRpc.mockImplementation(async (fn: string) =>
+      fn === "get_my_contacts"
+        ? { data: [], error: null }
+        : { data: withMenu, error: null },
+    );
+    expect(await (await GET()).json()).toMatchObject(withMenu);
   });
 });
 
@@ -157,7 +250,11 @@ describe("PUT /api/guest/rsvp", () => {
       payload: PAYLOAD,
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual(RSVP);
+    expect(await res.json()).toEqual({
+      ...RSVP,
+      contacts: [],
+      deadline_passed: false,
+    });
   });
 
   it("answers 403 for another household's ids", async () => {

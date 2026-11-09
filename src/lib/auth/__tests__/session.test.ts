@@ -20,12 +20,12 @@ describe("getSessionKind", () => {
     await expect(getSessionKind(client as never)).resolves.toBe("staff");
   });
 
-  it("is guest for a household responder", async () => {
+  it("is guest for any session of a household's sign-in account", async () => {
     const { client } = fakeSupabase({ user, household: true });
     await expect(getSessionKind(client as never)).resolves.toBe("guest");
   });
 
-  it("is staff when the user is both staff and a household responder", async () => {
+  it("is staff when the user is both staff and signed in to a household", async () => {
     const { client } = fakeSupabase({
       user,
       staffRole: "couple",

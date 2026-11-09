@@ -70,7 +70,11 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
   mockSignInWithOtp.mockResolvedValue({ data: {}, error: null });
   mockRequireGuest.mockResolvedValue({ supabase: { rpc: mockRpc } });
-  mockRpc.mockResolvedValue({ data: RSVP, error: null });
+  mockRpc.mockImplementation(async (fn: string) =>
+    fn === "get_my_contacts"
+      ? { data: [{ kind: "email", value: "ada@example.test" }], error: null }
+      : { data: RSVP, error: null },
+  );
 });
 
 describe("guest API documentation matches the route handlers", () => {

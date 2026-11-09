@@ -267,14 +267,14 @@ isOneToOne: false
                   ]
                 },"households": {
                   Row: {
-                    "address": Json | null,"auth_user_id": string | null,"created_at": string,"delivery_problem": boolean,"display_name": string,"id": string,"message_to_couple": string | null,"notes": string | null,"plus_one_allowance": number,"reminders_opt_out": boolean,"rsvp_deadline_override": string | null,"updated_at": string
+                    "address": Json | null,"auth_user_id": string | null,"created_at": string,"delivery_problem": boolean,"display_name": string,"id": string,"invite_link_issued_at": string,"invite_link_version": number,"message_to_couple": string | null,"notes": string | null,"plus_one_allowance": number,"reminders_opt_out": boolean,"rsvp_deadline_override": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address"?: Json | null,"auth_user_id"?: string | null,"created_at"?: string,"delivery_problem"?: boolean,"display_name": string,"id"?: string,"message_to_couple"?: string | null,"notes"?: string | null,"plus_one_allowance"?: number,"reminders_opt_out"?: boolean,"rsvp_deadline_override"?: string | null,"updated_at"?: string
+                    "address"?: Json | null,"auth_user_id"?: string | null,"created_at"?: string,"delivery_problem"?: boolean,"display_name": string,"id"?: string,"invite_link_issued_at"?: string,"invite_link_version"?: number,"message_to_couple"?: string | null,"notes"?: string | null,"plus_one_allowance"?: number,"reminders_opt_out"?: boolean,"rsvp_deadline_override"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "address"?: Json | null,"auth_user_id"?: string | null,"created_at"?: string,"delivery_problem"?: boolean,"display_name"?: string,"id"?: string,"message_to_couple"?: string | null,"notes"?: string | null,"plus_one_allowance"?: number,"reminders_opt_out"?: boolean,"rsvp_deadline_override"?: string | null,"updated_at"?: string
+                    "address"?: Json | null,"auth_user_id"?: string | null,"created_at"?: string,"delivery_problem"?: boolean,"display_name"?: string,"id"?: string,"invite_link_issued_at"?: string,"invite_link_version"?: number,"message_to_couple"?: string | null,"notes"?: string | null,"plus_one_allowance"?: number,"reminders_opt_out"?: boolean,"rsvp_deadline_override"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -579,17 +579,29 @@ isOneToOne: false
                   ]
                 },"settings": {
                   Row: {
-                    "couple_names": string | null,"default_rsvp_deadline": string | null,"id": boolean,"last_dispatch_at": string | null,"rsvp_open": boolean
+                    "couple_names": string | null,"default_rsvp_deadline": string | null,"id": boolean,"last_dispatch_at": string | null,"rsvp_open": boolean,"wedding_event_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "couple_names"?: string | null,"default_rsvp_deadline"?: string | null,"id"?: boolean,"last_dispatch_at"?: string | null,"rsvp_open"?: boolean
+                    "couple_names"?: string | null,"default_rsvp_deadline"?: string | null,"id"?: boolean,"last_dispatch_at"?: string | null,"rsvp_open"?: boolean,"wedding_event_id"?: string | null
                   }
                   Update: {
-                    "couple_names"?: string | null,"default_rsvp_deadline"?: string | null,"id"?: boolean,"last_dispatch_at"?: string | null,"rsvp_open"?: boolean
+                    "couple_names"?: string | null,"default_rsvp_deadline"?: string | null,"id"?: boolean,"last_dispatch_at"?: string | null,"rsvp_open"?: boolean,"wedding_event_id"?: string | null
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "settings_wedding_event_id_fkey"
+      columns: ["wedding_event_id"]
+isOneToOne: false
+      referencedRelation: "event_counts"
+      referencedColumns: ["event_id"]
+    },{
+      foreignKeyName: "settings_wedding_event_id_fkey"
+      columns: ["wedding_event_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"staff": {
                   Row: {
@@ -749,6 +761,9 @@ isOneToOne: true
               "household_a": string,"household_b": string,"reasons": (string)[]
             }[]
                            },
+"get_my_contacts":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "get_my_rsvp":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
@@ -757,6 +772,9 @@ isOneToOne: true
                            },
 "invite":
 { Args: { "event_id": string,"guest_ids": (string)[] }; Returns: Json
+                           },
+"invite_links_open":
+{ Args: { "at_time"?: string }; Returns: boolean
                            },
 "is_couple":
 { Args: Record<PropertyKey, never>; Returns: boolean
@@ -812,6 +830,8 @@ isOneToOne: true
 "delivery_problem": boolean,
 "display_name": string,
 "id": string,
+"invite_link_issued_at": string,
+"invite_link_version": number,
 "message_to_couple": string | null,
 "notes": string | null,
 "plus_one_allowance": number,

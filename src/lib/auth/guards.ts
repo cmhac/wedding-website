@@ -37,7 +37,7 @@ export async function requireGuest(
 ): Promise<Session> {
   const session = await getSession(supabase);
   if (!session) throw await denial(supabase);
-  // A user who is both staff and a household responder is treated as staff.
+  // A user who is both staff and signed in to a household is treated as staff.
   if (session.kind !== "guest") throw new AuthError(403, "forbidden");
   return session;
 }

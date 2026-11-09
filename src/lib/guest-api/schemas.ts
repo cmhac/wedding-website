@@ -105,6 +105,12 @@ export const rsvpResponseSchema = z.looseObject({
     reminders_opt_out: z.boolean(),
   }),
   guests: z.array(guestSchema),
+  /** The household's addresses, masked (first character, then three dots, then the domain). */
+  contacts: z
+    .array(z.looseObject({ kind: z.literal("email"), masked: z.string() }))
+    .optional(),
+  /** True when every invited event is closed: the deadline passed or RSVPs are closed. */
+  deadline_passed: z.boolean().optional(),
   dietary_categories: z
     .array(
       z.looseObject({

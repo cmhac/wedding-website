@@ -77,7 +77,7 @@ describe("requireCouple", () => {
 });
 
 describe("requireGuest", () => {
-  it("returns the user for a household responder", async () => {
+  it("returns the user for a session of a household's account", async () => {
     const { client } = fakeSupabase({ user, household: true });
     const result = await requireGuest(client as never);
     expect(result.user).toEqual(user);
@@ -89,7 +89,7 @@ describe("requireGuest", () => {
     expect((e as AuthError).status).toBe(401);
   });
 
-  it("treats a user who is both staff and responder as staff, so 403", async () => {
+  it("treats a user who is both staff and a household member as staff, so 403", async () => {
     const { client } = fakeSupabase({
       user,
       staffRole: "planner",

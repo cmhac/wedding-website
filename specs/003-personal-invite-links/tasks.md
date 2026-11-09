@@ -71,18 +71,18 @@ description: "Task list for personal invite links and shared household sign-in"
 
 ### Tests for User Story 1
 
-- [ ] T018 [P] [US1] Write `src/lib/auth/__tests__/invite-link.test.ts`: `inviteToken(householdId, version)` gives `<22-char base64url id>.<43-char base64url HMAC-SHA256 of "id:version" keyed with INVITE_LINK_SECRET>`; `parseInviteToken` rejects wrong length, bad characters, a tampered signature (constant-time compare) and a different version; the token never contains anything but the id and signature; `inviteLinkUrl(householdId, version)` builds `${NEXT_PUBLIC_SITE_URL}/i/<token>`
-- [ ] T019 [P] [US1] Write `supabase/tests/database/160-invite-links.test.sql`: `households.invite_link_version integer not null default 1` and `invite_link_issued_at timestamptz not null default now()` exist and are hidden from guest reads; `settings.wedding_event_id` references `events` with `on delete set null`; `invite_links_open()` is true with no wedding event, true the day before the event's date in `America/Los_Angeles`, false on that date and after (test across midnight Pacific and UTC); only the service role can execute it
-- [ ] T020 [P] [US1] Write `src/app/i/[token]/__tests__/route.test.ts`: valid token and links open → `302` to the RSVP path with session cookies, `Cache-Control: no-store` and `X-Robots-Tag: noindex`; a relative `next` under the RSVP path is honoured and anything else ignored; malformed token, wrong signature, superseded version, unknown household, links closed, and a failing `createHouseholdSession` each → `302` to `/auth/error` with no query detail; opening twice gives two independent sessions; nothing is logged but an outcome code
-- [ ] T021 [P] [US1] Add to `src/app/api/guest/rsvp/__tests__/route.test.ts`: `deadline_passed` is false before the deadline, true when RSVPs are closed globally or every invited event's effective deadline has passed; `PUT` after the deadline still returns `409 rsvp_closed`
+- [x] T018 [P] [US1] Write `src/lib/auth/__tests__/invite-link.test.ts`: `inviteToken(householdId, version)` gives `<22-char base64url id>.<43-char base64url HMAC-SHA256 of "id:version" keyed with INVITE_LINK_SECRET>`; `parseInviteToken` rejects wrong length, bad characters, a tampered signature (constant-time compare) and a different version; the token never contains anything but the id and signature; `inviteLinkUrl(householdId, version)` builds `${NEXT_PUBLIC_SITE_URL}/i/<token>`
+- [x] T019 [P] [US1] Write `supabase/tests/database/160-invite-links.test.sql`: `households.invite_link_version integer not null default 1` and `invite_link_issued_at timestamptz not null default now()` exist and are hidden from guest reads; `settings.wedding_event_id` references `events` with `on delete set null`; `invite_links_open()` is true with no wedding event, true the day before the event's date in `America/Los_Angeles`, false on that date and after (test across midnight Pacific and UTC); only the service role can execute it
+- [x] T020 [P] [US1] Write `src/app/i/[token]/__tests__/route.test.ts`: valid token and links open → `302` to the RSVP path with session cookies, `Cache-Control: no-store` and `X-Robots-Tag: noindex`; a relative `next` under the RSVP path is honoured and anything else ignored; malformed token, wrong signature, superseded version, unknown household, links closed, and a failing `createHouseholdSession` each → `302` to `/auth/error` with no query detail; opening twice gives two independent sessions; nothing is logged but an outcome code
+- [x] T021 [P] [US1] Add to `src/app/api/guest/rsvp/__tests__/route.test.ts`: `deadline_passed` is false before the deadline, true when RSVPs are closed globally or every invited event's effective deadline has passed; `PUT` after the deadline still returns `409 rsvp_closed`
 
 ### Implementation for User Story 1
 
-- [ ] T022 [US1] Migration `supabase/migrations/<ts>_invite_links.sql`: the two `households` columns (staff-only), `settings.wedding_event_id`, `invite_links_open()` per research R6 (T019 passes)
-- [ ] T023 [P] [US1] Implement `src/lib/auth/invite-link.ts` per T018 using Node's `crypto` (`createHmac`, `timingSafeEqual`)
-- [ ] T024 [US1] Implement `src/app/i/[token]/route.ts` per T020 and contracts/guest-api.md, using `parseInviteToken`, a service-role read of the household's `invite_link_version` and `auth_user_id`, `invite_links_open()`, and `createHouseholdSession`; reuse the relative-path rule from `src/app/auth/callback/route.ts` (extract it to a shared helper if needed)
-- [ ] T025 [US1] Add `deadline_passed` to the response in `src/app/api/guest/rsvp/route.ts` and its schema in `src/lib/guest-api/schemas.ts` per T021
-- [ ] T026 [US1] Confirm sessions do not expire: add to `docs/manual-setup.md` that the Supabase Auth session time-box and inactivity timeout stay unset, with the Management API check from quickstart.md
+- [x] T022 [US1] Migration `supabase/migrations/<ts>_invite_links.sql`: the two `households` columns (staff-only), `settings.wedding_event_id`, `invite_links_open()` per research R6 (T019 passes)
+- [x] T023 [P] [US1] Implement `src/lib/auth/invite-link.ts` per T018 using Node's `crypto` (`createHmac`, `timingSafeEqual`)
+- [x] T024 [US1] Implement `src/app/i/[token]/route.ts` per T020 and contracts/guest-api.md, using `parseInviteToken`, a service-role read of the household's `invite_link_version` and `auth_user_id`, `invite_links_open()`, and `createHouseholdSession`; reuse the relative-path rule from `src/app/auth/callback/route.ts` (extract it to a shared helper if needed)
+- [x] T025 [US1] Add `deadline_passed` to the response in `src/app/api/guest/rsvp/route.ts` and its schema in `src/lib/guest-api/schemas.ts` per T021
+- [x] T026 [US1] Confirm sessions do not expire: add to `docs/manual-setup.md` that the Supabase Auth session time-box and inactivity timeout stay unset, with the Management API check from quickstart.md
 
 **Checkpoint**: personal links work end to end; MVP reachable once invitations can carry the link (US5) or staff copy it (US4).
 
@@ -96,14 +96,14 @@ description: "Task list for personal invite links and shared household sign-in"
 
 ### Tests for User Story 2
 
-- [ ] T027 [P] [US2] Add to `supabase/tests/database/210-rsvp-rpc.test.sql`: two sessions of the same household Auth user each save answers; the final state is consistent (last save wins per field) and `audit_log` has one entry per save
-- [ ] T028 [P] [US2] Add to `src/app/api/guest/rsvp/__tests__/route.test.ts`: the response includes `contacts: [{ kind: "email", masked }]` with every address masked as first character, `•••`, then `@domain`; no unmasked address appears anywhere in the body
-- [ ] T029 [P] [US2] Add to `src/lib/auth/__tests__/session.test.ts`: `getSession` treats any session of the household Auth user as kind `guest` (the "responder" wording is gone)
+- [x] T027 [P] [US2] Add to `supabase/tests/database/210-rsvp-rpc.test.sql`: two sessions of the same household Auth user each save answers; the final state is consistent (last save wins per field) and `audit_log` has one entry per save
+- [x] T028 [P] [US2] Add to `src/app/api/guest/rsvp/__tests__/route.test.ts`: the response includes `contacts: [{ kind: "email", masked }]` with every address masked as first character, `•••`, then `@domain`; no unmasked address appears anywhere in the body
+- [x] T029 [P] [US2] Add to `src/lib/auth/__tests__/session.test.ts`: `getSession` treats any session of the household Auth user as kind `guest` (the "responder" wording is gone)
 
 ### Implementation for User Story 2
 
-- [ ] T030 [US2] Add masked `contacts` to `src/app/api/guest/rsvp/route.ts` and `src/lib/guest-api/schemas.ts` (masking helper in `src/lib/guest-api/mask.ts` with its own test)
-- [ ] T031 [US2] Update comments and wording that say "responder" in `src/lib/auth/session.ts` and `src/lib/guests/household-access.ts`, keeping behaviour (T029)
+- [x] T030 [US2] Add masked `contacts` to `src/app/api/guest/rsvp/route.ts` and `src/lib/guest-api/schemas.ts` (masking helper in `src/lib/guest-api/mask.ts` with its own test)
+- [x] T031 [US2] Update comments and wording that say "responder" in `src/lib/auth/session.ts` and `src/lib/guests/household-access.ts`, keeping behaviour (T029)
 
 **Checkpoint**: shared access works with addresses added directly in the database or through the create form.
 

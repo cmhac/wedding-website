@@ -25,6 +25,29 @@ together mean only server code (the household create endpoint and
 `scripts/create-staff-user.ts`) creates users. See
 `docs/decisions/0003-guest-identity.md` and `docs/decisions/0004-auth-emails-via-resend.md`.
 
+## Household sessions stay signed in
+
+Guests open their personal link once and stay signed in on that device, so the
+Supabase Auth session limits must stay **unset** (dashboard, Authentication,
+Sessions): no "time-box user sessions" and no "inactivity timeout". Setting
+either would sign guests out and force them to ask for a new link. Staff
+sessions follow the same project settings.
+
+Check it through the Management API (needs a personal access token with
+`auth_config_read`; the token is never stored in the repository):
+
+```bash
+curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  "https://api.supabase.com/v1/projects/<project-ref>/config/auth" \
+  | jq '{sessions_timebox, sessions_inactivity_timeout}'
+```
+
+Both fields must be empty or zero. Supabase documents both settings, and says
+sessions are not ended the moment a limit is reached, in
+[its sessions guide](https://supabase.com/docs/guides/auth/sessions) and the
+[auth config reference](https://supabase.com/docs/reference/api/v1-get-auth-service-config).
+Record the date you checked here: _not checked yet_.
+
 ## Sign-in rate limiting
 
 The sign-in routes (`/api/guest/sign-in`, `/api/admin/sign-in`) keep an
