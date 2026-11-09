@@ -811,6 +811,9 @@ isOneToOne: true
 "record_message_event":
 { Args: { "occurred_at": string,"provider_event_id": string,"provider_message_id": string,"type": string }; Returns: string
                            },
+"reissue_invite_link":
+{ Args: { "household_id": string }; Returns: number
+                           },
 "remove_household_contact":
 { Args: { "contact_id": string,"household_id": string }; Returns: Json
                            },
@@ -818,6 +821,9 @@ isOneToOne: true
 { Args: { "filter": Json,"message_type_key"?: string }; Returns: {
               "deliverable": boolean,"display_name": string,"household_id": string,"skip_reason": string
             }[]
+                           },
+"revoke_household_sessions":
+{ Args: { "household_id": string }; Returns: undefined
                            },
 "set_reminders_opt_out":
 { Args: { "opt_out": boolean }; Returns: boolean

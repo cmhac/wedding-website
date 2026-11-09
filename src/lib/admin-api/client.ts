@@ -9,14 +9,20 @@ import {
   type GrantStaffResponse,
 } from "./staff-schemas";
 import {
+  contactResponseSchema,
   createHouseholdResponseSchema,
   errorBodySchema,
   importResponseSchema,
+  inviteLinkResponseSchema,
+  removeContactResponseSchema,
   updateHouseholdResponseSchema,
+  type ContactResponse,
   type CreateHouseholdRequest,
   type CreateHouseholdResponse,
   type ErrorBody,
   type ImportResponse,
+  type InviteLinkResponse,
+  type RemoveContactResponse,
   type UpdateHouseholdRequest,
   type UpdateHouseholdResponse,
 } from "./schemas";
@@ -95,6 +101,60 @@ export const deleteHousehold = (id: string) =>
   call(null, `/api/admin/households/${encodeURIComponent(id)}`, {
     method: "DELETE",
   }) as Promise<ApiResult<null>>;
+
+const contactsPath = (householdId: string) =>
+  `/api/admin/households/${encodeURIComponent(householdId)}/contacts`;
+
+/** Adds an email address to a household. */
+export const addContact = (householdId: string, value: string) =>
+  call(
+    contactResponseSchema,
+    contactsPath(householdId),
+    json("POST", { kind: "email", value }),
+  ) as Promise<ApiResult<ContactResponse>>;
+
+/** Changes an address; this clears its delivery problem flag. */
+export const updateContact = (
+  householdId: string,
+  contactId: string,
+  value: string,
+) =>
+  call(
+    contactResponseSchema,
+    `${contactsPath(householdId)}/${encodeURIComponent(contactId)}`,
+    json("PATCH", { value }),
+  ) as Promise<ApiResult<ContactResponse>>;
+
+/** Removes an address; `paper_only` is true when it was the household's last. */
+export const removeContact = (householdId: string, contactId: string) =>
+  call(
+    removeContactResponseSchema,
+    `${contactsPath(householdId)}/${encodeURIComponent(contactId)}`,
+    { method: "DELETE" },
+  ) as Promise<ApiResult<RemoveContactResponse>>;
+
+const inviteLinkPath = (householdId: string) =>
+  `/api/admin/households/${encodeURIComponent(householdId)}/invite-link`;
+
+/** The household's current personal link, to copy. */
+export const getInviteLink = (householdId: string) =>
+  call(inviteLinkResponseSchema, inviteLinkPath(householdId), {
+    method: "GET",
+  }) as Promise<ApiResult<InviteLinkResponse>>;
+
+/** Issues a new link; the old one stops working at once. */
+export const reissueInviteLink = (householdId: string) =>
+  call(inviteLinkResponseSchema, inviteLinkPath(householdId), {
+    method: "POST",
+  }) as Promise<ApiResult<InviteLinkResponse>>;
+
+/** Signs the household out on every device. */
+export const signOutHousehold = (householdId: string) =>
+  call(
+    null,
+    `/api/admin/households/${encodeURIComponent(householdId)}/sign-out`,
+    { method: "POST" },
+  ) as Promise<ApiResult<null>>;
 
 /** Sends the CSV text as the request body. */
 export const importGuests = (csv: string) =>

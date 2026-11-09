@@ -40,15 +40,43 @@ begin
 end;
 $$;
 
--- Acts as a signed-in user: role authenticated plus JWT claims.
+-- Acts as a signed-in user: role authenticated plus JWT claims, including the
+-- `session_id` of a live session (a real access token always carries one, and
+-- guest access checks that the session still exists).
+create or replace function tests.create_session(user_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_session uuid := gen_random_uuid();
+begin
+  insert into auth.sessions (id, user_id, created_at, updated_at)
+    values (v_session, user_id, now(), now());
+  return v_session;
+end;
+$$;
+
 create or replace function tests.authenticate_as(user_id uuid)
+returns void
+language plpgsql
+as $$
+begin
+  perform tests.authenticate_as_session(user_id, tests.create_session(user_id));
+end;
+$$;
+
+-- Acts as a signed-in user whose access token names the given session, which
+-- may or may not exist in auth.sessions.
+create or replace function tests.authenticate_as_session(user_id uuid, session_id uuid)
 returns void
 language plpgsql
 as $$
 begin
   perform set_config(
     'request.jwt.claims',
-    json_build_object('sub', user_id, 'role', 'authenticated')::text,
+    json_build_object('sub', user_id, 'role', 'authenticated', 'session_id', session_id)::text,
     true
   );
   perform set_config('request.jwt.claim.sub', user_id::text, true);

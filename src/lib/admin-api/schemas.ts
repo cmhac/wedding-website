@@ -43,6 +43,29 @@ export const contactSchema = z.object({
 });
 export type ContactInput = z.infer<typeof contactSchema>;
 
+export const updateContactRequestSchema = z.object({ value: email }).strict();
+export type UpdateContactRequest = z.infer<typeof updateContactRequestSchema>;
+
+export const contactResponseSchema = z.object({
+  contact: z.object({
+    id: z.string(),
+    kind: z.literal("email"),
+    value: z.string(),
+  }),
+});
+export type ContactResponse = z.infer<typeof contactResponseSchema>;
+
+export const removeContactResponseSchema = z.object({
+  paper_only: z.boolean(),
+});
+export type RemoveContactResponse = z.infer<typeof removeContactResponseSchema>;
+
+export const inviteLinkResponseSchema = z.object({
+  url: z.string(),
+  issued_at: z.string(),
+});
+export type InviteLinkResponse = z.infer<typeof inviteLinkResponseSchema>;
+
 export const createHouseholdRequestSchema = z
   .object({
     display_name: z.string().trim().min(1).max(200),

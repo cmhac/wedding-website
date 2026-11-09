@@ -7,7 +7,7 @@ begin;
 
 select tests.clear_data();
 
-select plan(19);
+select plan(26);
 
 select tests.create_user('couple@example.test') as couple_user \gset
 select tests.create_user('household-a@households.invalid') as user_a \gset
@@ -87,6 +87,43 @@ select ok(
   and not has_function_privilege('authenticated', 'public.invite_links_open(timestamptz)', 'EXECUTE')
   and not has_function_privilege('anon', 'public.invite_links_open(timestamptz)', 'EXECUTE'),
   'only the service role can execute invite_links_open'
+);
+
+-- reissue_invite_link: staff only, audited, supersedes the old link.
+select tests.create_user('planner@example.test') as planner_user \gset
+insert into public.staff (user_id, role, display_name) values (:'planner_user', 'planner', 'Planner');
+update public.households set invite_link_issued_at = '2020-01-01T00:00:00Z';
+
+select tests.authenticate_as(:'couple_user');
+select is(public.reissue_invite_link('aaaaaaaa-0000-0000-0000-00000000000a'), 2, 'the couple can reissue: the version becomes 2');
+select tests.clear_auth();
+select tests.authenticate_as(:'planner_user');
+select is(public.reissue_invite_link('aaaaaaaa-0000-0000-0000-00000000000a'), 3, 'the planner can too: the version becomes 3');
+select tests.clear_auth();
+select ok(
+  (select invite_link_issued_at > '2020-01-01T00:00:00Z' from public.households where id = 'aaaaaaaa-0000-0000-0000-00000000000a'),
+  'reissuing sets when the link was issued'
+);
+select ok(
+  exists (
+    select 1 from public.audit_log
+     where entity = 'households' and entity_id = 'aaaaaaaa-0000-0000-0000-00000000000a'
+       and action = 'update' and 'invite_link_version' = any (changed_fields)
+       and actor_kind = 'planner'
+  ),
+  'it is audited (the column name, attributed to the actor)'
+);
+
+select tests.authenticate_as(:'user_a');
+select throws_ok($$select public.reissue_invite_link('aaaaaaaa-0000-0000-0000-00000000000a')$$, 'P0001', 'forbidden', 'a guest cannot reissue');
+select tests.clear_auth();
+select tests.authenticate_as(:'couple_user');
+select throws_ok($$select public.reissue_invite_link('99999999-0000-0000-0000-000000000009')$$, 'P0001', 'not_found', 'an unknown household is not_found');
+select tests.clear_auth();
+select ok(
+  not has_function_privilege('anon', 'public.reissue_invite_link(uuid)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.reissue_invite_link(uuid)', 'EXECUTE'),
+  'anon cannot execute it; signed-in users reach its own staff check'
 );
 
 select * from finish();
