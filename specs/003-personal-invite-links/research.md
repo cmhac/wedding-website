@@ -8,6 +8,7 @@ Each item records the decision, why, and what else was considered. Items marked 
 - **Rationale**: keeps session security, refresh and revocation in Supabase; the custom code only decides which household a request belongs to. Matches the constitution's "magic-link sign-in for everyone".
 - **Alternatives**: a fully custom session system (rejected: re-implements security-critical code); Supabase's own email sign-in per address (rejected: a Supabase user holds one email, and a household now has several).
 - **Verify first**: the `type` passed to `verifyOtp` for a token from `generateLink({ type: 'magiclink' })`. Supabase's reference lists `magiclink` as deprecated for email in favour of `email`. Use `email`; fall back to `magiclink` if the local test fails.
+- **Outcome (2026-11-09, local Supabase)**: confirmed. `generateLink({ type: "magiclink" })` returns `properties.hashed_token`, and `verifyOtp({ token_hash, type: "email" })` returns a session for the household's user. Use `email`. The check is `src/lib/auth/__tests__/verify-first.test.ts`.
 
 ## R2. The household's Auth user has a synthetic, never-mailed email
 
@@ -15,6 +16,7 @@ Each item records the decision, why, and what else was considered. Items marked 
 - **Rationale**: a household has several addresses, and Supabase allows one per user; tying the user to any one real address would make removing that address delete or rename the account. Keeping real addresses out of `auth.users` also means Supabase can never email a guest directly.
 - **Alternatives**: one Auth user per address (rejected: breaks "one shared account per household" and multiplies row-level-security joins); keeping the first address on the Auth user (rejected: the coupling above).
 - **Verify first**: Supabase accepts a `.invalid` address in `auth.admin.createUser`. Fallback: a subdomain of the site with no mail records, set through `HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN`.
+- **Outcome (2026-11-09, local Supabase)**: confirmed. `auth.admin.createUser({ email: "household-<uuid>@households.invalid", email_confirm: true })` succeeds, so the default domain stays `households.invalid`. The check is `src/lib/auth/__tests__/verify-first.test.ts`. It runs against the local stack only; hosted Supabase is checked again at the first production household.
 - **Existing data**: production has no households yet, so no Auth users need renaming. A household created before this change is converted by `scripts/convert-household-accounts.ts` (renames the Auth user's email; idempotent), run once if any exist.
 
 ## R3. Personal invite links are derived, not stored
@@ -69,6 +71,7 @@ Each item records the decision, why, and what else was considered. Items marked 
 - **Rationale**: takes effect on the next request, not when the access token expires. Supabase's `auth.admin.signOut` needs one of the user's own access tokens, which the server does not have for other devices.
 - **Alternatives**: deleting and recreating the household's Auth user (rejected: `invitations.responded_by` and `meal_selections.chosen_by` reference Auth users with `on delete set null`, so it would erase who answered); waiting for access tokens to expire (rejected: up to an hour of access after "sign out everywhere").
 - **Verify first**: deleting from `auth.sessions` also removes the refresh tokens, and a deleted session's access token is refused by the guest policy (pgTAP and a route test).
+- **Outcome (2026-11-09, local Supabase), first half**: confirmed. Deleting a user's `auth.sessions` rows also removes their `auth.refresh_tokens` rows and leaves other users' alone (`supabase/tests/database/170-household-sessions.test.sql`). The second half (a deleted session's access token refused by the guest policy) is tested with the sign-out-everywhere work.
 
 ## R11. Staying signed in indefinitely
 

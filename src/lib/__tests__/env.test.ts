@@ -10,6 +10,7 @@ const valid = {
   SEND_EMAIL_HOOK_SECRET: "hook-fake",
   RESEND_WEBHOOK_SECRET: "webhook-fake",
   CRON_SECRET: "cron-fake",
+  INVITE_LINK_SECRET: "invite-secret-fake-long-enough-for-hmac-0123456789",
 };
 
 describe("getServerEnv", () => {
@@ -56,6 +57,34 @@ describe("getServerEnv", () => {
     expect(() =>
       getServerEnv({ ...valid, GUEST_RSVP_PATH: "https://evil.example" }),
     ).toThrow(/GUEST_RSVP_PATH/);
+  });
+});
+
+describe("invite link settings", () => {
+  it("requires INVITE_LINK_SECRET on the server", () => {
+    const { INVITE_LINK_SECRET: _omit, ...rest } = valid;
+    void _omit;
+    expect(() => getServerEnv(rest)).toThrow(/INVITE_LINK_SECRET/);
+  });
+
+  it("defaults the household account domain to households.invalid", () => {
+    expect(getServerEnv(valid).HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN).toBe(
+      "households.invalid",
+    );
+  });
+
+  it("keeps a provided household account domain", () => {
+    expect(
+      getServerEnv({ ...valid, HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN: "mail.example" })
+        .HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN,
+    ).toBe("mail.example");
+  });
+
+  it("never exposes the secret to the browser", () => {
+    const env = getPublicEnv(valid) as Record<string, unknown>;
+    expect(env.INVITE_LINK_SECRET).toBeUndefined();
+    expect(Object.keys(env).join()).not.toMatch(/INVITE_LINK_SECRET/);
+    expect("NEXT_PUBLIC_INVITE_LINK_SECRET" in env).toBe(false);
   });
 });
 
