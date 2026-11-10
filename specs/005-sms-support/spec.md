@@ -17,6 +17,8 @@ This feature picks up the "Deferred: text messages" section of the personal invi
 - Q: What does "equal to email" mean? → A: Anything a guest or the couple can do through an email address, they can do through a phone number, with the same rules, the same neutral answers and the same limits. A household reachable only by phone is a complete household, not a second-class one. Staff are the one exception: they keep signing in by email (carried over from the invite links spec).
 - Q: Which earlier decisions carry over? → A: All of "Deferred: text messages" in the invite links spec: United States numbers only; the same link as email rather than a typed code; campaigns by email, text or both; no consent tracking, relying on the provider's standard STOP, START and HELP handling; one on/off switch for texts, off until the provider is set up; sign-in texts from templates kept in the repository, with first-draft wording written here.
 - Q: Is a one-time code (typed in from the text) offered as well? → A: No. A text carries a link, exactly as an email does.
+- Q: Which provider? → A: Twilio, confirmed by the couple on 2026-11-10 (previously only the leading option). Other providers and routes were checked the same day; none avoids the carriers' identity checks, which apply whichever provider sends the texts.
+- Q: Does this feature build the privacy policy and terms pages that Twilio's registration requires? → A: Yes. The couple granted a narrow exception on 2026-11-10 to the rule against building guest-facing screens: two plain, public, static text pages, a privacy policy and terms (see User Story 7). Nothing else guest-facing is added.
 
 ## Background
 
@@ -141,6 +143,24 @@ Text sending is off until the couple have set up the provider. One switch in the
 
 ---
 
+### User Story 7 - Public privacy and terms pages for the texting registration (Priority: P2)
+
+To register with the carriers, Twilio requires a public privacy policy and a public terms page, and its reviewers open every link submitted. The site gains two plain text pages, one at a privacy path and one at a terms path, that anyone can read without signing in, and which the couple paste into the registration.
+
+**Why this priority**: the registration cannot be approved without them, and texting stays off until it is approved. They are P2 only because they gate turning texting on, not building it.
+
+**Independent Test**: in a browser with no session, open each page, confirm it loads, carries the required wording and names the couple's wedding site, and that the home page and sign-in prompt link to neither unexpectedly beyond what is described below.
+
+**Acceptance Scenarios**:
+
+1. **Given** a visitor who is not signed in, **When** they open the privacy page or the terms page, **Then** it loads as plain readable text with no sign-in prompt, redirect or personal data.
+2. **Given** the privacy page, **When** it is read, **Then** it is titled "Privacy Policy", names the couple's wedding site, says what guest information is collected (names, email addresses, phone numbers, RSVP and meal answers) and what it is used for, and states that SMS opt-in data and personal information are not sold or shared with third parties for marketing purposes.
+3. **Given** the terms page, **When** it is read, **Then** it is titled "Terms & Conditions", names the couple's wedding site, and has an SMS section that says what texts guests get and how often, that message and data rates may apply, how to stop (reply STOP) and get help (reply HELP), and how to contact the couple.
+4. **Given** either page, **When** a signed-in guest, a staff member or an anonymous visitor opens it, **Then** the page is the same for all of them.
+5. **Given** the home page, **When** it is shown, **Then** it is unchanged except for two small plain links to these pages, so a reviewer who visits the site can find them (the pages are also reachable directly).
+
+---
+
 ### Edge Cases
 
 - A number typed with extra characters, letters, an extension, or an international prefix other than +1: normalized if it is clearly a United States number, otherwise refused with the same plain message. Never guessed at.
@@ -202,13 +222,20 @@ Text sending is off until the couple have set up the provider. One switch in the
 **Admin console v0**
 
 - **FR-025**: The temporary admin console MUST let staff view and edit a household's phone numbers; show phone counts and paper-only state in the household list and detail; accept several phone columns in the import (with import help updated); choose the channel(s) of a campaign; show per-contact delivery in the preview, delivery status, overview and reports; and show and change the master switch. It MUST stay plain and use the existing single stylesheet.
-- **FR-026**: The placeholder homepage's sign-in prompt MUST accept a phone number as described in FR-008. This is the only change to any guest-facing screen; the placeholder's other behavior and wording stay as they are, apart from the neutral answer's wording.
+- **FR-026**: The placeholder homepage's sign-in prompt MUST accept a phone number as described in FR-008, and the homepage MUST gain two small plain links to the privacy and terms pages (FR-030). These and the two pages are the only guest-facing changes; the placeholder's other behavior and wording stay as they are, apart from the neutral answer's wording.
+
+**Privacy and terms pages**
+
+- **FR-030**: The site MUST serve a privacy policy page and a terms page, each at its own fixed public path, readable by anyone without signing in and identical for every visitor. They MUST be plain text under the one existing homepage stylesheet, with no new design system, theming library or component library, and MUST stay separate from the designer's work: the designer may replace or restyle them, provided the required wording stays.
+- **FR-031**: The privacy page MUST be titled "Privacy Policy", name the couple's wedding site, describe the guest information collected and its use, say how long it is kept and how a guest asks the couple to correct or delete it, and state that SMS opt-in data and personal information are not sold or shared with third parties for marketing purposes.
+- **FR-032**: The terms page MUST be titled "Terms & Conditions" (or "Terms of Service"), name the couple's wedding site, and include an SMS section stating the kinds of texts sent and their approximate frequency, that message and data rates may apply, how to opt out (STOP) and get help (HELP), and the couple's contact details. The required wording comes from Twilio's current registration requirements, which the plan checks again before the pages are written.
+- **FR-033**: The pages MUST contain no guest data and MUST be covered by tests, including that they load without a session and carry the required wording. Their wording is a first draft for the couple to read and polish; it is not legal advice.
 
 **Privacy, setup and documentation**
 
 - **FR-027**: Phone numbers are personal data. They MUST NOT appear in logs, error messages shown to guests, or the change history (field names only), and fixtures and seed data MUST use numbers from the fictional range reserved for such use (555-0100 to 555-0199). Deleting a household MUST remove or irreversibly anonymise its phone numbers and text records.
 - **FR-028**: The guest and admin interface documents, the manual setup document, the architecture document, the constitution's and `CLAUDE.md`'s statements about sign-in and scope, and the decision records MUST be updated in the same change: the neutral answer's new wording, the phone-number sign-in, the channel choice, and what the couple must set up by hand with the provider (account, number, registration, delivery notifications, and the master switch). The provider choice MUST be recorded as a decision.
-- **FR-029**: The setup steps that cannot be done in code MUST be written for someone doing them for the first time, including that registration takes days to be approved and that texting stays off until it is, with secrets handled like the existing ones.
+- **FR-029**: The setup steps that cannot be done in code MUST be written for someone doing them for the first time, with secrets handled like the existing ones. They MUST cover, in order: confirming eligibility (no business tax ID); creating and upgrading the Twilio account; buying a United States local number; registering the brand (including the one-time text to a mobile phone that must be answered within 24 hours); registering the campaign (use case, description, how guests agreed, proof of that, links to the privacy and terms pages, and at least two sample texts that name the couple's site and include "text STOP"); and waiting for approval, which can take up to about five business days, with texting staying off until then. They MUST say how to fix and resubmit a rejected campaign, and that the guests' agreement must be described truthfully.
 
 ### Key Entities
 
@@ -218,6 +245,7 @@ Text sending is off until the couple have set up the provider. One switch in the
 - **Message type (changed)**: each type declares which channels it has wording for.
 - **Texting setting (new)**: the master on/off switch, off by default.
 - **Text wording**: the registered first-draft wording for the sign-in, invitation and reminder texts.
+- **Privacy page and terms page (new)**: two public, static text pages carrying the wording the registration requires.
 
 ## Success Criteria _(mandatory)_
 
@@ -232,10 +260,13 @@ Text sending is off until the couple have set up the provider. One switch in the
 - **SC-007**: With texting off, 0 texts are sent by any route, and the console says so.
 - **SC-008**: A campaign texted to 300 households completes with every text sent or recorded as failed, none dropped for rate reasons, and a sign-in text requested during the send arrives within 1 minute.
 - **SC-009**: 100% of texts sent in production are rendered from wording registered in the repository.
+- **SC-010**: Both the privacy and terms pages load for a visitor with no session in under 2 seconds on an ordinary connection and contain every required statement in FR-031 and FR-032, checked by an automated test.
 
 ## Assumptions
 
-- **Provider: Twilio, to be confirmed by the couple** (the invite links spec had it as the leading option, not yet confirmed). Registration for individuals without a business tax number is as a "sole proprietor" brand: Twilio lists $4 to register the brand, $15 one-time campaign vetting, and $2 a month per campaign ([Twilio's sole proprietor registration page](https://www.twilio.com/docs/messaging/compliance/a2p-10dlc/direct-sole-proprietor-registration-overview-new%20experience) and [its fee FAQ](https://support.twilio.com/hc/en-us/articles/4407882914971-Comparision-between-Starter-and-Standard-registration-for-A2P-10DLC); one older Twilio article lists $4.50 for the brand fee, so confirm in the console before paying). This spec's requirements do not depend on the provider; the plan records the final choice as a decision.
+- **Provider: Twilio**, confirmed by the couple on 2026-11-10. The plan records it as a decision. The requirements do not otherwise depend on the provider.
+- **Registration is more than a few forms, and is the carriers' requirement, not Twilio's.** This corrects the invite links spec's estimate of "about 15 minutes of forms and a few days' wait". For individuals without a business tax number, Twilio registers a "sole proprietor" brand and campaign ([Twilio's registration guide](https://www.twilio.com/docs/messaging/compliance/a2p-10dlc/direct-sole-proprietor-registration-overview-new%20experience), updated 2026-10-30). Beyond the forms it requires: a one-time text code to a mobile phone (answered within 24 hours), a detailed campaign description that matches the sample texts, a truthful description and proof of how guests agreed to be texted, at least two sample texts that name the brand and include opt-out wording, a real working website, and public privacy and terms pages with specific wording (FR-030 to FR-032). Twilio says a non-compliant opt-in description is the most common reason campaigns are rejected, that the brand is usually approved within minutes and the campaign within about five business days (contact support after ten), and that a rejected campaign can be fixed and resubmitted. Other providers and toll-free numbers were checked and do not avoid these checks.
+- **Costs** (Twilio's pages name these fees but the dollar amounts come from search summaries of Twilio's pages, so confirm them on the console's fee screen before paying): about $4 one-time for the brand (one older Twilio article says $4.50), $15 one-time campaign vetting, $2 a month for the campaign ([Twilio's fee FAQ](https://support.twilio.com/hc/en-us/articles/4407882914971-Comparision-between-Starter-and-Standard-registration-for-A2P-10DLC)), and about $1.15 a month for a United States local number ([Twilio phone numbers](https://twilio.com/en-us/phone-numbers)). Per-text prices are not yet checked.
 - **Provider limits shape the design.** Twilio documents that a sole proprietor registration is limited to one campaign, one phone number per campaign and one message per second ([Twilio, "Message throughput and trust scores"](https://support.twilio.com/hc/en-us/articles/1260803225669-Message-throughput-MPS-and-Trust-Scores-for-A2P-10DLC-in-the-US)). Two third-party summaries (Zuper's and Salesmate's documentation) give a T-Mobile daily cap of about 1,000 messages for this tier; that figure is not yet confirmed by Twilio or T-Mobile directly, so the plan verifies it. If the guest list is larger than the daily cap, a campaign takes more than one day, which FR-018's resume-across-runs behavior covers. A larger registration is possible later but is not part of this feature.
 - **STOP, START and HELP are handled by the provider.** Twilio's default opt-out words are STOP, STOPALL, UNSUBSCRIBE, CANCEL, END and QUIT, matched case-insensitively; after one, further texts to that person from that number fail with a documented "unsubscribed recipient" error until they reply START ([Twilio on opt-out keywords](https://support.twilio.com/hc/en-us/articles/223134027-Twilio-Support-for-Opt-out-Keywords-SMS-STOP-Filtering), [error 21610](https://www.twilio.com/docs/api/errors/21610)). That failure is what the site records; it keeps no list of its own.
 - **No consent tracking, by the couple's explicit decision (2026-10-29).** The couple vouch for their guests' consent, as they did for email. The system does not enforce quiet hours; the couple choose when to send.
@@ -243,6 +274,6 @@ Text sending is off until the couple have set up the provider. One switch in the
 - **Same link, not a code**: Supabase's own phone sign-in is not used; the site texts a link exactly as it emails one, and the provider only delivers messages. The household's sign-in account is unchanged: it has no real email address or phone number, which live with the contacts.
 - **Provider notifications** for delivery status arrive the way Resend's do today; the plan decides how they are verified.
 - **Fictional numbers**: numbers 555-0100 to 555-0199 are reserved for fictional use ([Wikipedia's summary of the North American Numbering Plan's reservation](<https://en.wikipedia.org/wiki/555_(telephone_number)>)), so fixtures and seed data cannot reach a real person.
-- **Scope.** Guest-facing screens other than the placeholder homepage's existing sign-in prompt stay out of scope; the guest interface changes are documented for the designer's frontend (FR-028). The rule against writing message content is lifted for first-draft texts only, by the couple's permission on 2026-10-29, which is already recorded in `CLAUDE.md`. Texts are plain text: no images, no pictures, no visual design.
+- **Scope.** Guest-facing screens other than the placeholder homepage's sign-in prompt and its two new links, and the privacy and terms pages (a narrow exception granted by the couple on 2026-11-10, to be recorded in `CLAUDE.md` and a decision record by this feature), stay out of scope; the guest interface changes are documented for the designer's frontend (FR-028). The rule against writing message content is lifted for first-draft texts only, by the couple's permission on 2026-10-29, which is already recorded in `CLAUDE.md`. Texts are plain text: no images, no pictures, no visual design.
 - **Decisions this feature touches** (the plan records them): the household sign-in decision (`docs/decisions/0011-household-sign-in-and-invite-links.md`) says typed-address links come from the `magic_link` template by email and gains a phone path; the constitution says email delivery is by Resend and sign-in is "magic-link for everyone", which still holds (a text link is a magic link) but whose Email line needs a text-delivery companion.
 - **Existing limits and rules are unchanged**: guests never create accounts themselves, sign-in never reveals who is on the guest list, the personal link closes on the wedding day, and the RSVP deadline never closes a link.
