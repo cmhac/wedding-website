@@ -16,9 +16,13 @@ export function parseTheme(value: unknown): Theme | null {
 }
 
 /** The browser's storage, or null where even asking for it is refused. */
-export function browserStorage(): ThemeStorage | null {
+export function browserStorage(
+  win: { localStorage?: ThemeStorage } | null = typeof window === "undefined"
+    ? null
+    : window,
+): ThemeStorage | null {
   try {
-    return typeof window === "undefined" ? null : window.localStorage;
+    return win?.localStorage ?? null;
   } catch {
     return null;
   }
