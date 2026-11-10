@@ -31,10 +31,10 @@ describe("GET /auth/callback", () => {
     expect(mockExchange).toHaveBeenCalledWith("abc");
   });
 
-  it("sends guests to the RSVP path, whatever the audience marker says", async () => {
+  it("sends guests to the home page, whatever the audience marker says", async () => {
     mockGetSession.mockResolvedValue({ kind: "guest" });
     const res = await get("audience=staff&code=abc");
-    expect(new URL(res.headers.get("location")!).pathname).toBe("/rsvp");
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/");
   });
 
   it("sends a missing code or a failed exchange to the failure path", async () => {

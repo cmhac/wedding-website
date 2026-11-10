@@ -160,18 +160,18 @@ The host must run Next.js server code on a supported Node version
 (`docs/decisions/0002-hosting.md`). Set these on the host; the server-only ones
 are never prefixed with `NEXT_PUBLIC_` and never exposed to the browser.
 
-| Variable                        | Visibility  | Notes                                           |
-| ------------------------------- | ----------- | ----------------------------------------------- |
-| `NEXT_PUBLIC_SITE_URL`          | public      | Production site URL                             |
-| `NEXT_PUBLIC_SUPABASE_URL`      | public      | Supabase project URL                            |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public      | Supabase anon key                               |
-| `SUPABASE_SERVICE_ROLE_KEY`     | server-only | Bypasses row-level security                     |
-| `RESEND_API_KEY`                | server-only |                                                 |
-| `EMAIL_FROM`                    | server-only | Address on the verified domain                  |
-| `SEND_EMAIL_HOOK_SECRET`        | server-only | Matches the Supabase Send Email hook secret     |
-| `RESEND_WEBHOOK_SECRET`         | server-only | Matches the Resend webhook signing secret       |
-| `CRON_SECRET`                   | server-only | Matches the `cron_secret` Vault secret          |
-| `GUEST_RSVP_PATH`               | public      | Path the guest frontend serves; default `/rsvp` |
+| Variable                        | Visibility  | Notes                                                                                                                                                    |
+| ------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`          | public      | Production site URL                                                                                                                                      |
+| `NEXT_PUBLIC_SUPABASE_URL`      | public      | Supabase project URL                                                                                                                                     |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public      | Supabase anon key                                                                                                                                        |
+| `SUPABASE_SERVICE_ROLE_KEY`     | server-only | Bypasses row-level security                                                                                                                              |
+| `RESEND_API_KEY`                | server-only |                                                                                                                                                          |
+| `EMAIL_FROM`                    | server-only | Address on the verified domain                                                                                                                           |
+| `SEND_EMAIL_HOOK_SECRET`        | server-only | Matches the Supabase Send Email hook secret                                                                                                              |
+| `RESEND_WEBHOOK_SECRET`         | server-only | Matches the Resend webhook signing secret                                                                                                                |
+| `CRON_SECRET`                   | server-only | Matches the `cron_secret` Vault secret                                                                                                                   |
+| `GUEST_RSVP_PATH`               | public      | Where signed-in guests land; default `/` (the placeholder homepage). Not set in production; set it to the RSVP path when the designer's RSVP page exists |
 
 ## Staff accounts
 

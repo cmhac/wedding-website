@@ -62,6 +62,15 @@ export type AdminShellProps = {
   children: ReactNode;
 };
 
+/** Opens the home page in a new tab, signed in as the same staff member. */
+function HomeLink() {
+  return (
+    <a href="/" target="_blank" rel="noopener" className="home-link">
+      View home page
+    </a>
+  );
+}
+
 function NavLinks({ current }: { current: NavKey }) {
   return (
     <>
@@ -109,6 +118,7 @@ export function AdminShell({
   return (
     <div className="app">
       <aside className="side">
+        <HomeLink />
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">
             W
@@ -136,6 +146,7 @@ export function AdminShell({
             Menu
           </summary>
           <nav className="m-drawer" aria-label="Main menu">
+            <HomeLink />
             <NavLinks current={current} />
             <Who staff={staff} signOutAction={signOutAction} />
           </nav>

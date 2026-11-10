@@ -12,6 +12,41 @@ function renderShell(current: Parameters<typeof AdminShell>[0]["current"]) {
   );
 }
 
+describe("AdminShell home page link", () => {
+  it("opens the home page in a new tab, safely", () => {
+    renderShell("overview");
+    const links = screen.getAllByRole("link", { name: "View home page" });
+    expect(links).toHaveLength(2); // the sidebar and the phone drawer
+    for (const link of links) {
+      expect(link).toHaveAttribute("href", "/");
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link.getAttribute("rel")).toContain("noopener");
+    }
+  });
+
+  it("is the very first item at the top of the sidebar", () => {
+    const { container } = renderShell("overview");
+    const side = container.querySelector("aside.side")!;
+    expect(side.firstElementChild).toHaveAttribute("href", "/");
+    expect(side.firstElementChild).toHaveTextContent("View home page");
+  });
+
+  it("is the first item in the phone drawer", () => {
+    renderShell("overview");
+    const drawer = screen.getByRole("navigation", { name: "Main menu" });
+    expect(drawer.firstElementChild).toHaveAttribute("href", "/");
+    expect(drawer.firstElementChild).toHaveTextContent("View home page");
+  });
+
+  it("is not part of the Main navigation list", () => {
+    renderShell("overview");
+    const nav = screen.getByRole("navigation", { name: "Main" });
+    expect(
+      within(nav).queryByRole("link", { name: "View home page" }),
+    ).toBeNull();
+  });
+});
+
 describe("AdminShell", () => {
   it("has a Main navigation with the grouped links", () => {
     renderShell("overview");
@@ -94,7 +129,8 @@ describe("AdminShell", () => {
       "aria-current",
       "page",
     );
-    expect(within(drawer).getAllByRole("link")).toHaveLength(9);
+    // The nine console links, plus the home page link at the top.
+    expect(within(drawer).getAllByRole("link")).toHaveLength(10);
   });
 
   it("puts the page content in main", () => {

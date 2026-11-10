@@ -16,6 +16,12 @@ describe("POST /api/guest/sign-out", () => {
     expect(res.status).toBe(204);
   });
 
+  it("ends only this device's session, so a household's other devices stay signed in", async () => {
+    mockSignOut.mockResolvedValue({ error: null });
+    await POST();
+    expect(mockSignOut).toHaveBeenCalledWith({ scope: "local" });
+  });
+
   it("answers 204 even when signing out throws", async () => {
     mockSignOut.mockRejectedValue(new Error("down"));
     expect((await POST()).status).toBe(204);

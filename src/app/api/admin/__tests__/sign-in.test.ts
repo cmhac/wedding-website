@@ -52,6 +52,16 @@ beforeEach(() => {
 });
 
 describe("POST /api/admin/sign-in", () => {
+  it("answers neutrally and asks Supabase for nothing for a household's internal address", async () => {
+    delete process.env.HOUSEHOLD_ACCOUNT_EMAIL_DOMAIN;
+    const res = await POST(
+      request({ email: "household-1@households.invalid" }),
+    );
+    expect(res.status).toBe(202);
+    expect(await res.json()).toEqual(NEUTRAL);
+    expect(mockSignInWithOtp).not.toHaveBeenCalled();
+  });
+
   it("asks Supabase for a staff-audience link without creating users", async () => {
     await POST(request({ email: "planner@example.com" }));
     expect(mockSignInWithOtp).toHaveBeenCalledWith({

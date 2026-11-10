@@ -22,11 +22,13 @@ const serverSchema = publicSchema.extend({
     .string()
     .min(1)
     .default("households.invalid"),
-  // A relative path served by the screen builders, used to build email links.
+  // A relative path where signed-in guests land (the placeholder homepage until
+  // the designer's RSVP page exists). Read directly by src/lib/auth/redirect.ts;
+  // when set, it is also the RSVP link in emails.
   GUEST_RSVP_PATH: z
     .string()
     .regex(/^\/(?!\/)[^\s]*$/, "must be a relative path")
-    .default("/rsvp"),
+    .default("/"),
 });
 
 export type PublicEnv = z.infer<typeof publicSchema>;

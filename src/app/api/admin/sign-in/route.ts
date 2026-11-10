@@ -2,6 +2,7 @@ import { z } from "zod";
 import { clientIp, createRateLimiter } from "@/lib/rate-limit";
 import { withMinimumDuration } from "@/lib/sign-in-timing";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { requestStaffLink } from "@/lib/auth/staff-sign-in";
 import { log } from "@/lib/log";
 import { errorResponse, validationError } from "@/lib/api-errors";
 
@@ -49,19 +50,11 @@ export async function POST(request: Request) {
   await withMinimumDuration(MIN_RESPONSE_MS, async () => {
     try {
       const supabase = await createServerSupabase();
-      const { error } = await supabase.auth.signInWithOtp({
-        email: parsed.data.email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?audience=staff`,
-        },
-      });
+      const outcome = await requestStaffLink(supabase, parsed.data.email);
       // Same answer for a known address, an unknown address, and an error,
       // so the response never reveals who has an account.
-      if (error) {
-        log.warn("admin_sign_in_failed", {
-          code: typeof error.code === "string" ? error.code : "unknown",
-        });
+      if (outcome !== "requested") {
+        log.warn("admin_sign_in_failed", { code: outcome });
       }
     } catch {
       log.warn("admin_sign_in_failed", { code: "exception" });

@@ -37,9 +37,9 @@ describe("GET /auth/callback", () => {
     expect(location(res)).toBe(`${SITE}/admin`);
   });
 
-  it("sends guests to /rsvp", async () => {
+  it("sends guests to the home page", async () => {
     mockGetSession.mockResolvedValue({ kind: "guest" });
-    expect(location(await call("?code=abc"))).toBe(`${SITE}/rsvp`);
+    expect(location(await call("?code=abc"))).toBe(`${SITE}/`);
   });
 
   it("uses GUEST_RSVP_PATH for guests when set", async () => {
@@ -78,6 +78,7 @@ describe("GET /auth/callback", () => {
     });
 
     it("honors an allowlisted path for guests", async () => {
+      process.env.GUEST_RSVP_PATH = "/rsvp";
       mockGetSession.mockResolvedValue({ kind: "guest" });
       expect(location(await call("?code=abc&next=/rsvp/meals"))).toBe(
         `${SITE}/rsvp/meals`,
@@ -86,9 +87,7 @@ describe("GET /auth/callback", () => {
 
     it("does not send guests into /admin", async () => {
       mockGetSession.mockResolvedValue({ kind: "guest" });
-      expect(location(await call("?code=abc&next=/admin"))).toBe(
-        `${SITE}/rsvp`,
-      );
+      expect(location(await call("?code=abc&next=/admin"))).toBe(`${SITE}/`);
     });
 
     it.each([
