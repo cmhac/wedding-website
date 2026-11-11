@@ -1,3 +1,4 @@
+import { LegalLinks } from "./LegalLinks";
 import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -12,6 +13,7 @@ export function Placeholder() {
         <ThemeToggle />
         <SignOutButton />
       </div>
+      <LegalLinks />
     </>
   );
 }

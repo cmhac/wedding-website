@@ -266,3 +266,21 @@ body {
   color: var(--text);
   text-underline-offset: 3px;
 }
+
+/* Small legal links at the foot of the home page, never over the centered line. */
+.legal-links {
+  position: fixed;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.legal-links a {
+  color: var(--muted);
+  text-underline-offset: 3px;
+}
+.legal-links a:hover {
+  color: var(--text);
+}

@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import type { FormEvent } from "react";
 import { createGuestApiClient } from "@/lib/guest-api/client";
 import { looksLikePhone } from "@/lib/sms/phone";
+import { LegalLinks } from "./LegalLinks";
 
 // Shown for every answer except "too many attempts" and "could not reach the
 // server", so the prompt never reveals whether an address is a guest or staff.
@@ -144,6 +145,7 @@ export function SignInPrompt({
           {smsAvailable ? "Send me a link" : "Email me a link"}
         </button>
       </form>
+      <LegalLinks />
     </main>
   );
 }

@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { SignInPrompt } from "../SignInPrompt";
 
 const BOTH =
@@ -46,13 +52,12 @@ describe("SignInPrompt with texting available", () => {
     expect(statement).toContain("about a dozen messages over six months");
     expect(statement).toContain("Msg & data rates may apply");
     expect(statement).toContain("Reply HELP for help, STOP to opt out");
-    expect(
-      screen.getByRole("link", { name: "Privacy Policy" }),
-    ).toHaveAttribute("href", "/privacy");
-    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute(
-      "href",
+    // The statement links to both pages (the foot links are separate).
+    const inStatement = within(box.closest("div")!).getAllByRole("link");
+    expect(inStatement.map((a) => a.getAttribute("href"))).toEqual([
+      "/privacy",
       "/terms",
-    );
+    ]);
   });
 
   it("cannot send a phone number until the box is ticked", async () => {
