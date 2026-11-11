@@ -23,7 +23,8 @@ insert into public.household_contacts (household_id, kind, value, created_at) va
 
 select tests.authenticate_as(:'user_a');
 select is(
-  public.get_my_contacts(),
+  (select jsonb_agg(jsonb_build_object('kind', e ->> 'kind', 'value', e ->> 'value'))
+     from jsonb_array_elements(public.get_my_contacts()) e),
   '[{"kind": "email", "value": "a1@example.test"}, {"kind": "email", "value": "a2@example.test"}]'::jsonb,
   'a guest gets their own household''s addresses, oldest first'
 );
