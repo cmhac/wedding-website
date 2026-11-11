@@ -6,7 +6,7 @@ import { requestStaffLink } from "@/lib/auth/staff-sign-in";
 import { log } from "@/lib/log";
 import { errorResponse, validationError } from "@/lib/api-errors";
 import { signInRequestSchema } from "@/lib/guest-api/schemas";
-import { readJson } from "@/lib/guest-api/request";
+import { callRpc, readJson } from "@/lib/guest-api/request";
 import { generateHouseholdTokenHash } from "@/lib/auth/household-session";
 import { timedLinkUrl } from "@/lib/auth/timed-link";
 import { addressHash, allowSignInAttempt } from "@/lib/auth/sign-in-limits";
@@ -118,13 +118,15 @@ async function sendPhoneLink(
   const allowed = await allowSignInAttempt(admin, addressHash(phone.e164));
   if (!allowed) return "limited";
 
-  const found = await admin.rpc("find_phone_contact", { value: phone.e164 });
+  const found = await callRpc(admin, "find_phone_contact", {
+    value: phone.e164,
+  });
   if (found.error) return "lookup_failed";
   const household = (found.data as { household_id?: string } | null)
     ?.household_id;
   if (!household) return "unknown";
 
-  const recorded = await admin.rpc("record_sms_consent_for_number", {
+  const recorded = await callRpc(admin, "record_sms_consent_for_number", {
     household_id: household,
     value: phone.e164,
   });

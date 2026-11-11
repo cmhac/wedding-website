@@ -10,6 +10,9 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
  * server code calls this and passes booleans down.
  */
 
+/** The environment settings the text feature reads (process.env fits). */
+export type EnvLike = Record<string, string | undefined>;
+
 export type SmsState = {
   configured: boolean;
   enabled: boolean;
@@ -29,7 +32,7 @@ function has(value: string | undefined): boolean {
 }
 
 /** Account, token, and either a messaging service or a from number. */
-export function isSmsConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isSmsConfigured(env: EnvLike = process.env): boolean {
   return (
     has(env.TWILIO_ACCOUNT_SID) &&
     has(env.TWILIO_AUTH_TOKEN) &&
@@ -43,7 +46,7 @@ export function isSmsConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
  */
 export async function getSmsState(
   db?: SettingsDb,
-  env: NodeJS.ProcessEnv = process.env,
+  env: EnvLike = process.env,
 ): Promise<SmsState> {
   if (!isSmsConfigured(env)) {
     return { configured: false, enabled: false, available: false };

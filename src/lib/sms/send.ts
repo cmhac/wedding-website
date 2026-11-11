@@ -1,5 +1,5 @@
 import "server-only";
-import { isSmsConfigured } from "./state";
+import { isSmsConfigured, type EnvLike } from "./state";
 import { parseUsPhone } from "./phone";
 import { getTwilioClient } from "./twilio";
 
@@ -31,7 +31,7 @@ export async function sendText(args: {
   body: string;
   statusCallback?: string;
   client?: TextClient;
-  env?: NodeJS.ProcessEnv;
+  env?: EnvLike;
 }): Promise<SendTextResult> {
   const env = args.env ?? process.env;
   if (!isSmsConfigured(env)) return { ok: false, code: "not_configured" };

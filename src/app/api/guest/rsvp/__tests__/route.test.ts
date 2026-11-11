@@ -1,5 +1,11 @@
 /** @jest-environment node */
+jest.mock("server-only", () => ({}), { virtual: true });
 import { AuthError } from "@/lib/auth/guards";
+
+const mockState = jest.fn();
+jest.mock("@/lib/sms/state", () => ({
+  getSmsState: (...a: unknown[]) => mockState(...a),
+}));
 
 const mockRpc = jest.fn();
 const mockRequireGuest = jest.fn();
@@ -35,6 +41,11 @@ beforeEach(() => {
   jest.clearAllMocks();
   contactRows = [];
   contactsError = null;
+  mockState.mockResolvedValue({
+    configured: false,
+    enabled: false,
+    available: false,
+  });
   mockRequireGuest.mockResolvedValue({ supabase: { rpc: mockRpc } });
   mockRpc.mockImplementation(async (fn: string) =>
     fn === "get_my_contacts"
@@ -79,6 +90,41 @@ describe("GET /api/guest/rsvp", () => {
       contacts: [],
       deadline_passed: false,
     });
+  });
+});
+
+describe("GET /api/guest/rsvp: phone contacts", () => {
+  const rows = [
+    { kind: "email", value: "ada.fake@example.test" },
+    { kind: "phone", value: "+12025550123" },
+  ];
+
+  it("lists numbers masked, only while texting is available", async () => {
+    mockState.mockResolvedValue({
+      configured: true,
+      enabled: true,
+      available: true,
+    });
+    contactRows = rows;
+    const body = await (await GET()).json();
+    expect(body.contacts).toEqual([
+      { kind: "email", masked: "a•••@example.test" },
+      { kind: "phone", masked: "(•••) •••-0123" },
+    ]);
+    expect(JSON.stringify(body)).not.toContain("2025550123");
+  });
+
+  it("leaves numbers out while texting is not available", async () => {
+    mockState.mockResolvedValue({
+      configured: false,
+      enabled: false,
+      available: false,
+    });
+    contactRows = rows;
+    const body = await (await GET()).json();
+    expect(body.contacts).toEqual([
+      { kind: "email", masked: "a•••@example.test" },
+    ]);
   });
 });
 

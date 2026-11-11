@@ -1,5 +1,6 @@
 import "server-only";
 import twilio from "twilio";
+import type { EnvLike } from "./state";
 
 /**
  * The only file that imports the Twilio package (research: The provider
@@ -7,7 +8,7 @@ import twilio from "twilio";
  * pass a fake and nothing else depends on the package.
  */
 
-export function getTwilioClient(env: NodeJS.ProcessEnv = process.env) {
+export function getTwilioClient(env: EnvLike = process.env) {
   const sid = env.TWILIO_ACCOUNT_SID;
   const token = env.TWILIO_AUTH_TOKEN;
   if (!sid || !token) throw new Error("Twilio is not configured");
@@ -23,7 +24,7 @@ export function isValidTwilioSignature(
   signature: string,
   url: string,
   params: Record<string, string>,
-  env: NodeJS.ProcessEnv = process.env,
+  env: EnvLike = process.env,
 ): boolean {
   const token = env.TWILIO_AUTH_TOKEN;
   if (!token || !signature) return false;

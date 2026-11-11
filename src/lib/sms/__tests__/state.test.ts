@@ -29,7 +29,7 @@ describe("isSmsConfigured", () => {
     ["no token", { ...full, TWILIO_AUTH_TOKEN: "" }],
     ["no account", { ...full, TWILIO_ACCOUNT_SID: "   " }],
   ])("is false with %s", (_name, env) => {
-    expect(isSmsConfigured(env as NodeJS.ProcessEnv)).toBe(false);
+    expect(isSmsConfigured(env)).toBe(false);
   });
 });
 

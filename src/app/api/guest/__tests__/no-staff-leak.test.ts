@@ -189,10 +189,17 @@ describe("guest route handlers are structurally limited", () => {
       "name_plus_one",
       "set_reminders_opt_out",
     ]);
+    // The sign-in route also uses two service-role functions to look a typed
+    // phone number up and record its opt-in; nothing else may.
+    const signInOnly = new Set([
+      "find_phone_contact",
+      "record_sms_consent_for_number",
+    ]);
     const called = new Set<string>();
     for (const file of routeFiles(root)) {
       const source = readFileSync(file, "utf8");
       for (const m of source.matchAll(/callRpc\(\s*[\w.]+,\s*"([a-z_]+)"/g)) {
+        if (isSignIn(file) && signInOnly.has(m[1])) continue;
         called.add(m[1]);
       }
     }

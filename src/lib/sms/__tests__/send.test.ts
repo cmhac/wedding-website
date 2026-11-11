@@ -6,7 +6,7 @@ const env = {
   TWILIO_ACCOUNT_SID: "ACtest",
   TWILIO_AUTH_TOKEN: "token",
   TWILIO_MESSAGING_SERVICE_SID: "MGtest",
-} as NodeJS.ProcessEnv;
+};
 
 function fakeClient(result: "ok" | { code: number }) {
   const create = jest.fn(async () => {
@@ -47,7 +47,7 @@ describe("sendText", () => {
         TWILIO_ACCOUNT_SID: "ACtest",
         TWILIO_AUTH_TOKEN: "token",
         TWILIO_FROM_NUMBER: "+15005550006",
-      } as NodeJS.ProcessEnv,
+      },
     });
     expect(create).toHaveBeenCalledWith({
       from: "+15005550006",
@@ -95,7 +95,7 @@ describe("sendText", () => {
         to: "+12025550123",
         body: "Hi",
         client,
-        env: {} as NodeJS.ProcessEnv,
+        env: {},
       }),
     ).toEqual({ ok: false, code: "not_configured" });
     expect(create).not.toHaveBeenCalled();

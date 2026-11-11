@@ -10,6 +10,8 @@ import type {
   RsvpResponse,
   RsvpSubmit,
   SignInRequest,
+  SmsConsentRequest,
+  SmsConsentState,
 } from "./schemas";
 
 export type ApiResult<T> =
@@ -65,6 +67,9 @@ export function createGuestApiClient(options: GuestApiOptions = {}) {
     signIn: (req: SignInRequest) =>
       call<{ message: string }>("/api/guest/sign-in", "POST", req),
     signOut: () => call<undefined>("/api/guest/sign-out", "POST"),
+    getSmsConsent: () => call<SmsConsentState>("/api/guest/sms-consent", "GET"),
+    answerSmsConsent: (req: SmsConsentRequest) =>
+      call<{ saved: number }>("/api/guest/sms-consent", "POST", req),
     getRsvp: () => call<RsvpResponse>("/api/guest/rsvp", "GET"),
     submitRsvp: (req: RsvpSubmit) =>
       call<RsvpResponse>("/api/guest/rsvp", "PUT", req),

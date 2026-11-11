@@ -23,18 +23,21 @@ All endpoints return JSON. Errors use one shape:
 
 `issues` appears only on `422`. Messages never contain other households' data or reveal whether an email is on the guest list.
 
-| Method and path            | Purpose                                                             | Success | Errors                                                                    |
-| -------------------------- | ------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- |
-| `GET /i/[token]`           | Open a household's personal invite link: sign in and go to the RSVP | 302     | 302 to the sign-in failure path                                           |
-| `GET /auth/confirm`        | Complete a typed-address sign-in link                               | 302     | 302 to the sign-in failure path                                           |
-| `POST /auth/confirm`       | Same, for a frontend "Continue" page (form-encoded fields)          | 302     | 302 to the sign-in failure path                                           |
-| `POST /api/guest/sign-in`  | Email a sign-in link to the address typed                           | 202     | 422 invalid email format, 429 rate limited                                |
-| `POST /api/guest/sign-out` | End the session                                                     | 204     | none                                                                      |
-| `GET /api/guest/rsvp`      | Read the household, guests, events, menus                           | 200     | 401 not signed in, 403 not a guest                                        |
-| `PUT /api/guest/rsvp`      | Save answers, meals, dietary needs, message                         | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
-| `POST /api/guest/plus-one` | Name a plus-one placeholder                                         | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
-| `POST /api/guest/opt-out`  | Turn reminder emails off or on                                      | 200     | 401, 403, 422                                                             |
-| `GET /auth/callback`       | Completes sign-in from the emailed link                             | 302     | 302 to the sign-in failure path                                           |
+| Method and path               | Purpose                                                               | Success | Errors                                                                    |
+| ----------------------------- | --------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `GET /i/[token]`              | Open a household's personal invite link: sign in and go to the RSVP   | 302     | 302 to the sign-in failure path                                           |
+| `GET /t/[token]`              | Open the sign-in link texted to a typed phone number (15 minutes)     | 302     | 302 to the sign-in failure path                                           |
+| `GET /auth/confirm`           | Complete a typed-address sign-in link                                 | 302     | 302 to the sign-in failure path                                           |
+| `POST /auth/confirm`          | Same, for a frontend "Continue" page (form-encoded fields)            | 302     | 302 to the sign-in failure path                                           |
+| `POST /api/guest/sign-in`     | Email (or, once texting is on, text) a sign-in link to what was typed | 202     | 422 invalid email format, 429 rate limited                                |
+| `POST /api/guest/sign-out`    | End the session                                                       | 204     | none                                                                      |
+| `GET /api/guest/rsvp`         | Read the household, guests, events, menus                             | 200     | 401 not signed in, 403 not a guest                                        |
+| `PUT /api/guest/rsvp`         | Save answers, meals, dietary needs, message                           | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
+| `POST /api/guest/plus-one`    | Name a plus-one placeholder                                           | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
+| `POST /api/guest/opt-out`     | Turn reminder emails off or on                                        | 200     | 401, 403, 422                                                             |
+| `GET /api/guest/sms-consent`  | The numbers still to ask about (empty while texting is off)           | 200     | 401, 403                                                                  |
+| `POST /api/guest/sms-consent` | Record the consent step's answers                                     | 200     | 401, 403, 409 `texting_unavailable`, 422                                  |
+| `GET /auth/callback`          | Completes sign-in from the emailed link                               | 302     | 302 to the sign-in failure path                                           |
 
 ## Sign-in
 
