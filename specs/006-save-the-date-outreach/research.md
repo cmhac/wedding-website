@@ -84,4 +84,4 @@ Decisions made while planning, each with its reason and the alternatives set asi
 
 ## R12. Import consent column
 
-**Decision**: each phone column may be followed by a "texting consent" column (header `phone_1_consent` and so on): yes, no or blank. A yes records consent "by import" through the service-role function, only from "not asked" unless the staff member ticks an override; an unrecognised value is a per-row, per-column error that skips the household, as other bad rows do.
+**Decision**: each phone column may be followed by a "texting consent" column (headers `contact_phone_consent`, `contact_phone_2_consent` and so on, matching the phone columns `contact_phone`, `contact_phone_2`): yes, no or blank. A yes records consent "by import" through the service-role function, only from "not asked" unless the staff member ticks an override; an unrecognised value is a per-row, per-column error that skips the household, as other bad rows do.

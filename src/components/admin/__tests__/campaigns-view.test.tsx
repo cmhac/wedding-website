@@ -665,3 +665,49 @@ describe("CampaignEditor when texting is configured but switched off", () => {
     expect(screen.queryByText(/switched off/)).toBeNull();
   });
 });
+
+describe("DeliveryView for a test campaign", () => {
+  const row = {
+    id: "m1",
+    householdId: "h1",
+    householdName: "The Examples",
+    address: "ada@example.test",
+    status: "delivered",
+    detail: "",
+    at: "Aug 2, 9:02 AM PT",
+  };
+
+  it("labels a test, saying it does not count as the real send", () => {
+    render(
+      <DeliveryView
+        delivery={{
+          campaign: {
+            id: ID,
+            name: "Test: save_the_date",
+            status: "done",
+            isTest: true,
+          },
+          counts: { delivered: 1 },
+          rows: [row],
+        }}
+      />,
+    );
+    expect(screen.getByText("Test")).toBeInTheDocument();
+    expect(
+      screen.getByText(/does not count as the real send/),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no test label for a real campaign", () => {
+    render(
+      <DeliveryView
+        delivery={{
+          campaign: { id: ID, name: "Save the date", status: "done" },
+          counts: { delivered: 1 },
+          rows: [row],
+        }}
+      />,
+    );
+    expect(screen.queryByText("Test")).toBeNull();
+  });
+});

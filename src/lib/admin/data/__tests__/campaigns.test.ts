@@ -239,6 +239,16 @@ describe("loadCampaign", () => {
   });
 });
 
+describe("loadDelivery test flag", () => {
+  it("reports a test campaign as a test", async () => {
+    const { fake, client } = db();
+    const campaign = fake.tables.campaigns.find((c) => c.id === CAMPAIGN_C)!;
+    campaign.is_test = true;
+    const delivery = await loadDelivery(CAMPAIGN_C, client);
+    expect(delivery!.campaign.isTest).toBe(true);
+  });
+});
+
 describe("loadDelivery", () => {
   it("returns one row per message with plain details and Pacific times", async () => {
     const { client } = db();

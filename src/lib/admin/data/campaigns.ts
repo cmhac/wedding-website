@@ -55,7 +55,13 @@ export type DeliveryRow = {
 };
 
 export type DeliveryData = {
-  campaign: { id: string; name: string; status: CampaignStatus };
+  campaign: {
+    id: string;
+    name: string;
+    status: CampaignStatus;
+    /** A rehearsal send to one household, not the real send. */
+    isTest?: boolean;
+  };
   rows: DeliveryRow[];
   counts: Record<string, number>;
 };
@@ -269,7 +275,7 @@ export async function loadDelivery(
   const client = await clientOr(supabase);
   const campaigns = await rowsOf(
     "campaigns",
-    client.from("campaigns").select("id, name, status").eq("id", id),
+    client.from("campaigns").select("id, name, status, is_test").eq("id", id),
   );
   const campaign = campaigns[0];
   if (!campaign) return null;
@@ -328,6 +334,7 @@ export async function loadDelivery(
       id: campaign.id as string,
       name: campaign.name as string,
       status: campaign.status as CampaignStatus,
+      ...(campaign.is_test === true ? { isTest: true } : {}),
     },
     rows,
     counts,
