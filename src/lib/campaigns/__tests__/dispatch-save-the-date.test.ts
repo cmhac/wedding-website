@@ -120,7 +120,9 @@ function setup(options: { typeKey: string; channel: string; templates?: Row }) {
       textSender,
       sleep: async () => {},
     });
-  return { db, textSender, emailSend, run };
+  const failDetails = () =>
+    db.failNext("get_save_the_date", { message: "boom" });
+  return { db, textSender, emailSend, run, failDetails };
 }
 
 beforeEach(() => {
@@ -173,6 +175,19 @@ describe("a save the date campaign", () => {
     expect(db.tables.messages).toHaveLength(0);
     expect(textSender).not.toHaveBeenCalled();
     expect(DispatchError).toBeDefined();
+  });
+
+  it("sends no email when the card's facts cannot be read, rather than sending one with no date", async () => {
+    const { db, emailSend, run, failDetails } = setup({
+      typeKey: "save_the_date",
+      channel: "email",
+    });
+    failDetails();
+    await expect(run()).rejects.toThrow(
+      expect.objectContaining({ code: "server_error" }),
+    );
+    expect(emailSend).not.toHaveBeenCalled();
+    expect(db.tables.messages.every((m) => m.status !== "sent")).toBe(true);
   });
 
   it("sends by text alone without needing an email template", async () => {

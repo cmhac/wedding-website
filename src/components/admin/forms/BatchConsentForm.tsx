@@ -10,6 +10,9 @@ import { Alert, Field } from "../primitives";
 /** The id the table's row checkboxes point at with their `form` attribute. */
 export const BATCH_FORM_ID = "batch-consent";
 
+/** The most households one batch may cover (the route's limit). */
+const MAX_BATCH = 1000;
+
 type Counts = {
   marked: number;
   cleared: number;
@@ -56,6 +59,12 @@ export function BatchConsentForm({ matchingIds }: { matchingIds: string[] }) {
     const ids = chosenIds();
     if (ids.length === 0) {
       setError("Choose at least one household.");
+      return;
+    }
+    if (ids.length > MAX_BATCH) {
+      setError(
+        `A batch can cover ${MAX_BATCH} households at most. Narrow the filter or choose fewer.`,
+      );
       return;
     }
     setPending(true);

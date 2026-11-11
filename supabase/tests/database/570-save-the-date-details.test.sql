@@ -34,6 +34,11 @@ update public.settings set couple_names = 'Chris & Hannah';
 select is((select save_the_date_revision from public.settings), 2, 'changing something else does not');
 update public.settings set wedding_event_id = 'eeeeeeee-0000-0000-0000-000000000001';
 select is((select save_the_date_revision from public.settings), 3, 'changing the wedding event raises it');
+update public.events set starts_at = '2027-09-19 19:30:00+00' where id = 'eeeeeeee-0000-0000-0000-000000000001';
+select is((select save_the_date_revision from public.settings), 4, 'moving the wedding event''s own date raises it too');
+update public.events set name = 'Wedding day' where id = 'eeeeeeee-0000-0000-0000-000000000001';
+select is((select save_the_date_revision from public.settings), 4, 'but renaming the event does not');
+update public.events set starts_at = '2027-09-18 19:30:00+00' where id = 'eeeeeeee-0000-0000-0000-000000000001';
 select throws_ok(
   $$update public.settings set save_the_date_place = repeat('x', 201)$$,
   '23514', null, 'a place line over 200 characters is refused'
@@ -46,7 +51,7 @@ select is(
   'a guest gets the wedding date as a calendar date in the couple''s time zone'
 );
 select is(public.get_save_the_date() ->> 'place', 'Napa Valley, California', 'and the place line');
-select is((public.get_save_the_date() ->> 'revision')::int, 3, 'and the revision');
+select is((public.get_save_the_date() ->> 'revision')::int, 5, 'and the revision');
 select tests.clear_auth();
 select tests.authenticate_as(:'couple_user');
 select is(public.get_save_the_date() ->> 'couple_names', 'Chris & Hannah', 'staff can read it too');

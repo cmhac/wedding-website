@@ -93,6 +93,13 @@ function setup(options: {
       messages: [],
     },
     {
+      get_save_the_date: () => ({
+        couple_names: "Chris & Hannah",
+        date: "2027-09-18",
+        place: null,
+        note: null,
+        revision: 1,
+      }),
       resolve_audience: () =>
         hids.map((id) => {
           const hasEmail = db.tables.household_contacts.some(

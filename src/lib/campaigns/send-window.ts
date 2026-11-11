@@ -38,19 +38,16 @@ const GSM7_EXTENDED = "^{}\\[~]|€";
 
 /** How many text segments a message takes (160 or 153 standard; 70 or 67 Unicode). */
 export function textSegments(body: string): number {
-  let units = 0;
-  let unicode = false;
-  for (const char of body) {
-    if (GSM7.includes(char)) units += 1;
-    else if (GSM7_EXTENDED.includes(char)) units += 2;
-    else {
-      unicode = true;
-      // A character outside the basic plane takes two Unicode units.
-      units += char.length;
-    }
+  const chars = [...body];
+  const standard = chars.every(
+    (c) => GSM7.includes(c) || GSM7_EXTENDED.includes(c),
+  );
+  if (standard) {
+    // The extended set takes two units each.
+    const units = chars.reduce((n, c) => n + (GSM7.includes(c) ? 1 : 2), 0);
+    return units <= 160 ? 1 : Math.ceil(units / 153);
   }
-  if (!unicode) return units <= 160 ? 1 : Math.ceil(units / 153);
-  // Re-count in Unicode units: every character is one (two beyond the basic plane).
-  const unicodeUnits = [...body].reduce((n, c) => n + c.length, 0);
-  return unicodeUnits <= 70 ? 1 : Math.ceil(unicodeUnits / 67);
+  // Unicode: one unit per character, two beyond the basic plane (c.length).
+  const units = chars.reduce((n, c) => n + c.length, 0);
+  return units <= 70 ? 1 : Math.ceil(units / 67);
 }

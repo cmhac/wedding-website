@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../types/database.ts";
+import { callRpc } from "../guest-api/request.ts";
 import { createHouseholdAuthUser } from "./household-access.ts";
 import { parseGuestImport, type ImportError } from "./import.ts";
 
@@ -149,25 +150,14 @@ export async function runGuestImport(
       continue;
     }
     for (const value of phones) {
-      const { error } = await (
-        admin as unknown as {
-          rpc: (
-            fn: string,
-            args: Record<string, unknown>,
-          ) => PromiseLike<{ error: { message?: string } | null }>;
-        }
-      ).rpc("add_phone_contact", { household_id: id, value });
+      const { error } = await callRpc(admin, "add_phone_contact", {
+        household_id: id,
+        value,
+      });
       if (!error) {
         phonesSaved++;
         if ((household.consented_phones ?? []).includes(value)) {
-          const marked = await (
-            admin as unknown as {
-              rpc: (
-                fn: string,
-                args: Record<string, unknown>,
-              ) => PromiseLike<{ error: { message?: string } | null }>;
-            }
-          ).rpc("import_phone_consent", {
+          const marked = await callRpc(admin, "import_phone_consent", {
             household_id: id,
             value,
             marked_by: options.importedBy ?? null,

@@ -1,6 +1,6 @@
 import { destinationFor, withDestination } from "@/lib/auth/destination";
 import { getText, type TextRegistry } from "@/lib/sms/texts";
-import { TEXT_INTERVAL_MS } from "./dispatch";
+import { TEXT_INTERVAL_MS } from "./pacing";
 import { textSegments } from "./send-window";
 
 /**

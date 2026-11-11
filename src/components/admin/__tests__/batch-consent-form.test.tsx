@@ -173,3 +173,18 @@ describe("BatchConsentForm", () => {
     expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument();
   });
 });
+
+describe("BatchConsentForm size limit", () => {
+  it("says so plainly when more than 1000 households would be covered, sending nothing", async () => {
+    const many = Array.from({ length: 1001 }, (_, i) => `h${i}`);
+    render(<BatchConsentForm matchingIds={many} />);
+    fireEvent.change(screen.getByLabelText("Households"), {
+      target: { value: "all" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Review" }));
+    expect(
+      await screen.findByText(/1000 households at most/i),
+    ).toBeInTheDocument();
+    expect(mockBatch).not.toHaveBeenCalled();
+  });
+});

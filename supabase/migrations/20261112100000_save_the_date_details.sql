@@ -34,6 +34,31 @@ create trigger settings_b_bump_save_the_date_revision
   before update on public.settings
   for each row execute function private.settings_bump_save_the_date_revision();
 
+-- Moving the wedding event's own date is a change to the card too: raise the
+-- revision so the calendar file's SEQUENCE follows and programs that match on
+-- its identity replace the earlier entry.
+create function private.events_bump_save_the_date_revision()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.settings
+     set save_the_date_revision = save_the_date_revision + 1
+   where wedding_event_id = new.id;
+  return new;
+end;
+$$;
+
+revoke execute on function private.events_bump_save_the_date_revision() from public;
+
+create trigger events_bump_save_the_date_revision
+  after update of starts_at on public.events
+  for each row
+  when (new.starts_at is distinct from old.starts_at)
+  execute function private.events_bump_save_the_date_revision();
+
 -- get_save_the_date(): the card's facts for any signed-in guest or staff
 -- member, and for the sender (service role). Guests cannot read `settings`, so this is the one way they get it.
 -- Nothing about any household is returned.

@@ -7,6 +7,8 @@ import {
 } from "@/lib/email/templates";
 import { shapeSaveTheDate, type SaveTheDate } from "@/lib/calendar/details";
 import { log } from "@/lib/log";
+import { TEXT_INTERVAL_MS } from "./pacing";
+import { sendGate } from "./send-gate";
 import { getText, renderText, type TextRegistry } from "@/lib/sms/texts";
 import { statusCallbackUrl } from "@/lib/sms/urls";
 import type { SendTextResult } from "@/lib/sms/send";
@@ -38,6 +40,8 @@ export type DispatchErrorCode =
   | "campaign_not_sendable"
   | "template_missing"
   | "invalid_audience"
+  /** A real save the date held back by a hard gap in the readiness list. */
+  | "not_ready"
   | "server_error";
 
 export class DispatchError extends Error {
@@ -106,7 +110,6 @@ type ClaimedMessage = {
 };
 
 type Channel = "email" | "text" | "both";
-export const TEXT_INTERVAL_MS = 2000;
 const TEXT_BUDGET_MS = 45_000;
 
 const realSleep = (ms: number) =>
@@ -215,7 +218,11 @@ export async function sendCampaign(
   };
   // A save the date email is given the card's facts, read once for the run.
   if (wantsEmail && campaign.message_type_key === "save_the_date") {
-    const { data: details } = await db.rpc("get_save_the_date");
+    const { data: details, error: detailsError } =
+      await db.rpc("get_save_the_date");
+    // Never send a save the date with the card's facts missing: stop here, and
+    // the scheduled run resumes the campaign once they can be read.
+    if (detailsError) fail();
     env.saveTheDate = shapeSaveTheDate(details, env.siteUrl);
   }
 
@@ -693,6 +700,20 @@ export async function dispatchDueCampaigns(
   for (const id of dueIds) {
     const due = { id };
     try {
+      // A real save the date is held back by a hard gap, scheduled or not.
+      const blocked = await sendGate(db, due.id);
+      if (blocked) {
+        log.error("scheduled_campaign_failed", {
+          campaign_id: due.id,
+          code: "not_ready",
+        });
+        await db
+          .from("campaigns")
+          .update({ last_error_code: "not_ready" })
+          .eq("id", due.id);
+        outcomes.push({ campaign_id: due.id, ok: false, code: "not_ready" });
+        continue;
+      }
       const result = await sendCampaign(db, due.id, options);
       outcomes.push({ campaign_id: due.id, ok: true, result });
     } catch (e) {

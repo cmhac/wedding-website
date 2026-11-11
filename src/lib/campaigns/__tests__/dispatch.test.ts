@@ -89,6 +89,13 @@ function setup(
       messages: [],
     },
     {
+      get_save_the_date: () => ({
+        couple_names: "Chris & Hannah",
+        date: "2027-09-18",
+        place: null,
+        note: null,
+        revision: 1,
+      }),
       resolve_audience: () =>
         options.rpcRows ??
         households.map((h) => {
@@ -495,6 +502,12 @@ describe("sendCampaign", () => {
   });
 });
 
+const mockGate = jest.fn();
+jest.mock("../send-gate", () => ({
+  sendGate: (...a: unknown[]) => mockGate(...a),
+}));
+beforeEach(() => mockGate.mockResolvedValue(null));
+
 describe("dispatchDueCampaigns", () => {
   const dueOptions = (send: jest.Mock) => ({
     templates,
@@ -510,6 +523,23 @@ describe("dispatchDueCampaigns", () => {
     ]);
     expect(db.tables.campaigns[0].status).toBe("done");
     expect(db.tables.settings[0].last_dispatch_at).toEqual(expect.any(String));
+  });
+
+  it("holds back a scheduled campaign with a hard gap, recording why, and still runs the others", async () => {
+    const { db, send } = setup({ campaign: { status: "scheduled" } });
+    mockGate.mockResolvedValue({
+      key: "date",
+      label: "Wedding date",
+      status: "blocked",
+      detail: "The wedding date is not set.",
+    });
+    const out = await dispatchDueCampaigns(db, dueOptions(send));
+    expect(out.campaigns).toEqual([
+      { campaign_id: CAMPAIGN, ok: false, code: "not_ready" },
+    ]);
+    expect(send).not.toHaveBeenCalled();
+    expect(db.tables.campaigns[0].status).toBe("scheduled");
+    expect(db.tables.campaigns[0].last_error_code).toBe("not_ready");
   });
 
   it("does nothing, apart from the timestamp, when none are due", async () => {

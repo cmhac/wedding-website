@@ -36,6 +36,11 @@ describe("shapeSaveTheDate", () => {
     expect(shaped.calendar?.outlook).toContain("outlook.live.com");
   });
 
+  it("has no calendar while the site address is not set, rather than an entry with an empty address", () => {
+    expect(shapeSaveTheDate(raw, "").calendar).toBeNull();
+    expect(shapeSaveTheDate(raw, "  ").calendar).toBeNull();
+  });
+
   it("has no calendar when the date is not set", () => {
     const shaped = shapeSaveTheDate({ ...raw, date: null }, SITE);
     expect(shaped.date).toBeNull();

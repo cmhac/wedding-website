@@ -63,7 +63,8 @@ export function entryFor(
   >,
   siteUrl: string,
 ): CalendarEntry | null {
-  if (!details.date) return null;
+  // No date, or no site address to put in the entry: no entry rather than a wrong or empty one.
+  if (!details.date || siteUrl.trim() === "") return null;
   return {
     date: details.date,
     title: eventTitle(details.couple_names),

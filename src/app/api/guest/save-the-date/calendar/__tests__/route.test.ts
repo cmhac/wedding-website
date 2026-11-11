@@ -55,6 +55,11 @@ describe("GET /api/guest/save-the-date/calendar", () => {
     expect((await res.json()).error.code).toBe("not_ready");
   });
 
+  it("is 409 not_ready when the site address is not set", async () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "";
+    expect((await GET()).status).toBe(409);
+  });
+
   it("is 401 when not signed in and 403 when neither guest nor staff", async () => {
     mockRequireSignedIn.mockRejectedValue(
       new AuthError(401, "unauthenticated"),

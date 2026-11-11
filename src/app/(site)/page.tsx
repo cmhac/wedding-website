@@ -1,6 +1,6 @@
 import { Home } from "@/components/site/Home";
 import { getSession } from "@/lib/auth/session";
-import { callRpc } from "@/lib/guest-api/request";
+import { recordHouseholdOpened } from "@/lib/site/opened";
 import { getConsentPrompt } from "@/lib/sms/consent";
 import { getSmsState, type SmsState } from "@/lib/sms/state";
 
@@ -30,13 +30,7 @@ export default async function HomePage() {
   const state = await readSmsState();
   const available = state.available;
   // A guest's first load records that their household has opened the site.
-  if (session?.kind === "guest") {
-    try {
-      await callRpc(session.supabase, "record_household_opened");
-    } catch {
-      // Recording an open never breaks the page.
-    }
-  }
+  if (session) await recordHouseholdOpened(session);
   // Only a signed-in guest is asked, and only while texting is available.
   let consent: { id: string; masked: string }[] = [];
   if (session?.kind === "guest" && available) {
