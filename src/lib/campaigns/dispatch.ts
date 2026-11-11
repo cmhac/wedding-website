@@ -106,7 +106,7 @@ type ClaimedMessage = {
 };
 
 type Channel = "email" | "text" | "both";
-const TEXT_INTERVAL_MS = 2000;
+export const TEXT_INTERVAL_MS = 2000;
 const TEXT_BUDGET_MS = 45_000;
 
 const realSleep = (ms: number) =>

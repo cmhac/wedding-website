@@ -9,12 +9,18 @@ const timed = `${SITE}/t/${"A".repeat(22)}.1abcde.${"b".repeat(22)}`;
 const props = {
   sms_sign_in: { sign_in_url: timed },
   sms_confirmation: {},
-  save_the_date: { personal_link: link },
+  save_the_date: { personal_link: `${link}?next=/save-the-date` },
   invitation: { personal_link: link },
   rsvp_reminder: { personal_link: link, respond_by: "Sep 1" },
   update: { personal_link: link },
   optional_events_reminder: { personal_link: link },
 } as const;
+
+// The most characters each text may have. Every text is one segment (160 of the
+// standard alphabet) except the save the date, which carries a greeting, the
+// required disclosures and a longer link, and may take two joined segments of
+// 153 (spec FR-021).
+const MAX_LENGTH: Record<string, number> = { save_the_date: 306 };
 
 // The standard text alphabet (GSM-7): one segment holds 160 of these.
 const GSM7 =
@@ -49,8 +55,8 @@ describe.each(Object.keys(props) as (keyof typeof props)[])(
   (key) => {
     const text = renderText(key, props[key] as never);
 
-    it("is one segment: at most 160 characters of the standard alphabet", () => {
-      expect(text.length).toBeLessThanOrEqual(160);
+    it("is within its segment limit, in the standard alphabet", () => {
+      expect(text.length).toBeLessThanOrEqual(MAX_LENGTH[key] ?? 160);
       expect(GSM7.test(text)).toBe(true);
     });
 
@@ -73,6 +79,17 @@ describe("what each text must contain", () => {
     const t = renderText("sms_sign_in", props.sms_sign_in);
     expect(t).toContain(timed);
     expect(t).toMatch(/expires/i);
+  });
+
+  it("the save the date reads as from the couple, with the link and the required disclosures", () => {
+    const t = renderText("save_the_date", props.save_the_date);
+    expect(t).toMatch(/^Hi, it's Chris & Hannah!/);
+    expect(t).toMatch(/save the date/i);
+    expect(t).toContain(`${link}?next=/save-the-date`);
+    expect(t).toContain("Msg&data rates may apply");
+    expect(t).toContain("Reply HELP for help");
+    expect(t).toContain("STOP to opt out");
+    expect(t).not.toMatch(/bit\.ly|tinyurl|goo\.gl/i);
   });
 
   it("the confirmation has the required disclosures", () => {

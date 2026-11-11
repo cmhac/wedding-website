@@ -25,6 +25,7 @@ import {
 } from "@/lib/admin/data/campaigns";
 import { messageFor } from "@/lib/admin/messages";
 import { isForbidden, requireStaffPage } from "@/lib/admin/session";
+import { textSendWarning } from "@/lib/campaigns/send-window";
 import { getSmsState } from "@/lib/sms/state";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -139,6 +140,11 @@ export default async function CampaignsPage({
             campaignId={campaign.id}
             backHref={editHref}
             startConfirmed={confirm === "send"}
+            textWarning={
+              sms.configured && campaign && campaign.channel !== "email"
+                ? textSendWarning(new Date())
+                : null
+            }
           />
         ) : null}
       </div>

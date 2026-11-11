@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { MESSAGE_TYPE_KEYS, type Audience } from "@/lib/campaigns/audience";
+import { textSendWarning } from "@/lib/campaigns/send-window";
+import { previewTextCost } from "@/lib/campaigns/text-cost";
 import { getSmsState, isSmsConfigured } from "@/lib/sms/state";
 import { audienceFromForm } from "../audience-form";
 import { formatPacific, pacificLocalToIso } from "../time";
@@ -19,8 +21,19 @@ export type PreviewData = {
   /** `addresses` is how many emails the household will get (one per address). */
   willSend: { householdId: string; name: string; addresses: number }[];
   skipped: { householdId: string; name: string; reason: string }[];
+  /** Households this campaign cannot reach: no email and no opted-in number (post only). */
+  unreachable?: number;
+  /** A warning when a text would go out outside texting hours; never blocks the send. */
+  sendWarning?: string | null;
   /** Present only for a text or both campaign while texting is configured. */
   texts?: {
+    /** Numbers whose consent was recorded by staff or the import rather than the guest. */
+    preConsented?: number;
+    /** Segments one text takes, and the totals for this send; null when the type has no text. */
+    segmentsPerText?: number | null;
+    totalSegments?: number | null;
+    /** Minutes to send every text at the dispatcher's pace. */
+    minutes?: number | null;
     /** True when texting is configured but switched off: every text will be skipped. */
     switchedOff: boolean;
     /** `texts` is how many texts the household will get (one per opted-in number). */
@@ -58,6 +71,7 @@ const previewSchema = z
   .looseObject({
     message_type_key: z.enum(MESSAGE_TYPE_KEYS, TYPE_MESSAGE),
     channel: z.enum(["email", "text", "both"]).optional(),
+    scheduled_for: z.string().trim().optional(),
   })
   .transform((value, ctx) => {
     const box = withAudience(value, ctx);
@@ -67,6 +81,7 @@ const previewSchema = z
           messageType: value.message_type_key,
           audience: box.audience,
           channel: value.channel,
+          scheduledFor: value.scheduled_for,
         };
   });
 
@@ -167,7 +182,12 @@ export async function previewAudience(
             counts.set(c.household_id, (counts.get(c.household_id) ?? 0) + 1);
           }
         }
-        const preview: PreviewData = { willSend: [], skipped: [] };
+        const preview: PreviewData = {
+          willSend: [],
+          skipped: [],
+          unreachable: 0,
+          sendWarning: null,
+        };
         for (const row of rows) {
           if (row.deliverable) {
             preview.willSend.push({
@@ -191,10 +211,11 @@ export async function previewAudience(
             (r) => r.deliverable || r.skip_reason === "no_email",
           );
           const phones = new Map<string, string[]>();
+          let preConsented = 0;
           if (eligible.length > 0) {
             const found = await supabase
               .from("household_contacts")
-              .select("household_id, sms_consent")
+              .select("household_id, sms_consent, sms_consent_source")
               .eq("kind", "phone")
               .in(
                 "household_id",
@@ -204,14 +225,26 @@ export async function previewAudience(
             for (const p of (found.data ?? []) as {
               household_id: string;
               sms_consent: string;
+              sms_consent_source: string | null;
             }[]) {
               const list = phones.get(p.household_id) ?? [];
               list.push(p.sms_consent);
               phones.set(p.household_id, list);
+              if (
+                p.sms_consent === "opted_in" &&
+                (p.sms_consent_source === "staff" ||
+                  p.sms_consent_source === "import")
+              ) {
+                preConsented++;
+              }
             }
           }
           const texts: NonNullable<PreviewData["texts"]> = {
             switchedOff: !state.enabled,
+            preConsented,
+            segmentsPerText: null,
+            totalSegments: null,
+            minutes: null,
             willText: [],
             notTexted: [],
           };
@@ -241,7 +274,36 @@ export async function previewAudience(
               });
             }
           }
+          const total = texts.willText.reduce((n, r) => n + r.texts, 0);
+          const cost = previewTextCost(
+            input.messageType,
+            total,
+            process.env.NEXT_PUBLIC_SITE_URL ?? "",
+          );
+          if (cost) {
+            texts.segmentsPerText = cost.segmentsPerText;
+            texts.totalSegments = cost.totalSegments;
+            texts.minutes = cost.minutes;
+          }
           preview.texts = texts;
+          // Households reached by neither channel: no email and no opted-in number.
+          preview.unreachable = rows.filter(
+            (r) =>
+              r.skip_reason === "no_email" &&
+              !(phones.get(r.household_id) ?? []).includes("opted_in"),
+          ).length;
+        } else {
+          preview.unreachable = rows.filter(
+            (r) => r.skip_reason === "no_email",
+          ).length;
+        }
+        if (input.channel && input.channel !== "email") {
+          const scheduled = pacificLocalToIso(input.scheduledFor ?? "");
+          const when =
+            typeof scheduled === "string"
+              ? new Date(scheduled)
+              : (options.now ?? new Date());
+          preview.sendWarning = textSendWarning(when);
         }
         return { data: preview };
       },

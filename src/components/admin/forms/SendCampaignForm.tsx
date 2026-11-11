@@ -16,6 +16,8 @@ export type SendCampaignFormProps = {
   recipientCount?: number;
   /** Open at the confirm step (the page was reached with confirm=send). */
   startConfirmed?: boolean;
+  /** A warning about texting hours for a send now; shown at the confirm step, never blocks. */
+  textWarning?: string | null;
 };
 
 type Outcome =
@@ -26,6 +28,7 @@ export function SendCampaignForm({
   backHref,
   recipientCount,
   startConfirmed = false,
+  textWarning = null,
 }: SendCampaignFormProps) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(startConfirmed);
@@ -68,6 +71,9 @@ export function SendCampaignForm({
     <div className="stack-sm">
       {outcome?.kind === "refused" ? (
         <Alert variant="error">{outcome.text}</Alert>
+      ) : null}
+      {confirming && textWarning ? (
+        <Alert variant="warn">{textWarning}</Alert>
       ) : null}
       {confirming ? (
         // The panel's Cancel is a link; leaving it should also close the step.
