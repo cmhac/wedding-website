@@ -31,18 +31,16 @@ export function PrivacyPolicy() {
 
       <h2>How we use it</h2>
       <p>
-        We use it only to plan and run our wedding: to send your invitation by
-        email, to send RSVP reminders, sign-in links and essential wedding
-        updates by email or, if you opt in, by text message, to record your
-        RSVP, and to arrange food, seating and logistics with our venue and
-        caterers.
+        We use it only to plan and run our wedding: to send you messages about
+        it by email or, if you opt in, by text message, to record your RSVP, and
+        to arrange food, seating and logistics with our venue and caterers.
       </p>
 
       <h2>Text messages</h2>
       <p>
-        We send your first invitation by email. We text a mobile number only
-        after you opt in by ticking a box on this site, and only about the
-        wedding. We do not use your number for marketing.{" "}
+        We text a mobile number only after you opt in by ticking a box on this
+        site, and only about the wedding. We do not use your number for
+        marketing.{" "}
         <strong>
           We do not sell or share your SMS opt-in data or personal information
           with third parties for marketing purposes.

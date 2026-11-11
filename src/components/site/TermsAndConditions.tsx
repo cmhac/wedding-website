@@ -28,10 +28,8 @@ export function TermsAndConditions() {
       <h2>SMS terms: {SITE_NAME} Texts</h2>
       <p>
         <strong>Program description.</strong> If you opt in, we send text
-        messages to your mobile number about our wedding: RSVP reminders with a
-        personal link to the site, essential logistics updates, and sign-in
-        links when you ask for one. We send your first invitation by email, not
-        text. We do not send marketing or promotional messages.
+        messages to your mobile number about our wedding. We do not send
+        marketing or promotional messages.
       </p>
       <p>
         <strong>Message frequency.</strong> About a dozen messages per number in

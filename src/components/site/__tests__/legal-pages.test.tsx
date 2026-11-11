@@ -29,8 +29,8 @@ describe("PrivacyPolicy", () => {
     expect(text()).toMatch(/RSVP answers, meal choices and dietary needs/);
   });
 
-  it("says texts go only to numbers that opted in, and first contact is by email", () => {
-    expect(text()).toMatch(/first invitation by email/);
+  it("says texts go only to numbers that opted in", () => {
+    expect(text()).not.toMatch(/invitation/);
     expect(text()).toMatch(/only after you opt in by ticking a box/);
   });
 
@@ -72,9 +72,7 @@ describe("TermsAndConditions", () => {
     expect(
       screen.getByRole("heading", { name: /SMS terms/ }),
     ).toBeInTheDocument();
-    expect(text()).toMatch(/RSVP reminders/);
-    expect(text()).toMatch(/essential logistics updates/);
-    expect(text()).toMatch(/first invitation by email, not text/);
+    expect(text()).not.toMatch(/RSVP reminders|logistics updates|invitation/);
     expect(text()).toMatch(/About a dozen messages per number/);
     expect(text()).toMatch(/Message and data rates may apply/);
     expect(text()).toMatch(/Agreeing is optional/);
