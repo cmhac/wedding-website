@@ -224,6 +224,37 @@ set. Sign-in and every email work meanwhile. Do these in order. The design is in
 To test without sending anything, use Twilio's test credentials with the magic
 sender `+15005550006` (it returns a fake message id and delivers nothing).
 
+## The save the date outreach
+
+1. **Consent collected outside the site.** If you mark numbers as consented (one
+   at a time, in a batch, or with the import's consent column), the carrier
+   registration's description of how people opt in has to cover how that consent
+   was really collected, and you should keep your own copy of the evidence (the
+   note field on each mark is for pointing at it). Twilio accepts several routes
+   (a consent form on a website or app, a signed paper document, a text keyword,
+   or a verbal opt-in with a detailed script) and says consent applies per
+   campaign. The privacy and terms pages are locked and describe only the
+   on-site tick, so decide how to reconcile them before the first text goes out
+   (see decision 0015).
+2. **Confirm the email sending domain is verified** at Resend. The readiness
+   list can only see that the key and sending address are set, not that the
+   domain is verified.
+3. **Close the RSVP** in Settings until invitations go out, unless you want
+   guests who open the save the date to be able to answer.
+4. **Register the save the date email.** The wording and design come from the
+   couple or the designer and go in `emails/index.ts` under `save_the_date`;
+   until then a campaign that includes email is refused, and a text-only send
+   works.
+5. **Rehearse.** On a save the date campaign, use "Send a test" for your own
+   household, open the links on a phone, and add the date to Google Calendar,
+   Outlook and Apple Calendar (the steps are in
+   `specs/006-save-the-date-outreach/quickstart.md`). Whether Apple Calendar
+   and Outlook replace an earlier entry when you re-download the file after a
+   change is not documented by either, so try it.
+6. **Schedule the send** for the day the cards are posted, between 11 a.m. and
+   9 p.m. Eastern so every guest in the continental United States gets a text
+   inside 8 a.m. to 9 p.m. their time (the console warns otherwise).
+
 ## Staff accounts
 
 Create the first couple account with `scripts/create-staff-user.ts` (see the

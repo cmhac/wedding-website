@@ -12,6 +12,6 @@ Published in `docs/admin-api.md` once built. Staff only (the couple and the plan
 | Audience filter `not_opened: true`                                | New campaign audience filter, combined with the existing ones.                                                                                                                       |
 | Campaign `is_test`                                                | A test campaign (single-household audience). Excluded from `not_yet_sent_message_type`.                                                                                              |
 
-Import gains optional columns `phone_N_consent` (yes, no or blank) beside each phone column.
+Import gains optional columns `contact_phone_consent`, `contact_phone_2_consent`, ... (yes, no or blank) beside each phone column.
 
 Console changes (no separate API): household list checkboxes and batch bar; consent state and mark buttons on a household's numbers; "opened" column; save the date details form; readiness list, send-window warning, segment count and "send a test" on a campaign.
