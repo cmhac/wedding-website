@@ -135,3 +135,12 @@
 - **MVP**: Phase 1, Phase 2 and US1 plus US2 give a guest who taps a save the date link a signed-in page with calendar buttons.
 - **First outreach ready**: add US3 (consent) and US4 (send). Then US5 and US6 for safe rehearsal, then US7 for follow-up.
 - Commit after each phase; push at the end of each phase with `git push -u origin claude/sleepy-wright-u85php`.
+
+## Phase 11: Convergence
+
+- [ ] T053 Regenerate `src/types/database.ts` with `npm run db:types` on a machine with Docker and the local Supabase running (never by hand), then replace the loose typing used for the new columns and functions where the generated types now cover them, per Constitution II and the plan's complexity table (partial)
+- [ ] T054 Run `npm run test:db` on a machine with Docker and fix any failure in `supabase/migrations/20261112100000_save_the_date_details.sql`, `20261112100100_staff_sms_consent.sql`, `20261112100200_audience_not_opened.sql` or `supabase/tests/database/570-save-the-date-details.test.sql`, `580-staff-sms-consent.test.sql`, `590-audience-not-opened.test.sql`, per Constitution I and II (partial)
+- [ ] T055 Show a "Test" label on a test campaign in the delivery view, in `src/components/admin/DeliveryView.tsx` and `src/lib/admin/data/campaigns.ts` (`loadDelivery`), with a test in `src/components/admin/__tests__/campaigns-view.test.tsx`, per FR-024 (partial)
+- [ ] T056 Mark `docs/decisions/0014-text-messages.md` as superseded in part by `docs/decisions/0015-save-the-date-outreach.md`: its statement that staff cannot mark a number opted in by any route no longer holds, per Constitution (documentation updated with the behavior it describes) (contradicts)
+- [ ] T057 Align `specs/006-save-the-date-outreach/quickstart.md`, `research.md` (the import consent column is `contact_phone_consent`, `contact_phone_2_consent`, and so on) and `contracts/admin-api.md` (the place and note are saved by a settings form action, and the readiness list is a section of the campaign page, not endpoints) with what was built, per plan: contracts and quickstart (partial)
+- [ ] T058 Add a sentence to `docs/guest-api.md` saying that a mail program's built-in browser keeps the sign-in inside that browser, and that opening the link again on another device or asking for a sign-in link covers it, per the spec's edge case about built-in browsers (partial)
