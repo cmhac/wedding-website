@@ -1,7 +1,7 @@
 "use client";
 
 import type { StaffRow } from "@/lib/admin/data/settings";
-import { saveSettings } from "@/lib/admin/actions/settings";
+import { saveSettings, saveSmsSwitch } from "@/lib/admin/actions/settings";
 import { savedSettingsMessage } from "@/lib/admin/settings-message";
 import { pacificLocalToIso } from "@/lib/admin/time";
 import type { StaffRole } from "@/lib/auth/session";
@@ -22,7 +22,11 @@ export type SettingsViewProps = {
     sign_in_limit_per_address: number;
     sign_in_window_minutes: number;
     sign_in_limit_global_per_hour: number;
+    /** The couple's texting switch. */
+    sms_enabled?: boolean;
   };
+  /** True when the text provider is configured: only then is the switch shown. */
+  smsConfigured?: boolean;
   /** Events to choose the wedding from. */
   events: { id: string; name: string }[];
   staff: Pick<StaffRow, "user_id" | "display_name" | "role">[];
@@ -34,6 +38,7 @@ export function SettingsView({
   settings,
   events,
   staff,
+  smsConfigured = false,
 }: SettingsViewProps) {
   const isCouple = role === "couple";
   const stored = pacificLocalToIso(settings.default_rsvp_deadline);
@@ -87,6 +92,40 @@ export function SettingsView({
         title="Settings"
         description="RSVP rules and who can use this console."
       />
+      {smsConfigured ? (
+        <Card heading="Text messaging">
+          <p className="muted">
+            {settings.sms_enabled
+              ? "Texting is on. Guests with a phone number are asked to opt in at their next sign-in, and only numbers that opted in are texted."
+              : "Texting is off. No texts are sent and guests are not asked to opt in. Turn it on once the carriers have approved the registration."}
+          </p>
+          <ActionForm
+            action={saveSmsSwitch as ActionFormProps["action"]}
+            submitLabel="Save"
+            successMessage={undefined}
+          >
+            {() => (
+              <label className="check">
+                <input
+                  type="checkbox"
+                  name="sms_enabled"
+                  defaultChecked={settings.sms_enabled === true}
+                  disabled={!isCouple}
+                />{" "}
+                <span>
+                  <strong>Texting is on</strong>
+                  <br />
+                  <span className="muted">
+                    {isCouple
+                      ? "Turning this on texts nobody by itself."
+                      : "Only the couple can change this."}
+                  </span>
+                </span>
+              </label>
+            )}
+          </ActionForm>
+        </Card>
+      ) : null}
       <Card heading="RSVP settings">
         <ActionForm
           // The result also carries the message in `data`; the form shows the same

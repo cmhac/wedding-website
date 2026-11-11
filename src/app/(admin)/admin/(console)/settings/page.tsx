@@ -3,6 +3,7 @@ import { SettingsView } from "@/components/admin/SettingsView";
 import { loadEventOptions } from "@/lib/admin/data/households";
 import { loadSettings, loadStaff } from "@/lib/admin/data/settings";
 import { isForbidden, requireStaffPage } from "@/lib/admin/session";
+import { isSmsConfigured } from "@/lib/sms/state";
 
 export default async function SettingsPage() {
   const session = await requireStaffPage();
@@ -19,6 +20,7 @@ export default async function SettingsPage() {
       settings={settings}
       events={events}
       staff={staff}
+      smsConfigured={isSmsConfigured()}
     />
   );
 }

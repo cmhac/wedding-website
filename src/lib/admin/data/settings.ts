@@ -20,6 +20,8 @@ export type SettingsData = {
   sign_in_limit_per_address: number;
   sign_in_window_minutes: number;
   sign_in_limit_global_per_hour: number;
+  /** The couple's texting switch (meaningful only while the provider is configured). */
+  sms_enabled: boolean;
   row: SettingsRow;
 };
 
@@ -51,6 +53,7 @@ export async function loadSettings(
     sign_in_limit_global_per_hour: Number(
       row.sign_in_limit_global_per_hour ?? 60,
     ),
+    sms_enabled: Boolean(row.sms_enabled),
     row,
   };
 }

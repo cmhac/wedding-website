@@ -281,3 +281,54 @@ describe("RemoveAccessButton", () => {
     );
   });
 });
+
+describe("SettingsView text messaging", () => {
+  const base = {
+    role: "couple" as const,
+    currentUserId: "u1",
+    events: [],
+    staff: [],
+    settings: {
+      default_rsvp_deadline: "",
+      rsvp_open: true,
+      wedding_event_id: "",
+      sign_in_limit_per_address: 3,
+      sign_in_window_minutes: 10,
+      sign_in_limit_global_per_hour: 60,
+      sms_enabled: false,
+    },
+  };
+
+  it("shows nothing about texting while the provider is not configured", () => {
+    const { container } = render(<SettingsView {...base} />);
+    expect(container.textContent).not.toMatch(/text messag|Texting/i);
+  });
+
+  it("shows the switch, off, when configured but switched off", () => {
+    render(<SettingsView {...base} smsConfigured />);
+    expect(
+      screen.getByRole("heading", { name: "Text messaging" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Texting is off/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", { name: /Texting is on/ }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: /Texting is on/ }),
+    ).toBeEnabled();
+  });
+
+  it("shows it on, and disabled for a planner", () => {
+    render(
+      <SettingsView
+        {...base}
+        role="planner"
+        smsConfigured
+        settings={{ ...base.settings, sms_enabled: true }}
+      />,
+    );
+    const box = screen.getByRole("checkbox", { name: /Texting is on/ });
+    expect(box).toBeChecked();
+    expect(box).toBeDisabled();
+  });
+});

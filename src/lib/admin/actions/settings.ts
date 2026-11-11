@@ -3,6 +3,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { savedSettingsMessage } from "../settings-message";
+import { isSmsConfigured } from "@/lib/sms/state";
+import { messageFor } from "../messages";
 import { pacificLocalToIso } from "../time";
 import { runAdminAction, type ActionResult } from "./shared";
 
@@ -85,5 +87,46 @@ export async function saveSettings(
       };
     },
     { supabase: options.supabase },
+  );
+}
+
+const smsSwitchSchema = z.object({
+  // A ticked checkbox posts a value; an unticked one posts nothing.
+  sms_enabled: z.string().optional(),
+});
+
+/**
+ * The couple's on/off switch for texting (couple only; the database refuses a
+ * planner too). Turning it on texts nobody: guests are asked to opt in at their
+ * next sign-in. Refused while the provider is not configured.
+ */
+export async function saveSmsSwitch(
+  _previous: ActionResult<{ message: string }> | null,
+  formData: FormData,
+  options: { supabase?: SupabaseClient } = {},
+): Promise<ActionResult<{ message: string }>> {
+  if (!isSmsConfigured()) {
+    return { ok: false, message: messageFor("texting_not_configured") };
+  }
+  return runAdminAction(
+    smsSwitchSchema,
+    formData,
+    async ({ input, supabase }) => {
+      const enabled = input.sms_enabled !== undefined;
+      const { error } = await supabase
+        .from("settings")
+        .update({ sms_enabled: enabled })
+        .eq("id", true);
+      return {
+        error,
+        revalidate: ["/admin/settings"],
+        data: {
+          message: enabled
+            ? "Texting is on. Nobody is texted yet: guests are asked to opt in at their next sign-in."
+            : "Texting is off. No texts are sent and guests are not asked to opt in.",
+        },
+      };
+    },
+    { supabase: options.supabase, coupleOnly: true },
   );
 }
