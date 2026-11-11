@@ -81,11 +81,11 @@ select tests.clear_auth();
 select is((select first_opened_at from public.households where id = 'aaaaaaaa-0000-0000-0000-00000000000a'), '2026-01-01 00:00:00+00'::timestamptz, 'it is set once and never changes again');
 
 -- Test campaigns.
-insert into public.campaigns (id, message_type_key, name, audience, status)
-  values ('cccccccc-0000-0000-0000-000000000001', 'save_the_date', 'Test', '{"scope":"all"}', 'draft');
+insert into public.message_types (key, label, is_essential, template_key) values
+  ('save_the_date', 'Save the date', true, 'save_the_date');
+insert into public.campaigns (id, message_type_key, name, audience, status, started_at)
+  values ('cccccccc-0000-0000-0000-000000000001', 'save_the_date', 'Test', '{"scope":"all"}', 'sending', now());
 select is((select is_test from public.campaigns where id = 'cccccccc-0000-0000-0000-000000000001'), false, 'a campaign is not a test by default');
-update public.campaigns set status = 'scheduled', scheduled_for = now() + interval '1 day' where id = 'cccccccc-0000-0000-0000-000000000001';
-update public.campaigns set status = 'sending' where id = 'cccccccc-0000-0000-0000-000000000001';
 select throws_ok(
   $$update public.campaigns set is_test = true where id = 'cccccccc-0000-0000-0000-000000000001'$$,
   'P0001', 'campaign_locked', 'a sending campaign cannot become a test'

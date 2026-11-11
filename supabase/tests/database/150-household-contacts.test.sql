@@ -26,7 +26,7 @@ select is(
 select has_type('public', 'contact_kind', 'the contact kind type exists');
 select columns_are(
   'public', 'household_contacts',
-  array['id', 'household_id', 'kind', 'value', 'delivery_problem', 'created_at', 'sms_consent', 'sms_consent_at', 'sms_consent_source'],
+  array['id', 'household_id', 'kind', 'value', 'delivery_problem', 'created_at', 'sms_consent', 'sms_consent_at', 'sms_consent_source', 'sms_consent_by', 'sms_consent_note', 'sms_consent_overrode_decline'],
   'the columns are as designed'
 );
 

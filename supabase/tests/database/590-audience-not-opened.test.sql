@@ -32,10 +32,12 @@ select is(
 select tests.clear_auth();
 
 -- Test campaigns do not count as the real send.
+insert into public.message_types (key, label, is_essential, template_key) values
+  ('save_the_date', 'Save the date', true, 'save_the_date');
 insert into public.campaigns (id, message_type_key, name, audience, status, is_test)
   values ('cccccccc-0000-0000-0000-000000000001', 'save_the_date', 'Test', '{"scope":"household","household_id":"bbbbbbbb-0000-0000-0000-00000000000b"}', 'done', true);
-insert into public.messages (campaign_id, household_id, to_email, status)
-  values ('cccccccc-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-00000000000b', 'b@example.test', 'sent');
+insert into public.messages (campaign_id, household_id, status)
+  values ('cccccccc-0000-0000-0000-000000000001', 'bbbbbbbb-0000-0000-0000-00000000000b', 'sent');
 select tests.authenticate_as(:'couple_user');
 select is(
   (select count(*)::int from public.resolve_audience('{"scope":"filter","filters":{"not_yet_sent_message_type":"save_the_date"}}'::jsonb)),
@@ -43,11 +45,15 @@ select is(
 );
 select tests.clear_auth();
 
-update public.campaigns set is_test = false where id = 'cccccccc-0000-0000-0000-000000000001';
+-- The same send as a real campaign does count (a finished campaign cannot become a test or stop being one).
+insert into public.campaigns (id, message_type_key, name, audience, status)
+  values ('cccccccc-0000-0000-0000-000000000002', 'save_the_date', 'Real', '{"scope":"all"}', 'done');
+insert into public.messages (campaign_id, household_id, status)
+  values ('cccccccc-0000-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-00000000000b', 'sent');
 select tests.authenticate_as(:'couple_user');
 select is(
   (select array_agg(display_name) from public.resolve_audience('{"scope":"filter","filters":{"not_yet_sent_message_type":"save_the_date"}}'::jsonb)),
-  array['Household A'], 'the same send as a real campaign does count'
+  array['Household A'], 'a real send does count: only the household with no real send is left'
 );
 select is(
   (select count(*)::int from public.resolve_audience('{"scope":"filter","filters":{"not_opened":true,"not_yet_sent_message_type":"save_the_date"}}'::jsonb)),
