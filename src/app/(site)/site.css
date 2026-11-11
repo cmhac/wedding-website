@@ -208,3 +208,39 @@ body {
   color: var(--bad-text);
   background: var(--bad-bg);
 }
+
+/* The public privacy and terms pages: a readable column of plain text. */
+.legal {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 16px 24px;
+  display: grid;
+  gap: 16px;
+}
+.legal h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+.legal h2 {
+  margin: 16px 0 0;
+  font-size: 1.25rem;
+}
+.legal p {
+  margin: 0;
+}
+.legal-meta {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.legal a,
+.legal-footer a {
+  color: var(--text);
+  text-underline-offset: 3px;
+}
+.legal-footer {
+  padding: 8px 16px 40px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
