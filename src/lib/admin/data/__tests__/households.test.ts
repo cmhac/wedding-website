@@ -214,6 +214,73 @@ describe("loadHouseholdList phone numbers", () => {
   });
 });
 
+describe("loadHouseholdList batch and follow-up support", () => {
+  it("lists the ids of every household matching the filter, not just the page", async () => {
+    const { client } = build();
+    const list = await loadHouseholdList(query(), client);
+    expect(list.matchingIds).toHaveLength(5);
+    expect(new Set(list.matchingIds)).toEqual(
+      new Set(["h-a", "h-b", "h-c", "h-d", "h-e"]),
+    );
+    const delivery = await loadHouseholdList(
+      query({ show: "delivery_problem" }),
+      client,
+    );
+    expect(delivery.matchingIds).toEqual(["h-c"]);
+  });
+
+  it("filters to households with a number that has not consented", async () => {
+    const { client } = build();
+    const list = await loadHouseholdList(
+      query({ show: "texting_not_consented" }),
+      client,
+    );
+    expect(names(list.rows)).toEqual(["Accent family"]);
+  });
+
+  it("reports when a household first opened the site, and filters to those that have not", async () => {
+    const { db, client } = build();
+    db.tables.households.find((h) => h.id === "h-a")!.first_opened_at =
+      "2027-02-03T18:00:00Z";
+    const all = await loadHouseholdList(query(), client);
+    expect(all.rows.find((r) => r.id === "h-a")!.openedAt).toBe(
+      "2027-02-03T18:00:00Z",
+    );
+    expect(all.rows.find((r) => r.id === "h-b")!.openedAt).toBeNull();
+    const unopened = await loadHouseholdList(
+      query({ show: "not_opened" }),
+      client,
+    );
+    expect(names(unopened.rows)).not.toContain("Accent family");
+    expect(unopened.total).toBe(4);
+  });
+
+  it("copes with a household's contact detail carrying who marked a number", async () => {
+    const { db, client } = build();
+    db.tables.household_contacts.push({
+      ...contact("c10", "h-a", "+12025550124"),
+      kind: "phone",
+      sms_consent: "opted_in",
+      sms_consent_at: "2027-02-01T18:00:00Z",
+      sms_consent_source: "staff",
+      sms_consent_by: "u-1",
+      sms_consent_note: "address form",
+      sms_consent_overrode_decline: true,
+    });
+    db.tables.staff = [{ user_id: "u-1", display_name: "Hannah" }];
+    const detail = await loadHouseholdDetail("h-a", client);
+    const phone = detail!.phones!.find((p) => p.id === "c10")!;
+    expect(phone).toMatchObject({
+      consentSource: "staff",
+      consentBy: "Hannah",
+      consentNote: "address form",
+      overrodeDecline: true,
+    });
+    const guestTick = detail!.phones!.find((p) => p.id === "c9")!;
+    expect(guestTick.consentSource).toBeNull();
+  });
+});
+
 describe("loadHouseholdList", () => {
   it("sorts by display name and reports the total", async () => {
     const { client } = build();

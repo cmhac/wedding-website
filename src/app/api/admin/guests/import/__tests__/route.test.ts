@@ -62,6 +62,7 @@ beforeEach(() => {
   mockRequireStaff.mockResolvedValue({
     kind: "staff",
     role: "planner",
+    user: { id: "staff-1" },
     supabase: sessionClient,
   });
   rpc.mockResolvedValue({

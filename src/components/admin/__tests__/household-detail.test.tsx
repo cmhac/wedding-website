@@ -405,6 +405,10 @@ describe("HouseholdDetailView phone numbers", () => {
         deliveryProblem: false,
         consent: "opted_in",
         consentAt: "2027-02-01T18:00:00Z",
+        consentSource: "guest" as const,
+        consentBy: null,
+        consentNote: null,
+        overrodeDecline: false,
       },
     ],
   });

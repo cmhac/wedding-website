@@ -32,9 +32,12 @@ export function ImportHelp({
             in <code>contact_phone</code>, and any more in{" "}
             <code>contact_phone_2</code>, <code>contact_phone_3</code> and so
             on. United States numbers only, in any common format. A number is
-            texted only after its owner opts in themselves, so nothing in the
-            file can switch texts on; the first message every household gets is
-            still the invitation email.
+            texted only once its consent is recorded. If its owner already
+            agreed to be texted, put <code>yes</code> in the column after it:{" "}
+            <code>contact_phone_consent</code>,{" "}
+            <code>contact_phone_2_consent</code> and so on. A yes is recorded as
+            consented by import, under your name; blank or <code>no</code>{" "}
+            leaves the number for its owner to answer when they sign in.
           </p>
         ) : null}
         <p>

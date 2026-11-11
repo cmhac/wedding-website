@@ -16,6 +16,8 @@ const MESSAGES = {
   not_us_phone:
     "Only United States numbers are supported. Use an email address instead.",
   phone_in_use: "That number already belongs to another household.",
+  declined_needs_override:
+    "This number declined texts at the site. Confirm to mark it anyway.",
   texting_not_configured:
     "Texting is not set up, so phone numbers cannot be saved.",
   household_contact:
@@ -72,6 +74,7 @@ const DB_PATTERNS: Array<[RegExp, MessageCode]> = [
   [/household_contact/i, "household_contact"],
   [/\bforbidden\b/i, "forbidden"],
   [/\bnot_found\b/i, "not_found"],
+  [/declined_needs_override/i, "declined_needs_override"],
   [/invalid_payload/i, "invalid_payload"],
 ];
 

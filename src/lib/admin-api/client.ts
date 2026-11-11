@@ -9,6 +9,7 @@ import {
   type GrantStaffResponse,
 } from "./staff-schemas";
 import {
+  consentCountsResponseSchema,
   contactResponseSchema,
   createHouseholdResponseSchema,
   errorBodySchema,
@@ -17,6 +18,7 @@ import {
   phoneContactResponseSchema,
   removeContactResponseSchema,
   updateHouseholdResponseSchema,
+  type ConsentCountsResponse,
   type ContactResponse,
   type CreateHouseholdRequest,
   type CreateHouseholdResponse,
@@ -165,6 +167,35 @@ export const removePhone = (householdId: string, contactId: string) =>
     `${phonesPath(householdId)}/${encodeURIComponent(contactId)}`,
     { method: "DELETE" },
   ) as Promise<ApiResult<RemoveContactResponse>>;
+
+export type ConsentChange = {
+  mode: "mark" | "clear";
+  /** Mark numbers that declined at the site too. */
+  override_declined?: boolean;
+  note?: string;
+};
+
+/** Marks or clears the text consent of one number. Sends no text. */
+export const setPhoneConsent = (
+  householdId: string,
+  contactId: string,
+  change: ConsentChange,
+) =>
+  call(
+    consentCountsResponseSchema,
+    `${phonesPath(householdId)}/${encodeURIComponent(contactId)}/consent`,
+    json("POST", change),
+  ) as Promise<ApiResult<ConsentCountsResponse>>;
+
+/** Marks or clears consent for every phone number of the chosen households; `dry_run` only counts. */
+export const setBatchConsent = (
+  change: ConsentChange & { household_ids: string[]; dry_run?: boolean },
+) =>
+  call(
+    consentCountsResponseSchema,
+    "/api/admin/households/consent",
+    json("POST", change),
+  ) as Promise<ApiResult<ConsentCountsResponse>>;
 
 const inviteLinkPath = (householdId: string) =>
   `/api/admin/households/${encodeURIComponent(householdId)}/invite-link`;

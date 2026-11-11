@@ -17,6 +17,8 @@ export const SHOW_VALUES = [
   "meals",
   "delivery_problem",
   "paper_only",
+  "texting_not_consented",
+  "not_opened",
 ] as const;
 export type ShowFilter = (typeof SHOW_VALUES)[number];
 
@@ -47,12 +49,16 @@ export type HouseholdRow = {
   deliveryProblem: boolean;
   paperOnly: boolean;
   possibleDuplicate: boolean;
+  /** When a signed-in device first loaded the site (or previewed it); null if never. */
+  openedAt: string | null;
 };
 
 export type HouseholdList = {
   rows: HouseholdRow[];
   /** Households matching the search and filters. */
   total: number;
+  /** The ids of every household matching the search and filters (all pages), for batch edits. */
+  matchingIds: string[];
   /** All households. */
   totalAll: number;
   totalGuests: number;
@@ -105,6 +111,13 @@ export type HouseholdDetail = {
     deliveryProblem: boolean;
     consent: string;
     consentAt: string | null;
+    /** How the answer was recorded: the guest's tick, staff, or the import. */
+    consentSource: "guest" | "staff" | "import" | null;
+    /** The staff member who marked or imported it. */
+    consentBy: string | null;
+    consentNote: string | null;
+    /** True when a staff mark replaced a decline. */
+    overrodeDecline: boolean;
   }[];
   plusOneAllowance: number;
   address: HouseholdAddress | null;
@@ -326,6 +339,7 @@ export async function loadHouseholdList(
       deliveryProblem: Boolean(h.delivery_problem),
       paperOnly: addresses.length === 0,
       possibleDuplicate: duplicateIds.has(id),
+      openedAt: text(h.first_opened_at),
     };
   });
 
@@ -353,6 +367,10 @@ export async function loadHouseholdList(
           return row.deliveryProblem;
         case "paper_only":
           return row.paperOnly;
+        case "texting_not_consented":
+          return (row.phones?.total ?? 0) > (row.phones?.optedIn ?? 0);
+        case "not_opened":
+          return row.openedAt === null;
         default:
           return true;
       }
@@ -364,6 +382,7 @@ export async function loadHouseholdList(
   return {
     rows: matches.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
     total: matches.length,
+    matchingIds: matches.map((row) => row.id),
     totalAll: built.length,
     totalGuests: guests.length,
     page,
@@ -400,40 +419,56 @@ function asAddress(value: unknown): HouseholdAddress | null {
     : null;
 }
 
+function consentSource(value: unknown): "guest" | "staff" | "import" | null {
+  if (value === "staff" || value === "import") return value;
+  return value ? "guest" : null;
+}
+
 export async function loadHouseholdDetail(
   id: string,
   supabase?: SupabaseClient,
 ): Promise<HouseholdDetail | null> {
   const db = await client(supabase);
-  const [households, guests, contacts, categories, dietary, settings] =
-    await Promise.all([
-      rows("staff_households", db.rpc("staff_households")),
-      rows("staff_guests", db.rpc("staff_guests")),
-      rows(
-        "household_contacts",
-        db
-          .from("household_contacts")
-          .select(
-            "id, household_id, kind, value, delivery_problem, created_at, sms_consent, sms_consent_at",
-          )
-          .eq("household_id", id)
-          .order("created_at", { ascending: true }),
-      ),
-      rows(
-        "dietary_categories",
-        db
-          .from("dietary_categories")
-          .select("key, label, display_order")
-          .order("display_order", { ascending: true }),
-      ),
-      rows(
-        "guest_dietary",
-        db
-          .from("guest_dietary")
-          .select("guest_id, category_key, severity, details"),
-      ),
-      rows("settings", db.from("settings").select("default_rsvp_deadline")),
-    ]);
+  const [
+    households,
+    guests,
+    contacts,
+    categories,
+    dietary,
+    settings,
+    staffNames,
+  ] = await Promise.all([
+    rows("staff_households", db.rpc("staff_households")),
+    rows("staff_guests", db.rpc("staff_guests")),
+    rows(
+      "household_contacts",
+      db
+        .from("household_contacts")
+        .select(
+          "id, household_id, kind, value, delivery_problem, created_at, sms_consent, sms_consent_at, sms_consent_source, sms_consent_by, sms_consent_note, sms_consent_overrode_decline",
+        )
+        .eq("household_id", id)
+        .order("created_at", { ascending: true }),
+    ),
+    rows(
+      "dietary_categories",
+      db
+        .from("dietary_categories")
+        .select("key, label, display_order")
+        .order("display_order", { ascending: true }),
+    ),
+    rows(
+      "guest_dietary",
+      db
+        .from("guest_dietary")
+        .select("guest_id, category_key, severity, details"),
+    ),
+    rows("settings", db.from("settings").select("default_rsvp_deadline")),
+    rows("staff", db.from("staff").select("user_id, display_name")),
+  ]);
+  const staffName = new Map(
+    staffNames.map((s) => [s.user_id as string, String(s.display_name)]),
+  );
 
   const h = households.find((row) => row.id === id);
   if (!h) return null;
@@ -476,6 +511,12 @@ export async function loadHouseholdDetail(
         deliveryProblem: Boolean(c.delivery_problem),
         consent: String(c.sms_consent ?? "not_asked"),
         consentAt: text(c.sms_consent_at),
+        consentSource: consentSource(c.sms_consent_source),
+        consentBy: c.sms_consent_by
+          ? (staffName.get(String(c.sms_consent_by)) ?? null)
+          : null,
+        consentNote: text(c.sms_consent_note),
+        overrodeDecline: c.sms_consent_overrode_decline === true,
       })),
     plusOneAllowance: num(h.plus_one_allowance),
     address: asAddress(h.address),

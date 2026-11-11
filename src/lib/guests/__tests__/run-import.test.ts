@@ -186,3 +186,85 @@ describe("runGuestImport sign-in accounts", () => {
     expect(a.createUser).not.toHaveBeenCalled();
   });
 });
+
+describe("runGuestImport: phone consent marks", () => {
+  const csv = [
+    "household_ref,household_name,first_name,last_name,contact_phone,contact_phone_consent,contact_phone_2,contact_phone_2_consent",
+    "h1,Test Household,Ann,Example,(202) 555-0123,yes,(202) 555-0124,",
+  ].join("\n");
+
+  function adminClient(consent: { message?: string } | null = null) {
+    const rpc = jest.fn(async (fn: string, _args: object) => ({
+      data: fn === "import_phone_consent" ? { result: "marked" } : null,
+      error: fn === "import_phone_consent" ? consent : null,
+    }));
+    const from = jest.fn(() => ({
+      update: () => ({ eq: async () => ({ error: null }) }),
+    }));
+    return {
+      admin: {
+        rpc,
+        from,
+        auth: {
+          admin: {
+            createUser: async () => ({
+              data: { user: { id: "u1" } },
+              error: null,
+            }),
+            deleteUser: async () => ({}),
+          },
+        },
+      } as never,
+      rpc,
+    };
+  }
+
+  it("records each number marked yes as imported, by the staff member who imported, and nothing for the rest", async () => {
+    const { client } = fakeClient();
+    const { admin, rpc } = adminClient();
+    const res = await runGuestImport(client, csv, admin, {
+      smsConfigured: true,
+      importedBy: "staff-1",
+    });
+    expect(rpc).toHaveBeenCalledWith("import_phone_consent", {
+      household_id: "hh-1",
+      value: "+12025550123",
+      marked_by: "staff-1",
+      override_declined: false,
+    });
+    const marks = rpc.mock.calls.filter((c) => c[0] === "import_phone_consent");
+    expect(marks).toHaveLength(1);
+    expect(res).toMatchObject({
+      kind: "done",
+      phonesSaved: 2,
+      phonesConsented: 1,
+    });
+  });
+
+  it("reports a mark that was not saved by row and column, and carries on", async () => {
+    const { client } = fakeClient();
+    const { admin } = adminClient({ message: "boom +12025550123" });
+    const res = await runGuestImport(client, csv, admin, {
+      smsConfigured: true,
+      importedBy: "staff-1",
+    });
+    expect(res).toMatchObject({ kind: "done", phonesSaved: 2 });
+    if (res.kind !== "done") throw new Error("unexpected");
+    expect(res.phonesConsented).toBeUndefined();
+    expect(res.errors).toContainEqual({
+      row: 2,
+      field: "contact_phone_consent",
+      message: "The consent mark was not saved",
+    });
+    expect(JSON.stringify(res.errors)).not.toContain("555");
+  });
+
+  it("marks nothing when texting is not configured", async () => {
+    const { client } = fakeClient();
+    const { admin, rpc } = adminClient();
+    await runGuestImport(client, csv, admin, { smsConfigured: false });
+    expect(rpc.mock.calls.some((c) => c[0] === "import_phone_consent")).toBe(
+      false,
+    );
+  });
+});

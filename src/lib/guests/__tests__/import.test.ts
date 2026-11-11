@@ -288,9 +288,66 @@ describe("parseGuestImport: phone columns", () => {
     expect(result.phonesIgnored).toBe(2);
   });
 
-  it("never reads a consent column", () => {
+  it("ignores a column that is not a phone consent column", () => {
     const csv = `${header.trim()},sms_consent\nSmith,Ann,Smith,,(202) 555-0123,,yes\n`;
     const result = parseGuestImport(csv, { ...slugs, smsConfigured: true });
+    expect(result.errors).toEqual([]);
     expect(JSON.stringify(result.households)).not.toMatch(/consent|opted/i);
+  });
+});
+
+describe("parseGuestImport: phone consent columns", () => {
+  const header =
+    "household_name,first_name,last_name,contact_phone,contact_phone_consent,contact_phone_2,contact_phone_2_consent\n";
+  const slugs = { eventSlugs: [] as string[], smsConfigured: true };
+
+  it("lists the numbers marked yes, in standard form, and leaves the rest alone", () => {
+    const csv = `${header}Smith,Ann,Smith,(202) 555-0123,yes,202-555-0124,no\nJones,Bo,Jones,202-555-0150,,,\n`;
+    const result = parseGuestImport(csv, slugs);
+    expect(result.errors).toEqual([]);
+    expect(result.households[0].phones).toEqual([
+      "+12025550123",
+      "+12025550124",
+    ]);
+    expect(result.households[0].consented_phones).toEqual(["+12025550123"]);
+    expect(result.households[1].consented_phones).toBeUndefined();
+  });
+
+  it.each(["y", "Y", "true", "1", "x", "YES"])("reads %s as yes", (value) => {
+    const csv = `${header}Smith,Ann,Smith,(202) 555-0123,${value},,\n`;
+    expect(parseGuestImport(csv, slugs).households[0].consented_phones).toEqual(
+      ["+12025550123"],
+    );
+  });
+
+  it.each(["n", "false", "0", "NO", ""])("reads %s as not marked", (value) => {
+    const csv = `${header}Smith,Ann,Smith,(202) 555-0123,${value},,\n`;
+    const result = parseGuestImport(csv, slugs);
+    expect(result.errors).toEqual([]);
+    expect(result.households[0].consented_phones).toBeUndefined();
+  });
+
+  it("reports an unrecognised value by row and column, skipping the household, without repeating it", () => {
+    const csv = `${header}Smith,Ann,Smith,(202) 555-0123,maybe-leak-me,,\n`;
+    const result = parseGuestImport(csv, slugs);
+    expect(result.households).toEqual([]);
+    expect(result.errors).toEqual([
+      { row: 2, field: "contact_phone_consent", message: "Use yes or no" },
+    ]);
+    expect(JSON.stringify(result.errors)).not.toContain("leak-me");
+  });
+
+  it("ignores a yes beside an empty number", () => {
+    const csv = `${header}Smith,Ann,Smith,,yes,,\n`;
+    const result = parseGuestImport(csv, slugs);
+    expect(result.errors).toEqual([]);
+    expect(result.households[0].consented_phones).toBeUndefined();
+  });
+
+  it("ignores consent columns when texting is not configured", () => {
+    const csv = `${header}Smith,Ann,Smith,(202) 555-0123,yes,,maybe\n`;
+    const result = parseGuestImport(csv, { eventSlugs: [] });
+    expect(result.errors).toEqual([]);
+    expect(result.households[0]).not.toHaveProperty("consented_phones");
   });
 });

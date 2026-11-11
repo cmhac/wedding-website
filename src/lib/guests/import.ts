@@ -9,9 +9,10 @@ import { z } from "zod";
  * `last_name`. Optional: `household_ref` (groups rows into a household; without
  * it rows are grouped by household name plus contact email), `contact_email` (and
  * `contact_email_2`, `contact_email_3`, ... for a household's further addresses;
- * `contact_phone`, `contact_phone_2`, ... for United States phone numbers, read
- * only when texting is configured and otherwise ignored and counted; a number's
- * opt-in is never in the file),
+ * `contact_phone`, `contact_phone_2`, ... for United States phone numbers (each
+ * may be followed by a `contact_phone_consent` column: yes records the number as
+ * consented "by import"), read
+ * only when texting is configured and otherwise ignored and counted),
  * `plus_one_allowance` (integer >= 0, default 0), `guest_email`,
  * `dietary_notes`, `notes`, and one `event:<slug>` column per event, holding
  * yes/true/1/x to invite the guest or no/false/0 or blank.
@@ -38,6 +39,8 @@ export type ImportHousehold = {
   contacts: string[];
   /** Phone numbers as E.164, in column order; present only when texting is configured. */
   phones?: string[];
+  /** The numbers whose owners agreed to texts before the site (consent column "yes"); recorded as "import". */
+  consented_phones?: string[];
   /** True when the household has no email and needs a paper invitation. */
   paper_only: boolean;
   plus_one_allowance: number;
@@ -124,6 +127,12 @@ export function parseGuestImport(
     .filter(({ m }) => m !== null)
     .map(({ h, i, m }) => ({ field: h, i, n: Number(m![1] ?? 1) }))
     .sort((a, b) => a.n - b.n);
+  // A consent column follows each phone column: contact_phone_consent, contact_phone_2_consent, ...
+  const consentColumns = new Map<number, number>();
+  header.forEach((h, i) => {
+    const m = /^contact_phone(?:_(\d+))?_consent$/.exec(h);
+    if (m) consentColumns.set(Number(m[1] ?? 1), i);
+  });
   const smsConfigured = options.smsConfigured === true;
   let phonesIgnored = 0;
 
@@ -179,8 +188,9 @@ export function parseGuestImport(
       }
     }
     const phones: string[] = [];
+    const consentedPhones: string[] = [];
     const phoneFields = new Map<string, string>();
-    for (const { field, i } of phoneColumns) {
+    for (const { field, i, n } of phoneColumns) {
       const raw = (cells[i] ?? "").trim();
       if (!raw) continue;
       if (!smsConfigured) {
@@ -200,6 +210,17 @@ export function parseGuestImport(
       } else {
         phones.push(parsedPhone.e164);
         phoneFields.set(parsedPhone.e164, field);
+        const consentIndex = consentColumns.get(n);
+        const consent = (
+          consentIndex === undefined ? "" : (cells[consentIndex] ?? "")
+        )
+          .trim()
+          .toLowerCase();
+        if (TRUE_VALUES.has(consent)) {
+          consentedPhones.push(parsedPhone.e164);
+        } else if (!FALSE_VALUES.has(consent)) {
+          fail(`${field}_consent`, "Use yes or no");
+        }
       }
     }
     const hasContactCells = contactColumns.some(
@@ -251,6 +272,9 @@ export function parseGuestImport(
           display_name: displayName,
           contacts,
           ...(smsConfigured ? { phones } : {}),
+          ...(smsConfigured && consentedPhones.length > 0
+            ? { consented_phones: consentedPhones }
+            : {}),
           paper_only: contacts.length === 0 && phones.length === 0,
           plus_one_allowance: allowance,
           guests: [],
