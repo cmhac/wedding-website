@@ -6,6 +6,9 @@ import {
   type TemplateRegistry,
 } from "@/lib/email/templates";
 import { log } from "@/lib/log";
+import { getText, renderText, type TextRegistry } from "@/lib/sms/texts";
+import { statusCallbackUrl } from "@/lib/sms/urls";
+import type { SendTextResult } from "@/lib/sms/send";
 import { audienceSchema } from "./audience";
 import { loadCampaignProps, type LooseDb } from "./props";
 
@@ -17,8 +20,16 @@ import { loadCampaignProps, type LooseDb } from "./props";
  * unique (campaign, household, address) constraint, claimed with `claim_campaign_messages` so concurrent runs never
  * double-send, and sent with the message id as the idempotency key.
  *
- * Only ids, counts and outcome codes are logged: never addresses or names.
- * Expects a service-role client.
+ * A campaign has a channel: email, text or both. Email goes to every address as
+ * above. Text goes only to phone numbers that have opted in (a number that has
+ * not is skipped with a plain reason), one text per number, paced at one every
+ * `textIntervalMs` and for at most `textBudgetMs` per run: whatever is left
+ * stays queued and the campaign stays `sending`, so the scheduled run carries
+ * on (research: Pacing). A text has no idempotency key, so a text claimed but
+ * never confirmed is never retried automatically (the database marks it failed).
+ *
+ * Only ids, counts and outcome codes are logged: never addresses, numbers or
+ * names. Expects a service-role client.
  */
 
 export type DispatchErrorCode =
@@ -45,6 +56,8 @@ export type DispatchResult = {
   sent: number;
   skipped: { no_email: number; opted_out: number; other: number };
   failed: number;
+  /** Messages still queued or sending when the run stopped (texts left for the next run). */
+  remaining?: number;
 };
 
 export type DispatchOptions = {
@@ -54,6 +67,19 @@ export type DispatchOptions = {
   siteUrl?: string;
   rsvpPath?: string;
   now?: () => Date;
+  /** Text sending, for tests: whether texting is available, the sender, a sleep and the pace. */
+  smsAvailable?: boolean;
+  textSender?: (args: {
+    to: string;
+    body: string;
+    statusCallback?: string;
+  }) => Promise<SendTextResult>;
+  texts?: TextRegistry;
+  sleep?: (ms: number) => Promise<void>;
+  /** Milliseconds between campaign texts (default 2000: half of Twilio's one a second). */
+  textIntervalMs?: number;
+  /** Time a run may spend sending texts (default 45000). */
+  textBudgetMs?: number;
 };
 
 type Row = Record<string, unknown>;
@@ -65,8 +91,31 @@ type AudienceRow = {
 type ClaimedMessage = {
   id: string;
   household_id: string | null;
+  channel?: "email" | "text";
   to_email: string | null;
+  to_phone?: string | null;
 };
+
+type Channel = "email" | "text" | "both";
+const TEXT_INTERVAL_MS = 2000;
+const TEXT_BUDGET_MS = 45_000;
+
+const realSleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function defaultSmsAvailable(): Promise<boolean> {
+  const { getSmsState } = await import("@/lib/sms/state");
+  return (await getSmsState()).available;
+}
+
+async function defaultSendText(args: {
+  to: string;
+  body: string;
+  statusCallback?: string;
+}): Promise<SendTextResult> {
+  const { sendText } = await import("@/lib/sms/send");
+  return sendText(args);
+}
 
 const DEFAULT_BATCH = 50;
 // `sending` is included so a campaign interrupted by a crash can be resumed:
@@ -88,7 +137,7 @@ export async function sendCampaign(
 
   const { data: campaign, error: campaignError } = await db
     .from("campaigns")
-    .select("id, status, message_type_key, audience")
+    .select("id, status, message_type_key, audience, channel")
     .eq("id", campaignId)
     .maybeSingle();
   if (campaignError) fail();
@@ -107,15 +156,32 @@ export async function sendCampaign(
     .maybeSingle();
   if (typeError || !type) fail();
 
-  // Check the template exists before any message row is created.
+  const channel: Channel =
+    campaign.channel === "text" || campaign.channel === "both"
+      ? campaign.channel
+      : "email";
+  const wantsEmail = channel !== "text";
+  const wantsText = channel !== "email";
+
+  // Check the wording exists for every chosen channel before any message row is
+  // created: a missing one refuses the whole send, on both channels.
   try {
-    getTemplate(type.template_key, options.templates);
+    if (wantsEmail) getTemplate(type.template_key, options.templates);
+    if (wantsText) getText(type.template_key, options.texts);
   } catch (e) {
     if (e instanceof TemplateError) throw new DispatchError("template_missing");
     throw e;
   }
 
-  await queueMessages(db, campaignId, audience.data, type.is_essential);
+  const smsAvailable = wantsText
+    ? (options.smsAvailable ?? (await defaultSmsAvailable().catch(() => false)))
+    : false;
+
+  await queueMessages(db, campaignId, audience.data, type.is_essential, {
+    wantsEmail,
+    wantsText,
+    smsAvailable,
+  });
 
   const { error: startError } = await db
     .from("campaigns")
@@ -137,26 +203,65 @@ export async function sendCampaign(
     rsvpPath: options.rsvpPath ?? process.env.GUEST_RSVP_PATH ?? "/rsvp",
   };
 
-  for (;;) {
+  // With texts in play, claim one message at a time so a claimed text is always
+  // sent (or given back) within this run: a claimed text that was never sent
+  // would otherwise be marked "not confirmed" later.
+  const interval = options.textIntervalMs ?? TEXT_INTERVAL_MS;
+  const budget = options.textBudgetMs ?? TEXT_BUDGET_MS;
+  const sleep = options.sleep ?? realSleep;
+  const startedAt = now().getTime();
+  let textsSent = 0;
+  let stopped = false;
+
+  while (!stopped) {
     const { data: claimed, error: claimError } = await db.rpc(
       "claim_campaign_messages",
-      { campaign_id: campaignId, limit: batchSize },
+      { campaign_id: campaignId, limit: wantsText ? 1 : batchSize },
     );
     if (claimError) fail();
     const batch = (claimed ?? []) as ClaimedMessage[];
     if (batch.length === 0) break;
     for (const message of batch) {
-      await deliver(db, message, type.template_key, env, options, now);
+      if (message.channel === "text") {
+        const elapsed = now().getTime() - startedAt;
+        const pace = textsSent > 0 ? interval : 0;
+        if (elapsed + pace >= budget && (textsSent > 0 || elapsed >= budget)) {
+          // No room left in this run: give the text back for the next one.
+          await db
+            .from("messages")
+            .update({ status: "queued", to_phone: null, claimed_at: null })
+            .eq("id", message.id);
+          stopped = true;
+          break;
+        }
+        if (pace > 0) await sleep(pace);
+        await deliverText(db, message, type.template_key, env, options, now);
+        textsSent++;
+      } else {
+        await deliver(db, message, type.template_key, env, options, now);
+      }
     }
   }
 
-  const { error: doneError } = await db
-    .from("campaigns")
-    .update({ status: "done", completed_at: now().toISOString() })
-    .eq("id", campaignId);
-  if (doneError) fail();
+  // The campaign is done only when nothing is left to send; otherwise it stays
+  // `sending` and the scheduled run continues it.
+  const { data: left, error: leftError } = await db
+    .from("messages")
+    .select("id")
+    .eq("campaign_id", campaignId)
+    .in("status", ["queued", "sending"]);
+  if (leftError) fail();
+  const remaining = ((left ?? []) as Row[]).length;
+  if (remaining === 0) {
+    const { error: doneError } = await db
+      .from("campaigns")
+      .update({ status: "done", completed_at: now().toISOString() })
+      .eq("id", campaignId);
+    if (doneError) fail();
+  }
 
   const result = await tally(db, campaignId);
+  if (remaining > 0) result.remaining = remaining;
   log.info("campaign_sent", {
     campaign_id: campaignId,
     queued: result.queued,
@@ -166,16 +271,26 @@ export async function sendCampaign(
   return result;
 }
 
+type QueueOptions = {
+  wantsEmail: boolean;
+  wantsText: boolean;
+  smsAvailable: boolean;
+};
+
 /**
- * Resolves the audience and inserts one message per address of each deliverable
- * household, and one skipped row (no address) for each household that cannot be
- * emailed. Inserting is idempotent.
+ * Resolves the audience and inserts the messages. Email: one per address of each
+ * deliverable household, and one skipped row (no address) for each household
+ * that cannot be emailed. Text: one per phone number that has opted in; every
+ * other number of an eligible household is a skipped row saying why (not opted
+ * in, declined, or texting unavailable), and a household with no phone has one
+ * skipped row. Inserting is idempotent.
  */
 async function queueMessages(
   db: LooseDb,
   campaignId: string,
   audience: unknown,
   isEssential: boolean,
+  channels: QueueOptions,
 ) {
   const { data, error } = await db.rpc("resolve_audience", {
     filter: audience,
@@ -183,11 +298,20 @@ async function queueMessages(
   if (error) fail();
   const audienceRows = (data ?? []) as AudienceRow[];
 
+  // A household that is only out of the email audience for lack of an address
+  // can still be texted, so it counts as eligible for text.
+  const eligibleForText = (r: AudienceRow) =>
+    r.deliverable || r.skip_reason === "no_email";
+
   // The opt-out is applied here as well, so it holds whether or not the
   // database function knows the message type.
   let optedOut = new Set<string>();
   const candidates = audienceRows
-    .filter((r) => r.deliverable)
+    .filter(
+      (r) =>
+        (channels.wantsEmail ? r.deliverable : false) ||
+        (channels.wantsText && eligibleForText(r)),
+    )
     .map((r) => r.household_id);
   if (!isEssential && candidates.length > 0) {
     const { data: households, error: householdError } = await db
@@ -202,16 +326,16 @@ async function queueMessages(
     );
   }
 
-  const deliverable = audienceRows
+  const emailable = audienceRows
     .filter((r) => r.deliverable && !optedOut.has(r.household_id))
     .map((r) => r.household_id);
   const addressesByHousehold = new Map<string, string[]>();
-  if (deliverable.length > 0) {
+  if (channels.wantsEmail && emailable.length > 0) {
     const { data: contacts, error: contactError } = await db
       .from("household_contacts")
       .select("id, household_id")
       .eq("kind", "email")
-      .in("household_id", deliverable)
+      .in("household_id", emailable)
       .order("created_at", { ascending: true });
     if (contactError) fail();
     for (const c of (contacts ?? []) as Row[]) {
@@ -222,39 +346,112 @@ async function queueMessages(
     }
   }
 
-  const rows = audienceRows.flatMap<Row>((r) => {
-    const addresses = addressesByHousehold.get(r.household_id) ?? [];
-    if (r.deliverable && !optedOut.has(r.household_id)) {
-      // Deliverable but no address any more (removed since the audience was
-      // resolved): one skipped row.
-      if (addresses.length === 0) {
-        return [
-          {
-            campaign_id: campaignId,
-            household_id: r.household_id,
-            contact_id: null,
-            status: "skipped",
-            skip_reason: "no_email",
-          },
-        ];
-      }
-      return addresses.map((contactId) => ({
-        campaign_id: campaignId,
-        household_id: r.household_id,
-        contact_id: contactId,
-        status: "queued",
-      }));
+  const textable = audienceRows
+    .filter((r) => eligibleForText(r) && !optedOut.has(r.household_id))
+    .map((r) => r.household_id);
+  const phonesByHousehold = new Map<
+    string,
+    { id: string; consent: string }[]
+  >();
+  if (channels.wantsText && textable.length > 0) {
+    const { data: phones, error: phoneError } = await db
+      .from("household_contacts")
+      .select("id, household_id, sms_consent")
+      .eq("kind", "phone")
+      .in("household_id", textable)
+      .order("created_at", { ascending: true });
+    if (phoneError) fail();
+    for (const c of (phones ?? []) as Row[]) {
+      const key = c.household_id as string;
+      const list = phonesByHousehold.get(key) ?? [];
+      list.push({ id: c.id as string, consent: String(c.sms_consent) });
+      phonesByHousehold.set(key, list);
     }
-    return [
-      {
-        campaign_id: campaignId,
-        household_id: r.household_id,
-        contact_id: null,
-        status: "skipped",
-        skip_reason: r.deliverable ? "opted_out" : (r.skip_reason ?? "other"),
-      },
-    ];
-  });
+  }
+
+  const rows: Row[] = [];
+  const noContactRow = new Set<string>();
+  const skippedRow = (householdId: string, reason: string) => {
+    // One row with no address or number per household and campaign.
+    if (noContactRow.has(householdId)) return;
+    noContactRow.add(householdId);
+    rows.push({
+      campaign_id: campaignId,
+      household_id: householdId,
+      contact_id: null,
+      status: "skipped",
+      skip_reason: reason,
+    });
+  };
+
+  for (const r of audienceRows) {
+    const id = r.household_id;
+    const out = optedOut.has(id);
+
+    if (channels.wantsEmail) {
+      if (r.deliverable && !out) {
+        const addresses = addressesByHousehold.get(id) ?? [];
+        // Deliverable but no address any more (removed since the audience was
+        // resolved): one skipped row.
+        if (addresses.length === 0) skippedRow(id, "no_email");
+        for (const contactId of addresses) {
+          rows.push({
+            campaign_id: campaignId,
+            household_id: id,
+            contact_id: contactId,
+            status: "queued",
+          });
+        }
+      } else if (!channels.wantsText || !eligibleForText(r) || out) {
+        skippedRow(
+          id,
+          r.deliverable ? "opted_out" : (r.skip_reason ?? "other"),
+        );
+      } else {
+        // Not emailable, but eligible for text below: the household's own
+        // reason is "no email address", recorded once.
+        skippedRow(id, r.skip_reason ?? "no_email");
+      }
+    }
+
+    if (channels.wantsText) {
+      if (!eligibleForText(r) || out) {
+        if (!channels.wantsEmail) {
+          skippedRow(id, out ? "opted_out" : (r.skip_reason ?? "other"));
+        }
+        continue;
+      }
+      const phones = phonesByHousehold.get(id) ?? [];
+      if (phones.length === 0) {
+        if (!channels.wantsEmail) skippedRow(id, "no_phone");
+        continue;
+      }
+      for (const phone of phones) {
+        const base = {
+          campaign_id: campaignId,
+          household_id: id,
+          contact_id: phone.id,
+          channel: "text",
+        };
+        if (!channels.smsAvailable) {
+          rows.push({
+            ...base,
+            status: "skipped",
+            skip_reason: "texting_unavailable",
+          });
+        } else if (phone.consent === "opted_in") {
+          rows.push({ ...base, status: "queued" });
+        } else {
+          rows.push({
+            ...base,
+            status: "skipped",
+            skip_reason:
+              phone.consent === "declined" ? "declined" : "not_opted_in",
+          });
+        }
+      }
+    }
+  }
   if (rows.length === 0) return;
 
   const { error: upsertError } = await db.from("messages").upsert(rows, {
@@ -315,6 +512,97 @@ async function deliver(
     });
   } else {
     await record({ status: "failed", error_code: result.code });
+  }
+}
+
+const SHORT_DATE = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "America/Los_Angeles",
+});
+
+/** What each campaign text is given: the household's link and, for a reminder, a short date. */
+function textProps(props: {
+  personal_link: string;
+  respond_by: string | null;
+}) {
+  return {
+    personal_link: props.personal_link,
+    respond_by: props.respond_by
+      ? SHORT_DATE.format(new Date(props.respond_by))
+      : null,
+  };
+}
+
+/**
+ * Sends one campaign text. There is no way to make a retry safe, so the row was
+ * claimed first and is never re-sent automatically. A failure is recorded with
+ * Twilio's code (or `opted_out`) and flags the number for follow-up.
+ */
+async function deliverText(
+  db: LooseDb,
+  message: ClaimedMessage,
+  templateKey: string,
+  env: { siteUrl: string; rsvpPath: string },
+  options: DispatchOptions,
+  now: () => Date,
+) {
+  const record = async (patch: Row) => {
+    const { error } = await db
+      .from("messages")
+      .update(patch)
+      .eq("id", message.id);
+    if (error) log.error("message_update_failed", { message_id: message.id });
+  };
+
+  if (!message.to_phone) {
+    await record({ status: "skipped", skip_reason: "no_phone" });
+    return;
+  }
+  const props = message.household_id
+    ? await loadCampaignProps(db, message.household_id, env)
+    : null;
+  if (!props) {
+    await record({ status: "skipped", skip_reason: "household_missing" });
+    return;
+  }
+
+  let body: string;
+  try {
+    body = renderText(templateKey, textProps(props), options.texts);
+  } catch (e) {
+    const code = e instanceof TemplateError ? e.code : "template_failed";
+    await record({ status: "failed", error_code: code });
+    return;
+  }
+
+  let result: SendTextResult;
+  try {
+    result = await (options.textSender ?? defaultSendText)({
+      to: message.to_phone,
+      body,
+      statusCallback: statusCallbackUrl(),
+    });
+  } catch {
+    result = { ok: false, code: "send_failed" };
+  }
+
+  if (result.ok) {
+    await record({
+      status: "sent",
+      provider_message_id: result.sid,
+      sent_at: now().toISOString(),
+    });
+    return;
+  }
+  await record({ status: "failed", error_code: result.code });
+  if (message.household_id) {
+    await db
+      .from("household_contacts")
+      .update({ delivery_problem: true })
+      .eq("household_id", message.household_id)
+      .eq("kind", "phone")
+      .eq("value", message.to_phone);
   }
 }
 
