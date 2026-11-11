@@ -4,7 +4,30 @@
  */
 import { z } from "zod";
 
-export const signInRequestSchema = z.object({ email: z.email().max(320) });
+/**
+ * Sign-in request. `identifier` is an email address or a phone number (a value
+ * with an @ must be a valid email address; anything else is judged by the
+ * server). The old `email` field is still accepted. `sms_consent` is the ticked
+ * box and is only meaningful for a phone number.
+ */
+export const signInRequestSchema = z
+  .object({
+    identifier: z
+      .string()
+      .trim()
+      .min(1)
+      .max(320)
+      .refine((v) => !v.includes("@") || z.email().safeParse(v).success, {
+        message: "Not a valid email address",
+      })
+      .optional(),
+    email: z.email().max(320).optional(),
+    sms_consent: z.boolean().optional(),
+  })
+  .refine((v) => v.identifier !== undefined || v.email !== undefined, {
+    message: "identifier is required",
+    path: ["identifier"],
+  });
 export const signInResponseSchema = z.object({ message: z.string() });
 
 export const rsvpStatusSchema = z.enum(["attending", "declined"]);
