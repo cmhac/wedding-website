@@ -3,6 +3,7 @@ import { errorResponse } from "@/lib/api-errors";
 import { runGuestImport } from "@/lib/guests/run-import";
 import { SpreadsheetError, xlsxToCsv } from "@/lib/guests/spreadsheet";
 import { log } from "@/lib/log";
+import { isSmsConfigured } from "@/lib/sms/state";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
       session.supabase,
       csv,
       createAdminSupabase(),
+      { smsConfigured: isSmsConfigured() },
     );
     if (result.kind === "invalid") {
       return errorResponse(
@@ -111,6 +113,9 @@ export async function POST(request: Request) {
       created: result.created,
       errors: result.errors.map((e) => ({ ...e, row: sheetRow(e.row) })),
       source,
+      // Present only when there was something to say about phone numbers.
+      ...(result.phonesSaved ? { phones_saved: result.phonesSaved } : {}),
+      ...(result.phonesIgnored ? { phones_ignored: result.phonesIgnored } : {}),
     });
   } catch {
     log.error("guest_import_failed", { code: "import" });

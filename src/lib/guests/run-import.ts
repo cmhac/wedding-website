@@ -28,6 +28,9 @@ export type RunImportResult =
       householdIds: string[];
       /** Sign-in accounts created for them (counts only). */
       accounts: { linked: number; failed: number };
+      /** Phone numbers saved, and phone cells dropped (texting not configured, or no service-role client). */
+      phonesSaved?: number;
+      phonesIgnored?: number;
     }
   /** The file itself cannot be read (empty, not CSV, or missing columns). */
   | { kind: "invalid"; errors: ImportError[] };
@@ -77,6 +80,7 @@ export async function runGuestImport(
   supabase: SupabaseClient<Database>,
   csv: string,
   admin?: SupabaseClient<Database>,
+  options: { smsConfigured?: boolean } = {},
 ): Promise<RunImportResult> {
   const events = await supabase.from("events").select("slug");
   if (events.error) throw new Error("The import could not be completed.");
@@ -84,7 +88,10 @@ export async function runGuestImport(
     (e) => e.slug,
   );
 
-  const parsed = parseGuestImport(csv, { eventSlugs });
+  const parsed = parseGuestImport(csv, {
+    eventSlugs,
+    smsConfigured: options.smsConfigured === true,
+  });
   // Row 1 errors mean the file or its header is unusable.
   if (
     parsed.households.length === 0 &&
@@ -96,6 +103,7 @@ export async function runGuestImport(
   const created: Counts = { households: 0, guests: 0, invitations: 0 };
   const errors = [...parsed.errors];
   const householdIds: string[] = [];
+  let rpcHouseholdIds: { ref: string; household_id: string }[] | undefined;
 
   if (parsed.households.length > 0) {
     const { data, error } = await supabase.rpc("import_households", {
@@ -107,9 +115,50 @@ export async function runGuestImport(
     created.guests = result?.created?.guests ?? 0;
     created.invitations = result?.created?.invitations ?? 0;
     errors.push(...(result?.errors ?? []));
+    rpcHouseholdIds = result?.household_ids;
     householdIds.push(
       ...(result?.household_ids ?? []).map((h) => h.household_id),
     );
+  }
+
+  // Phone numbers are saved by a service-role function, one at a time, after
+  // the households exist; a number another household already has is reported
+  // by row and column, and the rest carry on. Nothing here can set an opt-in.
+  let phonesSaved = 0;
+  let phonesIgnored = parsed.phonesIgnored ?? 0;
+  const idByRef = new Map(
+    (rpcHouseholdIds ?? []).map((h) => [h.ref, h.household_id]),
+  );
+  for (const household of parsed.households) {
+    const phones = household.phones ?? [];
+    if (phones.length === 0) continue;
+    const id = idByRef.get(household.ref);
+    if (!admin || !id) {
+      phonesIgnored += phones.length;
+      continue;
+    }
+    for (const value of phones) {
+      const { error } = await (
+        admin as unknown as {
+          rpc: (
+            fn: string,
+            args: Record<string, unknown>,
+          ) => PromiseLike<{ error: { message?: string } | null }>;
+        }
+      ).rpc("add_phone_contact", { household_id: id, value });
+      if (!error) {
+        phonesSaved++;
+        continue;
+      }
+      errors.push({
+        row: household.guests[0]?.row ?? 1,
+        field: "contact_phone",
+        message:
+          error.message === "phone_in_use"
+            ? "Already used by another household"
+            : "The number was not saved",
+      });
+    }
   }
 
   const accounts =
@@ -118,5 +167,13 @@ export async function runGuestImport(
       : { linked: 0, failed: 0 };
 
   errors.sort((a, b) => a.row - b.row);
-  return { kind: "done", created, errors, householdIds, accounts };
+  return {
+    kind: "done",
+    created,
+    errors,
+    householdIds,
+    accounts,
+    ...(phonesSaved > 0 ? { phonesSaved } : {}),
+    ...(phonesIgnored > 0 ? { phonesIgnored } : {}),
+  };
 }

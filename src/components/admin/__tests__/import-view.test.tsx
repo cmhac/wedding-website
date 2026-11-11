@@ -175,3 +175,27 @@ describe("ImportForm", () => {
     expect(await screen.findByText("All rows imported.")).toBeInTheDocument();
   });
 });
+
+describe("ImportResultView phone numbers", () => {
+  it("says phone numbers were ignored when texting is not set up", () => {
+    render(
+      <ImportResultView
+        outcome={{
+          ok: true,
+          fileName: "guests.csv",
+          data: {
+            created: { households: 1, guests: 1, invitations: 0 },
+            errors: [],
+            phones_ignored: 3,
+            source: { format: "csv" },
+          },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        /Phone numbers were ignored because texting is not set up/,
+      ),
+    ).toBeInTheDocument();
+  });
+});

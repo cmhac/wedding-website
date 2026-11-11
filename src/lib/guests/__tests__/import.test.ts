@@ -227,3 +227,70 @@ describe("several addresses per household", () => {
     expect(JSON.stringify(r.errors)).not.toContain("leak-me");
   });
 });
+
+describe("parseGuestImport: phone columns", () => {
+  const header =
+    "household_name,first_name,last_name,contact_email,contact_phone,contact_phone_2\n";
+  const slugs = { eventSlugs: [] as string[] };
+
+  it("reads every phone column as a normalised United States number when texting is configured", () => {
+    const csv = `${header}Smith,Ann,Smith,ann@example.test,(202) 555-0123,202-555-0124\n`;
+    const result = parseGuestImport(csv, { ...slugs, smsConfigured: true });
+    expect(result.errors).toEqual([]);
+    expect(result.households[0].phones).toEqual([
+      "+12025550123",
+      "+12025550124",
+    ]);
+  });
+
+  it("reports a bad number by row and column without repeating it", () => {
+    const csv = `${header}Smith,Ann,Smith,ann@example.test,555-0100,(416) 555-0123\n`;
+    const result = parseGuestImport(csv, { ...slugs, smsConfigured: true });
+    expect(result.households).toEqual([]);
+    expect(result.errors).toEqual([
+      { row: 2, field: "contact_phone", message: "Not a valid phone number" },
+      {
+        row: 2,
+        field: "contact_phone_2",
+        message: "Only United States numbers are supported",
+      },
+    ]);
+    expect(JSON.stringify(result.errors)).not.toMatch(/555/);
+  });
+
+  it("refuses a number repeated in a household and one used by another household in the file", () => {
+    const csv =
+      `${header}Smith,Ann,Smith,,(202) 555-0123,202-555-0123\n` +
+      `Jones,Bo,Jones,,(202) 555-0150,\n` +
+      `Brown,Cy,Brown,,202.555.0150,\n`;
+    const result = parseGuestImport(csv, { ...slugs, smsConfigured: true });
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        {
+          row: 2,
+          field: "contact_phone_2",
+          message: "Repeats another number of this household",
+        },
+        {
+          row: 4,
+          field: "contact_phone",
+          message: "Used by another household in this file",
+        },
+      ]),
+    );
+  });
+
+  it("ignores phone columns when texting is not configured, saving nothing and counting what was dropped", () => {
+    const csv = `${header}Smith,Ann,Smith,ann@example.test,(202) 555-0123,555-0100\nJones,Bo,Jones,,,\n`;
+    const result = parseGuestImport(csv, slugs);
+    expect(result.errors).toEqual([]);
+    expect(result.households[0]).not.toHaveProperty("phones");
+    expect(result.phonesIgnored).toBe(2);
+  });
+
+  it("never reads a consent column", () => {
+    const csv = `${header.trim()},sms_consent\nSmith,Ann,Smith,,(202) 555-0123,,yes\n`;
+    const result = parseGuestImport(csv, { ...slugs, smsConfigured: true });
+    expect(JSON.stringify(result.households)).not.toMatch(/consent|opted/i);
+  });
+});
