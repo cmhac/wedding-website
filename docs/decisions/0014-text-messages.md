@@ -67,3 +67,27 @@ Consequences: a household with only a phone number cannot be contacted first by
 the system (the preview flags it, and the couple send the link another way);
 `TWILIO_AUTH_TOKEN` is a new server-only secret; the constitution's technology
 line needs "Text: Twilio for delivery".
+
+## Run time limit and error codes (checked 2026-11-11)
+
+- **Run time.** Vercel's documentation (Limits and Fluid compute pages, read
+  2026-11-11) gives a function a default and maximum of 300 seconds on the
+  Hobby plan and a default of 300 seconds (maximum 800) on Pro. A run spends
+  at most 45 seconds sending texts, so it fits with room to spare on either
+  plan. The send and scheduled-run routes also set `maxDuration = 60`
+  explicitly, so a future change in the platform default cannot cut a run
+  short. The scheduled run reports each campaign's `remaining` count, and a
+  campaign stays `sending` until nothing is queued.
+- **Error codes.** Twilio's error dictionary matches the plain wording used in
+  the admin console: 21610 (the recipient replied STOP), 30003 (handset
+  unreachable), 30005 (unknown destination handset), 30006 (landline or
+  unreachable carrier), 30007 (filtered as spam). Twilio's third-party
+  explanations differ on how permanent 30005 is, so the console says the
+  number "may not exist any more", not that it is gone.
+- **Typed-number opt-in.** Anyone who knows a guest's number can tick the box
+  on the sign-in prompt and opt that number in. The guest-list match still
+  applies (only numbers already on a household are accepted), the opt-in
+  records when and how it was given, and STOP always works. Chris has not
+  yet decided whether that is acceptable for a small,
+  known guest list; until he does, the behaviour is unchanged and a one-time
+  code is the upgrade.

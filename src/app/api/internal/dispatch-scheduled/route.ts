@@ -4,6 +4,9 @@ import { dispatchDueCampaigns } from "@/lib/campaigns/dispatch";
 import { log } from "@/lib/log";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
+/** Allows one run to spend up to 45 seconds sending texts (decision 0014). */
+export const maxDuration = 60;
+
 /** Compares secrets in constant time. Hashing first makes the lengths equal. */
 function secretMatches(provided: string, expected: string): boolean {
   const a = createHash("sha256").update(provided).digest();

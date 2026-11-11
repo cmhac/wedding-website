@@ -50,6 +50,35 @@ describe("PhonesList", () => {
     expect(screen.getByText("Delivery problem")).toBeInTheDocument();
   });
 
+  it("drops the flag once the number is corrected or removed (the data no longer carries it)", () => {
+    const { rerender } = render(
+      <PhonesList householdId="h1" phones={phones} />,
+    );
+    expect(screen.getByText("Delivery problem")).toBeInTheDocument();
+    // A corrected number comes back unflagged and not asked.
+    const corrected = phones.map((x) =>
+      x.id === "p2"
+        ? {
+            ...x,
+            deliveryProblem: false,
+            consent: "not_asked",
+            consentAt: null,
+          }
+        : x,
+    );
+    rerender(<PhonesList householdId="h1" phones={corrected} />);
+    expect(screen.queryByText("Delivery problem")).toBeNull();
+    // A removed number is gone with its flag.
+    rerender(
+      <PhonesList
+        householdId="h1"
+        phones={phones.filter((x) => x.id !== "p2")}
+      />,
+    );
+    expect(screen.queryByText("Delivery problem")).toBeNull();
+    expect(screen.queryByText("(202) 555-0124")).toBeNull();
+  });
+
   it("offers no way to opt a number in: there is no consent control", () => {
     render(<PhonesList householdId="h1" phones={phones} />);
     expect(screen.queryByRole("checkbox")).toBeNull();
