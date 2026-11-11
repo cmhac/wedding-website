@@ -395,3 +395,36 @@ describe("HouseholdDetailView: Remove tab", () => {
     ).toHaveAttribute("href", "/admin/households/h1?tab=remove");
   });
 });
+
+describe("HouseholdDetailView phone numbers", () => {
+  const withPhones = household({
+    phones: [
+      {
+        id: "p1",
+        value: "+12025550123",
+        deliveryProblem: false,
+        consent: "opted_in",
+        consentAt: "2027-02-01T18:00:00Z",
+      },
+    ],
+  });
+
+  it("shows phone numbers and their opt-in state only while texting is configured", () => {
+    render(
+      <HouseholdDetailView
+        household={withPhones}
+        tab="details"
+        smsConfigured
+      />,
+    );
+    expect(screen.getByText("(202) 555-0123")).toBeInTheDocument();
+    expect(screen.getByText(/Opted in/)).toBeInTheDocument();
+  });
+
+  it("shows nothing about phone numbers while texting is not configured", () => {
+    const { container } = render(
+      <HouseholdDetailView household={withPhones} tab="details" />,
+    );
+    expect(container.textContent).not.toMatch(/phone|Opted in|\(202\)/i);
+  });
+});

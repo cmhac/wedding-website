@@ -12,6 +12,12 @@ const MESSAGES = {
   email_in_use: "That email address already belongs to another household.",
   staff_account:
     "That email address belongs to a staff sign-in, so it cannot be used for a household.",
+  invalid_phone: "That is not a valid phone number.",
+  not_us_phone:
+    "Only United States numbers are supported. Use an email address instead.",
+  phone_in_use: "That number already belongs to another household.",
+  texting_not_configured:
+    "Texting is not set up, so phone numbers cannot be saved.",
   household_contact:
     "That email address belongs to a household, so it cannot also be a staff sign-in.",
   last_couple: "The last couple member cannot be removed.",

@@ -2,6 +2,7 @@
 
 import { ContactsList } from "./ContactsList";
 import { InviteLinkControls } from "./InviteLinkControls";
+import { PhonesList } from "./PhonesList";
 import { SignOutEverywhereForm } from "./forms/SignOutEverywhereForm";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -58,6 +59,7 @@ export function HouseholdDetailView({
   confirm,
   notice,
   extraTabs = [],
+  smsConfigured = false,
 }: {
   household: HouseholdDetail;
   /** The `tab` query value. */
@@ -69,6 +71,8 @@ export function HouseholdDetailView({
   /** The `notice` query value. */
   notice?: string;
   extraTabs?: ExtraHouseholdTab[];
+  /** True when the text provider is configured: only then are phone numbers shown. */
+  smsConfigured?: boolean;
 }) {
   const basePath = `/admin/households/${household.id}`;
   const tabs = [
@@ -117,7 +121,9 @@ export function HouseholdDetailView({
       {shownNotice ? (
         <Alert variant={shownNotice.variant}>{shownNotice.text}</Alert>
       ) : null}
-      {current === "details" ? <DetailsTab household={household} /> : null}
+      {current === "details" ? (
+        <DetailsTab household={household} smsConfigured={smsConfigured} />
+      ) : null}
       {current === "guests" ? (
         <GuestsTab household={household} guest={guest} confirm={confirm} />
       ) : null}
@@ -129,7 +135,13 @@ export function HouseholdDetailView({
   );
 }
 
-function DetailsTab({ household }: { household: HouseholdDetail }) {
+function DetailsTab({
+  household,
+  smsConfigured,
+}: {
+  household: HouseholdDetail;
+  smsConfigured: boolean;
+}) {
   const namedPlusOnes = household.guests.filter(
     (g) => g.isPlusOne && !g.isPlaceholder,
   ).length;
@@ -144,6 +156,14 @@ function DetailsTab({ household }: { household: HouseholdDetail }) {
           contacts={household.contacts}
         />
       </Card>
+      {smsConfigured ? (
+        <Card heading="Phone numbers">
+          <PhonesList
+            householdId={household.id}
+            phones={household.phones ?? []}
+          />
+        </Card>
+      ) : null}
       <Card heading="Personal link and sign-in">
         <div className="stack">
           <p className="muted">

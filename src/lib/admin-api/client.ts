@@ -14,6 +14,7 @@ import {
   errorBodySchema,
   importResponseSchema,
   inviteLinkResponseSchema,
+  phoneContactResponseSchema,
   removeContactResponseSchema,
   updateHouseholdResponseSchema,
   type ContactResponse,
@@ -22,6 +23,7 @@ import {
   type ErrorBody,
   type ImportResponse,
   type InviteLinkResponse,
+  type PhoneContactResponse,
   type RemoveContactResponse,
   type UpdateHouseholdRequest,
   type UpdateHouseholdResponse,
@@ -130,6 +132,37 @@ export const removeContact = (householdId: string, contactId: string) =>
   call(
     removeContactResponseSchema,
     `${contactsPath(householdId)}/${encodeURIComponent(contactId)}`,
+    { method: "DELETE" },
+  ) as Promise<ApiResult<RemoveContactResponse>>;
+
+const phonesPath = (householdId: string) =>
+  `/api/admin/households/${encodeURIComponent(householdId)}/phones`;
+
+/** Adds a United States phone number; its opt-in starts "not asked". */
+export const addPhone = (householdId: string, value: string) =>
+  call(
+    phoneContactResponseSchema,
+    phonesPath(householdId),
+    json("POST", { value }),
+  ) as Promise<ApiResult<PhoneContactResponse>>;
+
+/** Changes a number; its opt-in goes back to "not asked". */
+export const updatePhone = (
+  householdId: string,
+  contactId: string,
+  value: string,
+) =>
+  call(
+    phoneContactResponseSchema,
+    `${phonesPath(householdId)}/${encodeURIComponent(contactId)}`,
+    json("PATCH", { value }),
+  ) as Promise<ApiResult<PhoneContactResponse>>;
+
+/** Removes a number; `paper_only` is true when it was the household's last contact. */
+export const removePhone = (householdId: string, contactId: string) =>
+  call(
+    removeContactResponseSchema,
+    `${phonesPath(householdId)}/${encodeURIComponent(contactId)}`,
     { method: "DELETE" },
   ) as Promise<ApiResult<RemoveContactResponse>>;
 

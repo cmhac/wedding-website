@@ -96,6 +96,14 @@ export type HouseholdDetail = {
   id: string;
   displayName: string;
   contacts: { id: string; value: string; deliveryProblem: boolean }[];
+  /** Phone numbers with their opt-in state (shown only while texting is configured). */
+  phones?: {
+    id: string;
+    value: string;
+    deliveryProblem: boolean;
+    consent: string;
+    consentAt: string | null;
+  }[];
   plusOneAllowance: number;
   address: HouseholdAddress | null;
   notes: string | null;
@@ -377,7 +385,9 @@ export async function loadHouseholdDetail(
         "household_contacts",
         db
           .from("household_contacts")
-          .select("id, household_id, value, delivery_problem, created_at")
+          .select(
+            "id, household_id, kind, value, delivery_problem, created_at, sms_consent, sms_consent_at",
+          )
           .eq("household_id", id)
           .order("created_at", { ascending: true }),
       ),
@@ -423,11 +433,22 @@ export async function loadHouseholdDetail(
   return {
     id,
     displayName: h.display_name as string,
-    contacts: contacts.map((c) => ({
-      id: c.id as string,
-      value: String(c.value),
-      deliveryProblem: Boolean(c.delivery_problem),
-    })),
+    contacts: contacts
+      .filter((c) => c.kind !== "phone")
+      .map((c) => ({
+        id: c.id as string,
+        value: String(c.value),
+        deliveryProblem: Boolean(c.delivery_problem),
+      })),
+    phones: contacts
+      .filter((c) => c.kind === "phone")
+      .map((c) => ({
+        id: c.id as string,
+        value: String(c.value),
+        deliveryProblem: Boolean(c.delivery_problem),
+        consent: String(c.sms_consent ?? "not_asked"),
+        consentAt: text(c.sms_consent_at),
+      })),
     plusOneAllowance: num(h.plus_one_allowance),
     address: asAddress(h.address),
     notes: text(h.notes),

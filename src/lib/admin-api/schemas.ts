@@ -55,6 +55,16 @@ export const contactResponseSchema = z.object({
 });
 export type ContactResponse = z.infer<typeof contactResponseSchema>;
 
+export const phoneContactResponseSchema = z.object({
+  contact: z.object({
+    id: z.string(),
+    kind: z.literal("phone"),
+    value: z.string(),
+    sms_consent: z.string(),
+  }),
+});
+export type PhoneContactResponse = z.infer<typeof phoneContactResponseSchema>;
+
 export const removeContactResponseSchema = z.object({
   paper_only: z.boolean(),
 });

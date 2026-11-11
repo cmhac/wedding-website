@@ -13,6 +13,7 @@ import { loadEvents } from "@/lib/admin/data/events";
 import { loadHouseholdDetail } from "@/lib/admin/data/households";
 import { messageFor } from "@/lib/admin/messages";
 import { isForbidden, requireStaffPage } from "@/lib/admin/session";
+import { isSmsConfigured } from "@/lib/sms/state";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -56,6 +57,7 @@ export default async function HouseholdPage({
       guest={first(query.guest)}
       confirm={first(query.confirm)}
       notice={first(query.notice)}
+      smsConfigured={isSmsConfigured()}
       extraTabs={[
         {
           value: "answers",
