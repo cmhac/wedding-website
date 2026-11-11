@@ -42,3 +42,7 @@ Consequences: typed-address links are single use and short lived (a mail scanner
 that opens one first uses it up; the guest asks again or uses the personal link).
 Durable sign-in limits live in the database, keyed by a hash of the address.
 Details: `specs/003-personal-invite-links/research.md`.
+
+Update (2026-11-11): a guest can also type a phone number and get a text link
+(a 15-minute link that is not single use), once the couple have turned texting
+on. See [0014](./0014-text-messages.md).

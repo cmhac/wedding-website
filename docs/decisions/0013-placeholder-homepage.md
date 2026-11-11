@@ -37,3 +37,8 @@ guest-facing site exists. The full plan is in
 Alternatives: a top-level app layout (would impose a layout on the designer); a
 "Staff sign in" link (declined); a database function to look up staff addresses
 (unneeded because staff and household addresses never overlap).
+
+Update (2026-11-11): the exception also covers a one-time text-message consent
+step on this page, a consent checkbox on its sign-in prompt, two small links to
+the public privacy and terms pages, and those two pages. See
+[0014](./0014-text-messages.md).

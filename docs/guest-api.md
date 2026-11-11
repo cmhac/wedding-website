@@ -49,6 +49,17 @@ A household has one shared sign-in; any of its people can use it, on any device,
 
 Guests stay signed in until staff use "sign out everywhere" for the household (access ends on the next request) or `POST /api/guest/sign-out` ends this device's session only; other devices of the same household stay signed in.
 
+## Text messages (optional, off until the couple set it up)
+
+Everything here exists only while **texting is available**: the Twilio settings are on the server and the couple's switch is on. Otherwise no endpoint below does anything, the sign-in answer is the original email-only wording, and nothing about texting is shown.
+
+- **Sign-in body.** `POST /api/guest/sign-in` takes `{ "identifier": "<email or phone number>", "sms_consent": true }` (the old `{ "email": ... }` still works). A value with an `@` is the email path. A phone number is texted a link only when `sms_consent` is true, the number is on a household, and the sign-in limits allow it; its opt-in is recorded then. Every other case sends and records nothing, and the answer is the same: while texting is available, `{ "message": "If that email address or mobile number is on the guest list, or belongs to a staff account, a link is on its way." }`, after at least 1.5 seconds.
+- **Texted link, `GET /t/[token]`.** `/t/<household id>.<expiry>.<signature>`, valid 15 minutes and usable more than once in that window (a messaging app that opens it first does not use it up). It signs the household in on that device and redirects `302` to the guest landing path; every failure is a `302` to `/auth/error`. It does not stop on the wedding day, and ends when staff reissue the household's link or sign it out everywhere.
+- **Consent step.** `GET /api/guest/sms-consent` returns `{ "available": true, "pending": [{ "id", "masked": "(•••) •••-0123" }] }`, the household's numbers not yet asked about. `POST /api/guest/sms-consent` takes `{ "answers": [{ "id", "opt_in": true }] }` (a ticked box opts in, an unticked one declines and the step never returns for that number); one confirmation text is sent for each number newly opted in. While unavailable: `{ "available": false, "pending": [] }` and `409 texting_unavailable`. A frontend shows the consent step after a guest's first sign-in when `pending` is not empty.
+- **The consent statement** (shown with every unticked checkbox, separate from any agreement to the privacy and terms pages): "By ticking a box you agree to receive text messages from Chris & Hannah's wedding about our wedding (reminders, essential updates and sign-in links), about a dozen messages over six months. Msg & data rates may apply. Reply HELP for help, STOP to opt out." plus links to `/privacy` and `/terms`. Texts are optional and email always works. This wording matches what is registered with the carriers: change both together.
+- **Contacts.** `GET /api/guest/rsvp` also lists phone numbers masked as `(•••) •••-0123` in `contacts` (`{ "kind": "phone", "masked": ... }`) while texting is available. Guests cannot change them.
+- **STOP and START** are handled by the provider; the site keeps no opt-out list. A guest who replied STOP can use their email address, their personal link, or reply START.
+
 ## `GET /api/guest/rsvp` response
 
 Built from `get_my_rsvp()`; contains only the caller's household.

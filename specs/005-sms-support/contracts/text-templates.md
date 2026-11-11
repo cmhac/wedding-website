@@ -6,13 +6,13 @@ Texts are registered in `texts/index.ts`, mirroring [`emails/`](../../001-guest-
 export type TextTemplate<P> = (props: P) => string;
 ```
 
-| Key                        | Used for                           | Props                           |
-| -------------------------- | ---------------------------------- | ------------------------------- |
-| `sms_sign_in`              | the timed sign-in link             | `{ sign_in_url }`               |
-| `sms_confirmation`         | the one text after an opt-in       | `{}`                            |
-| `rsvp_reminder`            | RSVP reminder campaigns            | `{ personal_link, respond_by }` |
-| `update`                   | essential update campaigns         | `{ personal_link, note }`       |
-| `optional_events_reminder` | optional events reminder campaigns | `{ personal_link }`             |
+| Key                        | Used for                           | Props                                                          |
+| -------------------------- | ---------------------------------- | -------------------------------------------------------------- |
+| `sms_sign_in`              | the timed sign-in link             | `{ sign_in_url }`                                              |
+| `sms_confirmation`         | the one text after an opt-in       | `{}`                                                           |
+| `rsvp_reminder`            | RSVP reminder campaigns            | `{ personal_link, respond_by }` (a short date such as "Sep 1") |
+| `update`                   | essential update campaigns         | `{ personal_link }`                                            |
+| `optional_events_reminder` | optional events reminder campaigns | `{ personal_link }`                                            |
 
 No text is registered for `invitation` or `save_the_date`: the first contact is always an email, and choosing text for those types is refused before anything is queued.
 

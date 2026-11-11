@@ -70,13 +70,11 @@ describe("ConsentStep", () => {
   });
 
   it("shows an error and keeps the ticks when saving fails", async () => {
-    const answer = jest
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        status: 409,
-        error: { code: "texting_unavailable", message: "x" },
-      });
+    const answer = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      error: { code: "texting_unavailable", message: "x" },
+    });
     setup(answer);
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Text me at (•••) •••-0123" }),
