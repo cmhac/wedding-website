@@ -44,6 +44,9 @@ Plain-language terms used below:
 - Q: Can the guest-list import carry the consent mark too? → A: Yes, assumed from the couple's original description ("if guests have pre-consented to sms they'll be marked as such in the database"): the import accepts a consent column next to each phone number. The couple may confirm or drop this at planning.
 - Q: Is the save the date page built here? → A: Yes, as a barebones placeholder only (the couple's answer, 2026-11-11): plain, one stylesheet shared with the placeholder homepage, no design system, replaced or restyled by the designer. It exists so the full flow can be tested and sent. Content, calendar files and landing behavior are documented so the designer's page can take over without backend changes. No other guest-facing screen is added.
 - Q: Who writes the save the date email wording? → A: The couple, or the designer's email design. This feature registers the template slot, defines what it receives, and tests it with a fixture; it ships no real wording or design. (The couple's earlier permission to draft email wording covers only the sign-in, invitation and reminder emails.) The text wording already has a first draft, which this feature revises to the couple's description.
+- Q: Does a test send go to several households at once or one at a time? → A: One household at a time. Staff repeat the test for each household they want (for example one for each of the couple). It keeps a test to a single-household audience, which the send path already supports.
+- Q: Can the readiness list check that the email sending domain is verified? → A: No. The site can only check what it holds: that the email key and sending address are configured. Whether the domain is verified at the email provider is confirmed by hand, as the manual setup document already describes, and the readiness list says so rather than claiming it.
+- Q: What does the placeholder save the date page show when the wedding date is not set? → A: The couple's names and a plain "Details coming soon" line, with no calendar buttons. It never shows a wrong or empty date.
 - Q: Which calendars? → A: Google Calendar, Apple Calendar and Outlook by name, plus a standard calendar file that any other calendar opens.
 
 ## User Scenarios & Testing _(mandatory)_
@@ -66,7 +69,7 @@ A guest opens the save the date email, or the text, and taps the link. Their dev
 6. **Given** a guest with an unanswered phone number and texting available, **When** they land on the save the date page, **Then** the save the date comes first and the text consent step is offered after it, never in front of it (on the placeholder, the existing consent step appears below the date). (This changes the text-message spec's "before anything else"; see "What this changes".)
 7. **Given** a link that is reissued, made up, or opened on or after the wedding day, **When** it is opened, **Then** the plain failure page appears, as today.
 8. **Given** the RSVP has not opened yet, **When** a save the date reader signs in, **Then** nothing invites them to RSVP, and an attempt to save answers is refused as "not open yet" (the existing RSVP on/off setting).
-9. **Given** the placeholder page, **When** a signed-in guest opens it, **Then** it shows the couple's names, the date, the place line, the note line and one button each for Google Calendar, Outlook, and Apple or other calendars (the file), with nothing else: no navigation, no RSVP, no household information. **When** a visitor who is not signed in opens it, **Then** they are sent to the sign-in prompt on the homepage and see no details.
+9. **Given** the placeholder page, **When** a signed-in guest opens it, **Then** it shows the couple's names, the date, the place line, the note line and one button each for Google Calendar, Outlook, and Apple or other calendars (the file), with nothing else: no navigation, no RSVP, no household information. When the wedding date is not set it shows the couple's names and a plain "Details coming soon" line, with no calendar buttons. **When** a visitor who is not signed in opens it, **Then** they are sent to the sign-in prompt on the homepage and see no details.
 
 ---
 
@@ -163,9 +166,9 @@ Before the real send the couple can send the save the date to themselves and tes
 
 **Acceptance Scenarios**:
 
-1. **Given** a campaign, **When** staff choose "send a test", **Then** it goes only to households they choose (their own test household or households), by the channels chosen, through the same path and wording as the real send, and is marked as a test in the delivery view so it is not counted as the real save the date.
+1. **Given** a campaign, **When** staff choose "send a test", **Then** it goes only to the one household they choose (their own test household; they repeat the test for each household they want), by the channels chosen, through the same path and wording as the real send, and is marked as a test in the delivery view so it is not counted as the real save the date.
 2. **Given** a test send, **When** it completes, **Then** the real campaign's "not yet sent" audience is unaffected: the test households can still be included in the real send.
-3. **Given** staff open the readiness list, **When** it is shown, **Then** it reports, each as ready or not ready with the reason: the save the date details are complete; the wedding date is set; the save the date email template is registered; the save the date text is registered and within its length rule; the site's public address is set; the RSVP is closed until invitations go out, or open on purpose; the email sending domain is verified; texting is configured and switched on (or off by choice); how many households are reachable by email, by text, by both and by neither.
+3. **Given** staff open the readiness list, **When** it is shown, **Then** it reports, each as ready or not ready with the reason: the save the date details are complete; the wedding date is set; the save the date email template is registered; the save the date text is registered and within its length rule; the site's public address is set; the RSVP is closed until invitations go out, or open on purpose; the email key and sending address are configured (the site cannot see whether the domain is verified at the provider, so the list says to confirm that by hand using the manual setup document); texting is configured and switched on (or off by choice); how many households are reachable by email, by text, by both and by neither.
 4. **Given** something is not ready, **When** staff try the real send, **Then** a hard gap (no email template, no wedding date, no site address) blocks it with the reason, and a soft gap (texting off, send time outside the window) warns and lets them proceed.
 
 ---
@@ -244,7 +247,7 @@ After the send, the couple can see which households have opened their link and s
 
 **Rehearsal and readiness**
 
-- **FR-024**: Staff MUST be able to send any campaign as a test to chosen households only, through the same path and wording as the real send, marked as a test in the delivery view. A test MUST NOT count as the real send for the "not yet sent" audience filter.
+- **FR-024**: Staff MUST be able to send any campaign as a test to one chosen household at a time, through the same path and wording as the real send, marked as a test in the delivery view. A test MUST NOT count as the real send for the "not yet sent" audience filter.
 - **FR-025**: The console MUST show a readiness list for the save the date (see User Story 6, scenario 3), computed from live settings, naming each gap in plain words. A hard gap (no email template when email is chosen, no wedding date, no site address) MUST block the real send with its reason; a soft gap (texting off, send time outside the window, households reachable by neither channel) MUST warn only.
 
 **Follow-up**
