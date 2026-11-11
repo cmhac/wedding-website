@@ -210,9 +210,12 @@ set. Sign-in and every email work meanwhile. Do these in order. The design is in
    `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID` (or
    `TWILIO_FROM_NUMBER`). They are server-only; never put them in the repository.
    After the redeploy the banner disappears and Settings shows "Text messaging".
-7. **Set the delivery notification URL** on the messaging service (or per number)
-   to `<site>/api/webhooks/twilio`. The site sets the same URL on each text it
-   sends; Twilio's signature on it is checked with `TWILIO_AUTH_TOKEN`.
+7. **Delivery notifications need no setup if you leave the messaging
+   service's own callback URL blank**: the site sets `<site>/api/webhooks/twilio`
+   on each text it sends, and checks Twilio's signature with `TWILIO_AUTH_TOKEN`.
+   Twilio signs the exact URL it calls, so if you do set a callback URL anywhere
+   it must be exactly that (same host, no trailing slash), or every notification
+   will be refused.
 8. **Turn texting on** in Settings, as a couple member. This texts nobody by
    itself: guests are asked to opt in at their next sign-in, and only numbers that
    opted in are ever texted. Keep it off until the carriers have approved the

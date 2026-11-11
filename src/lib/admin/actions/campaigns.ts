@@ -146,6 +146,7 @@ export async function previewAudience(
           const contacts = await supabase
             .from("household_contacts")
             .select("household_id")
+            .eq("kind", "email")
             .in("household_id", ids);
           if (contacts.error) return { error: contacts.error };
           for (const c of (contacts.data ?? []) as { household_id: string }[]) {

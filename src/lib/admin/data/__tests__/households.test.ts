@@ -100,6 +100,8 @@ function seed() {
       contact("c2", "h-b", "second@example.test", "2027-01-01T00:00:02Z", true),
       contact("c3", "h-a", "h-a@example.test"),
       contact("c4", "h-c", "h-c@example.test"),
+      // A phone number must never appear among a household's email contacts.
+      { ...contact("c9", "h-a", "+12025550123"), kind: "phone" },
     ],
     events: [
       { id: "e-party", slug: "welcome-party", name: "Welcome party" },

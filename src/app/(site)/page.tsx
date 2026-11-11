@@ -1,7 +1,7 @@
 import { Home } from "@/components/site/Home";
 import { getSession } from "@/lib/auth/session";
 import { getConsentPrompt } from "@/lib/sms/consent";
-import { getSmsState } from "@/lib/sms/state";
+import { getSmsState, type SmsState } from "@/lib/sms/state";
 
 // Read per request: the answer depends on the visitor's session cookie.
 export const dynamic = "force-dynamic";
@@ -16,22 +16,23 @@ async function readSession() {
   }
 }
 
-async function smsAvailable(): Promise<boolean> {
+async function readSmsState(): Promise<SmsState> {
   try {
-    return (await getSmsState()).available;
+    return await getSmsState();
   } catch {
-    return false;
+    return { configured: false, enabled: false, available: false };
   }
 }
 
 export default async function HomePage() {
   const session = await readSession();
-  const available = await smsAvailable();
+  const state = await readSmsState();
+  const available = state.available;
   // Only a signed-in guest is asked, and only while texting is available.
   let consent: { id: string; masked: string }[] = [];
   if (session?.kind === "guest" && available) {
     try {
-      consent = (await getConsentPrompt(session.supabase)).pending;
+      consent = (await getConsentPrompt(session.supabase, state)).pending;
     } catch {
       consent = [];
     }

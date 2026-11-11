@@ -110,7 +110,11 @@ export function SignInPrompt({
             autoComplete={smsAvailable ? "username" : "email"}
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              // A tick belongs to the number it was given for.
+              setConsent(false);
+            }}
           />
         </div>
         {isPhone ? (

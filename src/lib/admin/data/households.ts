@@ -211,6 +211,9 @@ export async function loadHouseholdList(
       db
         .from("household_contacts")
         .select("household_id, value, delivery_problem, created_at")
+        // Email only: phone numbers have their own list and are hidden while
+        // texting is not configured.
+        .eq("kind", "email")
         .order("created_at", { ascending: true }),
     ),
     rows(

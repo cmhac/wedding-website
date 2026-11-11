@@ -2,7 +2,7 @@ import "server-only";
 import { log } from "@/lib/log";
 import { maskPhone } from "./phone";
 import { sendText } from "./send";
-import { getSmsState } from "./state";
+import { getSmsState, type SmsState } from "./state";
 import { renderText } from "./texts";
 import { statusCallbackUrl } from "./urls";
 
@@ -38,8 +38,10 @@ async function readContacts(db: Rpc): Promise<Contact[] | null> {
 /** The numbers still to ask about, masked; nothing while texting is not available. */
 export async function getConsentPrompt(
   db: Rpc,
+  /** The state the caller already read, to avoid a second settings query. */
+  known?: SmsState,
 ): Promise<{ available: boolean; pending: PendingNumber[] }> {
-  const state = await getSmsState();
+  const state = known ?? (await getSmsState());
   if (!state.available) return { available: false, pending: [] };
   const contacts = await readContacts(db);
   const pending = (contacts ?? [])
@@ -80,7 +82,6 @@ export async function answerConsent(
   const state = await getSmsState();
   if (!state.available) return { ok: false, code: "texting_unavailable" };
 
-  const contacts = await readContacts(db);
   const recorded = await db.rpc("record_sms_consent", {
     answers: answers.map((a) => ({ contact_id: a.id, opt_in: a.opt_in })),
   });
@@ -89,6 +90,12 @@ export async function answerConsent(
   const opted = new Set(
     Array.isArray(recorded.data) ? (recorded.data as string[]) : [],
   );
+  // Read after recording, so the numbers are current. If they cannot be read
+  // the opt-in stays recorded, and the missed confirmation is logged.
+  const contacts = opted.size > 0 ? await readContacts(db) : [];
+  if (contacts === null) {
+    log.warn("sms_confirmation", { outcome: "contacts_unreadable" });
+  }
   for (const contact of contacts ?? []) {
     if (opted.has(contact.id) && contact.kind === "phone") {
       await sendConfirmationText(contact.value);

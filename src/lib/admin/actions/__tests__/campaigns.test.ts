@@ -39,8 +39,20 @@ function setup(
     {
       campaigns,
       household_contacts: [
-        { id: "c1", household_id: "h1", value: "a@example.test" },
-        { id: "c2", household_id: "h1", value: "b@example.test" },
+        {
+          id: "c1",
+          household_id: "h1",
+          kind: "email",
+          value: "a@example.test",
+        },
+        {
+          id: "c2",
+          household_id: "h1",
+          kind: "email",
+          value: "b@example.test",
+        },
+        // A phone number does not count as an address to email.
+        { id: "c3", household_id: "h1", kind: "phone", value: "+12025550123" },
       ],
     },
     { rpcResults: { resolve_audience: { data: rpcData } } },

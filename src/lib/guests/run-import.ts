@@ -133,7 +133,10 @@ export async function runGuestImport(
     const phones = household.phones ?? [];
     if (phones.length === 0) continue;
     const id = idByRef.get(household.ref);
-    if (!admin || !id) {
+    // No id means the database rejected the household (already reported as
+    // errors), so its numbers are not "ignored".
+    if (!id) continue;
+    if (!admin) {
       phonesIgnored += phones.length;
       continue;
     }
