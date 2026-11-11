@@ -313,3 +313,98 @@ describe("option loaders", () => {
     expect(options).toHaveLength(5);
   });
 });
+
+describe("loadDelivery texts", () => {
+  const textMessages = [
+    {
+      id: "t1",
+      campaign_id: CAMPAIGN_C,
+      household_id: "h1",
+      channel: "text",
+      to_phone: "+12025550123",
+      status: "delivered",
+      skip_reason: null,
+      error_code: null,
+      queued_at: "2027-08-02T16:00:00Z",
+      sent_at: "2027-08-02T16:01:00Z",
+      last_event_at: "2027-08-02T16:02:00Z",
+    },
+    {
+      id: "t2",
+      campaign_id: CAMPAIGN_C,
+      household_id: "h1",
+      channel: "text",
+      to_phone: "+12025550124",
+      status: "failed",
+      skip_reason: null,
+      error_code: "21610",
+      queued_at: "2027-08-02T16:00:00Z",
+      sent_at: null,
+      last_event_at: null,
+    },
+    {
+      id: "t3",
+      campaign_id: CAMPAIGN_C,
+      household_id: "h1",
+      channel: "text",
+      to_phone: "+12025550125",
+      status: "failed",
+      skip_reason: null,
+      error_code: "unknown_outcome",
+      queued_at: "2027-08-02T16:00:00Z",
+      sent_at: null,
+      last_event_at: null,
+    },
+    {
+      id: "t4",
+      campaign_id: CAMPAIGN_C,
+      household_id: "h1",
+      channel: "text",
+      to_phone: null,
+      status: "skipped",
+      skip_reason: "not_opted_in",
+      error_code: null,
+      queued_at: "2027-08-02T16:00:00Z",
+      sent_at: null,
+      last_event_at: null,
+    },
+  ];
+  const withTexts = () => {
+    const { fake, client } = db();
+    fake.tables.messages.push(...textMessages);
+    return client;
+  };
+
+  it("shows each text per number, with a plain reason for a failure or a skip", async () => {
+    const delivery = await loadDelivery(CAMPAIGN_C, withTexts(), {
+      includeTexts: true,
+    });
+    const byId = Object.fromEntries(delivery!.rows.map((r) => [r.id, r]));
+    expect(byId.t1).toMatchObject({
+      channel: "text",
+      address: "(202) 555-0123",
+      status: "delivered",
+      detail: "",
+    });
+    expect(byId.t2).toMatchObject({
+      status: "failed",
+      detail: "The recipient replied STOP",
+    });
+    expect(byId.t3.detail).toBe(
+      "Sent but not confirmed: check Twilio before re-sending",
+    );
+    expect(byId.t4).toMatchObject({
+      address: null,
+      detail: "Not opted in to texts",
+    });
+    expect(delivery!.counts.failed).toBeGreaterThanOrEqual(2);
+  });
+
+  it("leaves texts out entirely while texting is not configured", async () => {
+    const delivery = await loadDelivery(CAMPAIGN_C, withTexts());
+    expect(delivery!.rows.some((r) => r.channel === "text")).toBe(false);
+    expect(JSON.stringify(delivery)).not.toMatch(
+      /2025550|STOP|opted in to texts/,
+    );
+  });
+});

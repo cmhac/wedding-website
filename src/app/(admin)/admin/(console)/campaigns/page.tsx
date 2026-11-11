@@ -146,7 +146,9 @@ export default async function CampaignsPage({
   }
 
   if (tab === "delivery") {
-    const delivery = id ? await loadDelivery(id, supabase) : null;
+    const delivery = id
+      ? await loadDelivery(id, supabase, { includeTexts: sms.configured })
+      : null;
     return (
       <div className="stack">
         {header}

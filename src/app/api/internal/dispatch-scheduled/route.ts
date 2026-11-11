@@ -30,7 +30,11 @@ export async function POST(request: Request) {
     return Response.json({
       campaigns: campaigns.map((c) =>
         c.ok
-          ? { campaign_id: c.campaign_id, ok: true }
+          ? {
+              campaign_id: c.campaign_id,
+              ok: true,
+              ...(c.result?.remaining ? { remaining: c.result.remaining } : {}),
+            }
           : { campaign_id: c.campaign_id, ok: false, code: c.code },
       ),
     });

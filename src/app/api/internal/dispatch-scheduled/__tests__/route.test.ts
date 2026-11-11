@@ -25,7 +25,7 @@ beforeEach(() => {
   process.env.CRON_SECRET = SECRET;
   mockDispatch.mockResolvedValue({
     campaigns: [
-      { campaign_id: "c-1", ok: true, result: {} },
+      { campaign_id: "c-1", ok: true, result: { remaining: 3 } },
       { campaign_id: "c-2", ok: false, code: "template_missing" },
     ],
   });
@@ -57,7 +57,7 @@ describe("POST /api/internal/dispatch-scheduled", () => {
     expect(mockDispatch).toHaveBeenCalledWith({ fake: "admin" });
     expect(await res.json()).toEqual({
       campaigns: [
-        { campaign_id: "c-1", ok: true },
+        { campaign_id: "c-1", ok: true, remaining: 3 },
         { campaign_id: "c-2", ok: false, code: "template_missing" },
       ],
     });
