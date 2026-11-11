@@ -25,7 +25,7 @@ New columns `contact_phone`, `contact_phone_2`, `contact_phone_3`, ... Same per-
 ## Campaigns
 
 - `campaigns.channel`: `email` (default), `text` or `both`; chosen on the new-campaign form only when configured; locked after sending.
-- Choosing `text` or `both` for a message type with no registered text wording (the invitation, the save the date) is refused: `422 template_missing` naming the type, nothing queued.
+- Choosing `text` or `both` for a message type with no registered text wording (a type added later without text wording) is refused: `422 template_missing` naming the type, nothing queued.
 - Preview, per household: emails to send, texts to send, and for every skipped number or household the reason in plain words: paper only; no contact on the chosen channel; not opted in; declined; reminders opted out; texting switched off; already responded. Totals per channel. With text chosen and the switch off: "Texting is switched off: texts will be skipped."
 - Sending: emails exactly as today. Texts: only to opted-in numbers, paced at one every 2 seconds, resumed by the scheduled run (research R11). A campaign stays `sending` until nothing is queued.
 

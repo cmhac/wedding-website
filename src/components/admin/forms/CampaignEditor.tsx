@@ -153,7 +153,7 @@ export function CampaignEditor({
         <Field
           id="channel"
           label="Send by"
-          hint="Texts go only to numbers that opted in. The invitation and the save the date have no text version, so they cannot be sent by text."
+          hint="Texts go only to numbers that opted in. The save the date and the invitation can be sent by text as well as email."
         >
           {!smsEnabled ? (
             <p className="muted">

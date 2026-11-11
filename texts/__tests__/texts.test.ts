@@ -9,6 +9,8 @@ const timed = `${SITE}/t/${"A".repeat(22)}.1abcde.${"b".repeat(22)}`;
 const props = {
   sms_sign_in: { sign_in_url: timed },
   sms_confirmation: {},
+  save_the_date: { personal_link: link },
+  invitation: { personal_link: link },
   rsvp_reminder: { personal_link: link, respond_by: "Sep 1" },
   update: { personal_link: link },
   optional_events_reminder: { personal_link: link },
@@ -23,7 +25,9 @@ describe("text registry", () => {
     expect(Object.keys(registry).sort()).toEqual(
       [
         "optional_events_reminder",
+        "invitation",
         "rsvp_reminder",
+        "save_the_date",
         "sms_confirmation",
         "sms_sign_in",
         "update",
@@ -31,10 +35,10 @@ describe("text registry", () => {
     );
   });
 
-  it("has no text for the invitation or the save the date", () => {
-    expect(Object.keys(registry)).not.toContain("invitation");
-    expect(Object.keys(registry)).not.toContain("save_the_date");
-    expect(() => getText("invitation")).toThrow(
+  it("has text for the invitation and the save the date, and refuses an unregistered type", () => {
+    expect(Object.keys(registry)).toContain("invitation");
+    expect(Object.keys(registry)).toContain("save_the_date");
+    expect(() => getText("some_new_type")).toThrow(
       expect.objectContaining({ code: "template_missing" }),
     );
   });
@@ -78,8 +82,10 @@ describe("what each text must contain", () => {
     expect(t).toMatch(/about a dozen/i);
   });
 
-  it("the reminder, update and optional-events texts carry the link", () => {
+  it("the save the date, invitation, reminder, update and optional-events texts carry the link", () => {
     for (const key of [
+      "save_the_date",
+      "invitation",
       "rsvp_reminder",
       "update",
       "optional_events_reminder",

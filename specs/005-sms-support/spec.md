@@ -27,8 +27,8 @@ This feature picks up the "Deferred: text messages" section of the personal invi
 ### Session 2026-11-11
 
 - Q: How do guests agree to be texted? → A: Only by ticking an unticked checkbox on the site. There is no verbal or offline consent. A guest ticks it either the first time they sign in (a one-time step that lists the household's numbers) or on the sign-in prompt when they type a number. This replaces the earlier "I vouch for their consent" decision: the site now records each number's opt-in.
-- Q: How does a guest first hear about the site? → A: By email. The first contact for any household is an invitation email, never a text. A number is never texted until its opt-in has been recorded, so no invitation text is ever sent to a number that has not opted in.
-- Q: What about a household with only a phone number and no email? → A: The system cannot make first contact with it. The couple reach it another way (a paper invitation carrying the site address, or a personal message with the household's personal link, which the console already lets staff copy). The guest then opens the link or types their number, ticks the checkbox, and from then on is texted like anyone else. The preview shows such households as skipped, "not opted in".
+- Q: How does a guest first hear about the site? → A: The save the date and the invitation can each be sent by email, text or both. A number is texted only once its opt-in has been recorded, so no text of any kind is sent to a number that has not opted in.
+- Q: What about a household with only a phone number and no email? → A: Its numbers are texted once they have opted in. Until then the preview shows them as skipped, "not opted in", and the couple reach the household another way (a paper invitation carrying the site address, or a personal message with the household's personal link, which the console already lets staff copy). The guest then opens the link or types their number, ticks the checkbox, and from then on is texted like anyone else.
 - Q: What if a guest says no to texts? → A: Their answer is recorded and they are not asked again for that number. They can still opt in later by typing the number into the sign-in prompt and ticking the checkbox, and they lose nothing: email always works.
 - Q: Is a confirmation text sent after a guest opts in? → A: Yes, one text per number, straight away, saying they are signed up and carrying the required disclosures (how often, message and data rates, STOP and HELP).
 
@@ -40,7 +40,7 @@ This feature picks up the "Deferred: text messages" section of the personal invi
 
 Today a household is reached by zero or more email addresses. A guest signs in by opening the personal link in an invitation email, or by typing one of the household's email addresses to be sent a short-lived link. Campaigns go out as one email per address. The data was designed so that a phone number could later be added as a second kind of contact without reworking it, and that is what this feature does.
 
-Texting differs from email in one way that shapes this feature: nobody is ever texted until they have ticked a checkbox saying they want to be. The couple import the guest list, including any phone numbers, and send the invitation by email. When a guest first signs in, they are asked whether they would like text updates at the numbers on file. Only then do texts flow.
+Texting differs from email in one way that shapes this feature: nobody is ever texted until they have ticked a checkbox saying they want to be. The couple import the guest list, including any phone numbers, and send the save the date and the invitation by email, text or both. When a guest first signs in, they are asked whether they would like text updates at the numbers on file. Only then do texts flow.
 
 Plain-language terms used below:
 
@@ -62,7 +62,7 @@ A guest opens their invitation email, taps the personal link and is signed in. I
 
 **Why this priority**: it is the only way a number becomes textable, so every other text story depends on it.
 
-**Independent Test**: import a household with one email and one phone number, send the invitation email, open its link, tick the box for the number, and confirm a confirmation text is sent and the number is recorded as opted in. Repeat leaving it unticked and confirm nothing is sent and the step does not return.
+**Independent Test**: import a household with one email and one phone number, send the invitation by email and by text to a household with a recorded opt-in, open its link, tick the box for the number, and confirm a confirmation text is sent and the number is recorded as opted in. Repeat leaving it unticked and confirm nothing is sent and the step does not return.
 
 **Acceptance Scenarios**:
 
@@ -118,7 +118,7 @@ The couple and the planner add, change and remove a household's phone numbers, i
 
 ### User Story 4 - Couple sends invitations and reminders by email, text or both (Priority: P1)
 
-When the couple send a campaign, they choose email, text or both. Email goes to every email address of each household in the audience. Text goes only to numbers that have opted in. The invitation is sent by email (a text invitation is never sent). Each message carries the household's personal link. The audience filters and the preview work as today, now counting messages by channel.
+When the couple send a campaign, they choose email, text or both. Email goes to every email address of each household in the audience. Text goes only to numbers that have opted in. The save the date and the invitation can each be sent by email, text or both. A household with both an email address and an opted-in number gets both. Each message carries the household's personal link. The audience filters and the preview work as today, now counting messages by channel.
 
 **Why this priority**: it is how reminders and updates reach guests who prefer texts, without ever texting someone who has not agreed.
 
@@ -129,7 +129,7 @@ When the couple send a campaign, they choose email, text or both. Email goes to 
 1. **Given** a reminder sent by both channels, **When** it goes out, **Then** every email address gets exactly one email, every opted-in number gets exactly one text, and no other number is texted; each message carries the household's personal link.
 2. **Given** the preview, **When** staff open it, **Then** each household shows how many emails and how many texts it will receive, each skipped number or household shows why (paper only, no contact on the chosen channel, not opted in, declined, reminders opted out for a non-essential type, text sending switched off, or already responded where the filter applies), and the totals are shown per channel.
 3. **Given** a campaign that has already been sent, **When** it is retried or run again, **Then** no contact receives a second copy.
-4. **Given** a message type with no registered text wording (the invitation, for example), **When** staff choose text or both for it, **Then** the send is refused with a plain message and nothing goes out on either channel (as for a missing email template today).
+4. **Given** a message type with no registered text wording (a type added later without text wording, for example), **When** staff choose text or both for it, **Then** the send is refused with a plain message and nothing goes out on either channel (as for a missing email template today).
 5. **Given** a household that opted out of reminders, **When** a reminder goes out by any channel, **Then** it is excluded, but an essential logistics update still goes to it.
 6. **Given** a large text campaign, **When** it is sent, **Then** it is paced so that the provider's limits for the couple's registration are not exceeded, continues until every text has been sent or has failed, and does not delay sign-in texts that guests are waiting for.
 7. **Given** a campaign scheduled for a later time by text, **When** the time arrives, **Then** it sends by the same rules, and a campaign scheduled before text sending is switched on sends only its emails (the texts are listed as skipped, not silently dropped).
@@ -249,11 +249,11 @@ If the text-message provider is not configured (the settings are absent, as on e
 - **FR-008**: When texting is available and a guest signs in for the first time by any route, and their household has any number that is not yet asked, the site MUST show the consent step before anything else. It MUST list each such number (masked) with its own checkbox, unticked by default, with the consent statement (FR-009) once, links to the privacy and terms pages, and a single button that saves all answers. A ticked box opts the number in; an unticked box records declined and the step MUST NOT return for that number. Any signed-in member can answer. The step MUST NOT be shown when texting is not available.
 - **FR-009**: The consent statement MUST be shown with every consent checkbox (the consent step and the sign-in prompt), and MUST: name the couple's wedding site; say what texts the guest will get (reminders, essential updates and sign-in links) and roughly how often (about a dozen messages over about six months); say that message and data rates may apply; say how to opt out (reply STOP) and get help (reply HELP); say that texts are optional and email is always available; and link to the privacy and terms pages. The statement and checkbox MUST be separate from any agreement to the privacy policy and terms. It MUST be the same for every visitor and MUST NOT reveal whether a number is known. Screenshots of it are used for the registration.
 - **FR-010**: When a number's opt-in is recorded, one confirmation text MUST be sent to it at once, saying it is signed up, roughly how many texts to expect, that message and data rates may apply, and how to get help and stop. It is sent once per opt-in, not again for repeated ticks.
-- **FR-011**: The first contact for every household MUST be by email: the invitation campaign MUST have no text version, and no text is ever sent to a number before its opt-in. A household with no email address MUST be listed in the preview as skipped for "not opted in" so the couple reach it another way (a paper invitation with the site address, or a personal message with its personal link).
+- **FR-011**: The save the date and the invitation MUST each have a text version and MUST be sendable by email, text or both. No text is ever sent to a number before its opt-in. A household with both an email address and an opted-in number MUST receive both when the channel is both. A household with no email address and no opted-in number MUST be listed in the preview as skipped for "not opted in" so the couple reach it another way (a paper invitation with the site address, or a personal message with its personal link).
 
 **Signing in**
 
-- **FR-012**: A personal invite link MUST work identically whether it arrived by email or by text: same expiry, same reissue behavior, same effect on every device, same failure page, same RSVP-deadline behavior. Nothing about it is specific to a channel.
+- **FR-012**: A personal invite link MUST work identically whether it arrived by email or by text: same expiry, same reissue behavior, same effect on every device, same failure page, same RSVP-deadline behavior. Nothing about it is specific to a channel, including in the save the date and invitation texts.
 - **FR-013**: A guest MUST be able to ask for a short-lived sign-in link by typing any one phone number of their household, ticking the consent checkbox (FR-009), and the link MUST be texted only to the number typed and MUST sign in to the same household as the personal link. Typing a number without ticking the checkbox MUST NOT send anything.
 - **FR-014**: The sign-in prompt MUST accept an email address or a phone number in one field and decide which it is, without a channel picker. The checkbox appears only for a phone number; email needs none. An entry that is not an email and not a recognisable phone number MUST get the same neutral answer as an unknown one. When texting is not available, the prompt MUST show email-only wording and no consent checkbox, and a phone number typed anyway MUST get the same neutral answer with nothing sent or recorded (FR-040).
 - **FR-015**: Asking for a link by phone MUST never create an account and MUST never reveal whether a number is on the guest list. The answer, status, wording and response time MUST be the same for known numbers, unknown numbers, non-US numbers, numbers over their limits, and when texting is not available. The wording MUST cover both channels, so it never shows which kind was typed. An unknown number MUST NOT have anything recorded for it.
@@ -279,7 +279,7 @@ If the text-message provider is not configured (the settings are absent, as on e
 
 **Wording**
 
-- **FR-029**: This feature MUST write first drafts of the wording and plain templates for the sign-in text, the opt-in confirmation text, the reminder text and the essential-update text, registered in the repository and covered by tests, under the couple's existing permission to write first-draft wording for texts (recorded in `CLAUDE.md`). The invitation has no text wording. The couple polish them later. No visual design is involved.
+- **FR-029**: This feature MUST write first drafts of the wording and plain templates for the sign-in text, the opt-in confirmation text, the reminder text, the essential-update text, the save the date text and the invitation text, registered in the repository and covered by tests, under the couple's existing permission to write first-draft wording for texts (recorded in `CLAUDE.md`). The couple polish them later. No visual design is involved.
 - **FR-030**: The first-draft texts MUST say who they are from, include the link where one belongs, and be as short as the content allows. They MUST NOT contain a guest's name or any other personal details beyond what an email of the same type already contains.
 
 **Admin console v0**
@@ -318,7 +318,7 @@ If the text-message provider is not configured (the settings are absent, as on e
 - **Phone opt-in record (new)**: for each phone number: not yet asked, opted in or declined, with when it changed and where the answer was given. Removed with the number; reset when the number changes.
 - **Message (changed)**: one email or text to one contact in one campaign; records the channel and the contact used.
 - **Campaign (changed)**: gains the choice of email, text or both.
-- **Message type (changed)**: each type declares which channels it has wording for; the invitation has none for text.
+- **Message type (changed)**: each type declares which channels it has wording for; the save the date and the invitation each have text wording.
 - **Texting setting (new)**: the master on/off switch, off by default. Texting is available only when this is on and the provider is configured.
 - **Provider configuration (new, not stored data)**: whether the server has the text provider's settings. Read from the deployment, never edited in the console.
 - **Admin banner (new)**: the not-configured warning shown on every admin screen.

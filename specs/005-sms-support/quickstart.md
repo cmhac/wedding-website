@@ -36,6 +36,7 @@ Set `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` to your account's **test** cred
 4. On a signed-out browser type `(202) 555-0123`, tick the box, ask for a link: the answer is the neutral one. The timed link is the text sent; open `/t/...` (copied from the test run's output) within 15 minutes to sign in.
 5. Create a reminder campaign by "both": the preview counts emails and texts, and lists unopted numbers as skipped "not opted in". Send it.
 6. Post a signed `failed` notification to `/api/webhooks/twilio` (the test helper in `src/lib/sms/__tests__/` builds a valid signature): the number is flagged and the delivery view shows the reason. A bad signature is refused with 403.
+7. Create a save the date campaign and an invitation campaign by "both" for a household with an email address and an opted-in number: it gets the email and the text, each with its personal link, and a number that has not opted in is skipped.
 
 ## 4. Real registration (when the carriers approve)
 

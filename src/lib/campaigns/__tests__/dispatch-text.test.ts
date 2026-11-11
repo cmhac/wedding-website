@@ -11,6 +11,8 @@ type Row = Record<string, unknown>;
 const CAMPAIGN = "c-1";
 const templates = {
   invitation_template: campaignFixture,
+  invitation: campaignFixture,
+  save_the_date: campaignFixture,
   rsvp_reminder: campaignFixture,
 };
 
@@ -61,9 +63,15 @@ function setup(options: {
       events: [],
       settings: [{ id: true, default_rsvp_deadline: null }],
       message_types: [
+        { key: "invitation", template_key: "invitation", is_essential: true },
         {
-          key: "invitation",
-          template_key: "invitation_template",
+          key: "save_the_date",
+          template_key: "save_the_date",
+          is_essential: true,
+        },
+        {
+          key: "no_text_type",
+          template_key: "no_text_template",
           is_essential: true,
         },
         {
@@ -300,10 +308,45 @@ describe("sendCampaign when texting is not available", () => {
   });
 });
 
+describe.each(["invitation", "save_the_date"])(
+  "sendCampaign sends the %s by email and text",
+  (typeKey) => {
+    it("sends both to a household with an address and an opted-in number, and skips an unopted number", async () => {
+      const { db, emailSend, textSender, run } = setup({
+        typeKey,
+        channel: "both",
+        contacts: [
+          email("h-1"),
+          phone("h-1", 1, "opted_in"),
+          phone("h-1", 2, "not_asked"),
+        ],
+        households: ["h-1"],
+      });
+      await run();
+      expect(emailSend).toHaveBeenCalledTimes(1);
+      expect(textSender).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(textSender.mock.calls[0])).toContain("/i/");
+      expect(byReason(db, "not_opted_in")).toBe(1);
+    });
+
+    it("texts only, to a phone-only household with an opted-in number", async () => {
+      const { emailSend, textSender, run } = setup({
+        typeKey,
+        channel: "text",
+        contacts: [phone("h-1", 1, "opted_in")],
+        households: ["h-1"],
+      });
+      await run();
+      expect(emailSend).not.toHaveBeenCalled();
+      expect(textSender).toHaveBeenCalledTimes(1);
+    });
+  },
+);
+
 describe("sendCampaign refuses text for a type with no text", () => {
   it("throws template_missing before queueing anything", async () => {
     const { db, run } = setup({
-      typeKey: "invitation",
+      typeKey: "no_text_type",
       channel: "text",
       contacts: [phone("h-1", 1, "opted_in")],
       households: ["h-1"],
@@ -315,7 +358,7 @@ describe("sendCampaign refuses text for a type with no text", () => {
 
   it("refuses text for the whole campaign, so nothing goes out by email either", async () => {
     const { emailSend, run } = setup({
-      typeKey: "invitation",
+      typeKey: "no_text_type",
       channel: "both",
       contacts: [email("h-1"), phone("h-1", 1, "opted_in")],
       households: ["h-1"],

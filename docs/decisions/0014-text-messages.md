@@ -17,8 +17,9 @@ full design is in [`specs/005-sms-support`](../../specs/005-sms-support/plan.md)
   provider would not remove the checks. Only `src/lib/sms/twilio.ts` imports the
   package, so tests use a fake. Registration is a sole-proprietor brand and
   campaign (no business tax number).
-- **Nobody is texted until they tick a box.** The first contact is always an
-  invitation email. A guest opts in with an unticked checkbox, either in a
+- **Nobody is texted until they tick a box.** The save the date and the
+  invitation can go by email, text or both, and a text goes only to an opted-in
+  number. A guest opts in with an unticked checkbox, either in a
   one-time consent step after first sign-in or on the sign-in prompt when they
   type a number. The site records each number's opt-in (not asked, opted in,
   declined, with when and where) on the contact itself, so it goes when the
