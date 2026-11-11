@@ -53,6 +53,16 @@ describe("GET /i/[token]", () => {
     expect(rpc).toHaveBeenCalledWith("invite_links_open");
   });
 
+  it("lands on the save the date page when the link asks for it, and ignores any other landing", async () => {
+    expect(to(await open(inviteToken(ID, 2), "?next=/save-the-date"))).toBe(
+      "/save-the-date",
+    );
+    expect(to(await open(inviteToken(ID, 2), "?next=/admin"))).toBe("/");
+    expect(to(await open(inviteToken(ID, 2), "?next=//evil.example"))).toBe(
+      "/",
+    );
+  });
+
   it("follows GUEST_RSVP_PATH", async () => {
     process.env.GUEST_RSVP_PATH = "/reply";
     expect(to(await open(inviteToken(ID, 2)))).toBe("/reply");

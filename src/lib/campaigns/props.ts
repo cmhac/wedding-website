@@ -1,3 +1,4 @@
+import { destinationFor, withDestination } from "@/lib/auth/destination";
 import { inviteLinkUrl } from "@/lib/auth/invite-link";
 import { buildCampaignProps, type CampaignProps } from "@/lib/email/templates";
 
@@ -43,6 +44,8 @@ export type PropsOptions = {
   rsvpPath?: string;
   /** The current time, for deciding which deadlines are still open. */
   now?: Date;
+  /** The message type being sent: it decides where the personal link lands. */
+  messageTypeKey?: string;
 };
 
 type EventStatus = CampaignProps["events"][number]["status"];
@@ -155,10 +158,13 @@ export async function loadCampaignProps(
       optional_events: progress?.pending_optional ?? 0,
       meals: progress?.pending_meals ?? 0,
     },
-    personal_link: inviteLinkUrl(
-      householdId,
-      Number(household.invite_link_version ?? 1),
-      options.siteUrl,
+    personal_link: withDestination(
+      inviteLinkUrl(
+        householdId,
+        Number(household.invite_link_version ?? 1),
+        options.siteUrl,
+      ),
+      destinationFor(options.messageTypeKey),
     ),
     siteUrl: options.siteUrl,
     rsvpPath: options.rsvpPath,

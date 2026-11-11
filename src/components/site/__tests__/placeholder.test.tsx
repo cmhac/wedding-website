@@ -11,17 +11,26 @@ describe("Placeholder", () => {
     for (const role of ["heading", "navigation", "contentinfo", "img"]) {
       expect(screen.queryByRole(role)).toBeNull();
     }
-    // The only links are the two small legal links, outside the centered line.
+    // The only links are the small save the date link and the two legal links,
+    // outside the centered line.
     expect(screen.getAllByRole("link").map((a) => a.textContent)).toEqual([
+      "Save the date",
       "Privacy Policy",
       "Terms",
     ]);
     expect(main).not.toContainElement(
       screen.getByRole("link", { name: "Terms" }),
     );
-    // The only text on the page is the line and the two small controls.
+    expect(screen.getByRole("link", { name: "Save the date" })).toHaveAttribute(
+      "href",
+      "/save-the-date",
+    );
+    expect(main).not.toContainElement(
+      screen.getByRole("link", { name: "Save the date" }),
+    );
+    // The only text on the page is the line, the two small controls and the small links.
     expect(container.textContent).toBe(
-      "Coming soon 👀Dark modeSign outPrivacy Policy · Terms",
+      "Coming soon 👀Dark modeSign outSave the datePrivacy Policy · Terms",
     );
   });
 

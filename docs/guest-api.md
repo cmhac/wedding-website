@@ -23,21 +23,23 @@ All endpoints return JSON. Errors use one shape:
 
 `issues` appears only on `422`. Messages never contain other households' data or reveal whether an email is on the guest list.
 
-| Method and path               | Purpose                                                               | Success | Errors                                                                    |
-| ----------------------------- | --------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- |
-| `GET /i/[token]`              | Open a household's personal invite link: sign in and go to the RSVP   | 302     | 302 to the sign-in failure path                                           |
-| `GET /t/[token]`              | Open the sign-in link texted to a typed phone number (15 minutes)     | 302     | 302 to the sign-in failure path                                           |
-| `GET /auth/confirm`           | Complete a typed-address sign-in link                                 | 302     | 302 to the sign-in failure path                                           |
-| `POST /auth/confirm`          | Same, for a frontend "Continue" page (form-encoded fields)            | 302     | 302 to the sign-in failure path                                           |
-| `POST /api/guest/sign-in`     | Email (or, once texting is on, text) a sign-in link to what was typed | 202     | 422 invalid email format, 429 rate limited                                |
-| `POST /api/guest/sign-out`    | End the session                                                       | 204     | none                                                                      |
-| `GET /api/guest/rsvp`         | Read the household, guests, events, menus                             | 200     | 401 not signed in, 403 not a guest                                        |
-| `PUT /api/guest/rsvp`         | Save answers, meals, dietary needs, message                           | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
-| `POST /api/guest/plus-one`    | Name a plus-one placeholder                                           | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
-| `POST /api/guest/opt-out`     | Turn reminder emails off or on                                        | 200     | 401, 403, 422                                                             |
-| `GET /api/guest/sms-consent`  | The numbers still to ask about (empty while texting is off)           | 200     | 401, 403                                                                  |
-| `POST /api/guest/sms-consent` | Record the consent step's answers                                     | 200     | 401, 403, 409 `texting_unavailable`, 422                                  |
-| `GET /auth/callback`          | Completes sign-in from the emailed link                               | 302     | 302 to the sign-in failure path                                           |
+| Method and path                         | Purpose                                                               | Success | Errors                                                                    |
+| --------------------------------------- | --------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `GET /i/[token]`                        | Open a household's personal invite link: sign in and go to the RSVP   | 302     | 302 to the sign-in failure path                                           |
+| `GET /t/[token]`                        | Open the sign-in link texted to a typed phone number (15 minutes)     | 302     | 302 to the sign-in failure path                                           |
+| `GET /auth/confirm`                     | Complete a typed-address sign-in link                                 | 302     | 302 to the sign-in failure path                                           |
+| `POST /auth/confirm`                    | Same, for a frontend "Continue" page (form-encoded fields)            | 302     | 302 to the sign-in failure path                                           |
+| `POST /api/guest/sign-in`               | Email (or, once texting is on, text) a sign-in link to what was typed | 202     | 422 invalid email format, 429 rate limited                                |
+| `POST /api/guest/sign-out`              | End the session                                                       | 204     | none                                                                      |
+| `GET /api/guest/rsvp`                   | Read the household, guests, events, menus                             | 200     | 401 not signed in, 403 not a guest                                        |
+| `PUT /api/guest/rsvp`                   | Save answers, meals, dietary needs, message                           | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
+| `POST /api/guest/plus-one`              | Name a plus-one placeholder                                           | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
+| `POST /api/guest/opt-out`               | Turn reminder emails off or on                                        | 200     | 401, 403, 422                                                             |
+| `GET /api/guest/sms-consent`            | The numbers still to ask about (empty while texting is off)           | 200     | 401, 403                                                                  |
+| `POST /api/guest/sms-consent`           | Record the consent step's answers                                     | 200     | 401, 403, 409 `texting_unavailable`, 422                                  |
+| `GET /api/guest/save-the-date`          | The card's facts and the calendar choices                             | 200     | 401, 403                                                                  |
+| `GET /api/guest/save-the-date/calendar` | The save the date as a calendar file                                  | 200     | 401, 403, 409 `not_ready`                                                 |
+| `GET /auth/callback`                    | Completes sign-in from the emailed link                               | 302     | 302 to the sign-in failure path                                           |
 
 ## Sign-in
 
@@ -215,3 +217,32 @@ await api.signOut();
 - Staff sessions are refused (`403`) on guest endpoints; staff use the admin API.
 - No endpoint accepts a household id from the client; the household always comes from the session.
 - Guest responses never include staff notes, addresses, other households, draft menus, messages, or audit data.
+
+## Save the date
+
+The first outreach is a save the date, by email and, for numbers whose consent is recorded, by text. Its link is the household's personal link with a landing: `GET /i/<token>?next=/save-the-date` signs the household in and redirects to `/save-the-date`. Only `/save-the-date` and the guest landing path are honored as `next`; anything else is ignored. Invitations, reminders and updates carry the plain link and land on the guest landing path as before. The same personal link serves every message, so an old save the date email still lands on the save the date.
+
+**Details, `GET /api/guest/save-the-date`** (a signed-in guest or staff member; `401` not signed in, `403` neither):
+
+```json
+{
+  "couple_names": "Chris & Hannah",
+  "date": "2027-09-18",
+  "place": "Napa Valley, California",
+  "note": "Invitation to follow",
+  "revision": 2,
+  "calendar": {
+    "google": "https://calendar.google.com/calendar/render?action=TEMPLATE&...",
+    "outlook": "https://outlook.live.com/calendar/0/deeplink/compose?...",
+    "file": "/api/guest/save-the-date/calendar"
+  }
+}
+```
+
+`date` is a calendar date, never a moment, so no time zone moves it. While the wedding date is not set, `date` and `calendar` are `null` and a page should say details are coming soon. The response holds nothing about any household and no personal link.
+
+**Calendar file, `GET /api/guest/save-the-date/calendar`** returns an all-day entry (`text/calendar`, downloaded as `save-the-date.ics`) with a stable identity and a revision number, so calendar programs that honour them replace an earlier entry instead of adding a second. `409 not_ready` while the date is not set. The Google and Outlook links open a prefilled new entry and cannot replace an earlier one, so a guest who adds the invitation event later may have two. The entry holds only the title, date, place, note and the site's address: no personal link, token or guest data, because calendar entries get shared.
+
+**The placeholder page.** `/save-the-date` is a barebones page built here under the couple's narrow exception of 2026-11-11: the couple's names, the date, the place, the note and three calendar buttons (Google Calendar, Outlook, and the file for Apple and others), with the text consent step below the date when there are numbers to ask about. A visitor who is not signed in is sent to `/`. The designer replaces it and reads the same endpoint; the placeholder homepage links to it for signed-in visitors.
+
+A guest's first load of `/` or `/save-the-date` records that their household has opened the site (when, not what they did); the couple use it to follow up with households that have not. A mail scanner that follows the link and loads the page could set it too, so treat it as "opened or previewed".

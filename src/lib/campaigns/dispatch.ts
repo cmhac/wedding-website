@@ -5,6 +5,7 @@ import {
   TemplateError,
   type TemplateRegistry,
 } from "@/lib/email/templates";
+import { shapeSaveTheDate, type SaveTheDate } from "@/lib/calendar/details";
 import { log } from "@/lib/log";
 import { getText, renderText, type TextRegistry } from "@/lib/sms/texts";
 import { statusCallbackUrl } from "@/lib/sms/urls";
@@ -45,6 +46,14 @@ export class DispatchError extends Error {
     this.name = "DispatchError";
   }
 }
+
+/** What every delivery in one run shares. */
+type SendEnv = {
+  siteUrl: string;
+  rsvpPath: string;
+  messageTypeKey?: string;
+  saveTheDate?: SaveTheDate;
+};
 
 export type DispatchResult = {
   campaign_id: string;
@@ -198,10 +207,17 @@ export async function sendCampaign(
     .in("status", SENDABLE);
   if (startError) fail();
 
-  const env = {
+  const env: SendEnv = {
     siteUrl: options.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "",
     rsvpPath: options.rsvpPath ?? process.env.GUEST_RSVP_PATH ?? "/rsvp",
+    // The message type decides where a personal link lands.
+    messageTypeKey: campaign.message_type_key,
   };
+  // A save the date email is given the card's facts, read once for the run.
+  if (wantsEmail && campaign.message_type_key === "save_the_date") {
+    const { data: details } = await db.rpc("get_save_the_date");
+    env.saveTheDate = shapeSaveTheDate(details, env.siteUrl);
+  }
 
   // With texts in play, claim one message at a time so a claimed text is always
   // sent (or given back) within this run: a claimed text that was never sent
@@ -465,7 +481,7 @@ async function deliver(
   db: LooseDb,
   message: ClaimedMessage,
   templateKey: string,
-  env: { siteUrl: string; rsvpPath: string },
+  env: SendEnv,
   options: DispatchOptions,
   now: () => Date,
 ) {
@@ -491,7 +507,10 @@ async function deliver(
 
   let rendered;
   try {
-    rendered = await renderTemplate(templateKey, props, options.templates);
+    const emailProps = env.saveTheDate
+      ? { ...props, details: env.saveTheDate, site_url: env.siteUrl }
+      : props;
+    rendered = await renderTemplate(templateKey, emailProps, options.templates);
   } catch (e) {
     const code = e instanceof TemplateError ? e.code : "template_failed";
     await record({ status: "failed", error_code: code });
@@ -543,7 +562,7 @@ async function deliverText(
   db: LooseDb,
   message: ClaimedMessage,
   templateKey: string,
-  env: { siteUrl: string; rsvpPath: string },
+  env: SendEnv,
   options: DispatchOptions,
   now: () => Date,
 ) {
