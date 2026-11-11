@@ -10,6 +10,8 @@
 
 **Update (2026-11-11, mid-review)**, in the couple's words: "We will now support pre-consented guests, with an option to mark individual guests as consented by the couple or planner within the UI, and the ability to batch-edit guests in the admin page and batch-mark them as consented."
 
+**Update (2026-11-11, later)**, in the couple's words: "I am okay with putting together a very barebones placeholder UI for the save the date for now. We'll overhaul it once design is ready."
+
 This feature builds on the personal invite links spec ([`specs/003-personal-invite-links/spec.md`](../003-personal-invite-links/spec.md)), the text-message spec ([`specs/005-sms-support/spec.md`](../005-sms-support/spec.md)) and the placeholder homepage spec ([`specs/004-placeholder-homepage/spec.md`](../004-placeholder-homepage/spec.md)). Their decisions carry over unchanged unless this spec says otherwise. Where it does change one, "What this changes in earlier decisions" lists it.
 
 ## Background
@@ -24,12 +26,12 @@ What already exists, found by reviewing the repository on 2026-11-11:
 - **No batch editing exists** in the admin console, and the import has no consent column.
 - **Nothing tells the couple whether a household has opened its link**, and there is no way to send a test to themselves before the real send.
 
-The couple's designer owns every guest-facing screen beyond the placeholder homepage. This feature therefore builds what the save the date page needs (its content, its calendar files, the right landing, the messages that lead to it) and documents it for the designer. It does not build the page.
+The couple's designer owns every guest-facing screen beyond the placeholder homepage and the pages already granted exceptions. For the save the date, the couple have granted one more narrow exception (2026-11-11): a barebones placeholder save the date page, so the whole flow can be rehearsed and sent before the design exists. This feature builds that page, plus what any save the date page needs (its content, its calendar files, the right landing, the messages that lead to it), and documents it for the designer, who replaces or restyles the page.
 
 Plain-language terms used below:
 
 - **Household**, **contact**, **personal invite link**, **campaign**, **paper only**, **opted in**, **texting available**: as in the earlier specs.
-- **Save the date page**: the guest-facing page the designer builds, showing what the physical card shows plus the add-to-calendar choices.
+- **Save the date page**: the guest-facing page showing what the physical card shows plus the add-to-calendar choices. This feature builds a barebones placeholder; the designer's version replaces it.
 - **Save the date details**: the handful of facts the card shows (the wedding date, where, and a short line of text), kept in one place for the page, the email, the text and the calendar entry.
 - **Pre-consented**: a phone number whose owner agreed to be texted before the site was involved, and which the couple or planner have marked as opted in, rather than the guest ticking the box themselves.
 - **Batch edit**: choosing several households in the admin console and applying one change to all of them.
@@ -40,7 +42,7 @@ Plain-language terms used below:
 
 - Q: Can numbers be marked as consented by the couple? → A: Yes. The couple or the planner can mark an individual number as consented in the admin console, and can mark many at once with a batch edit. (The couple's mid-review message above.)
 - Q: Can the guest-list import carry the consent mark too? → A: Yes, assumed from the couple's original description ("if guests have pre-consented to sms they'll be marked as such in the database"): the import accepts a consent column next to each phone number. The couple may confirm or drop this at planning.
-- Q: Is the save the date page built here? → A: No. The designer builds it. This feature supplies its content, calendar files and landing behavior, and documents them. Until the designer's page exists, opened links keep landing on the placeholder homepage.
+- Q: Is the save the date page built here? → A: Yes, as a barebones placeholder only (the couple's answer, 2026-11-11): plain, one stylesheet shared with the placeholder homepage, no design system, replaced or restyled by the designer. It exists so the full flow can be tested and sent. Content, calendar files and landing behavior are documented so the designer's page can take over without backend changes. No other guest-facing screen is added.
 - Q: Who writes the save the date email wording? → A: The couple, or the designer's email design. This feature registers the template slot, defines what it receives, and tests it with a fixture; it ships no real wording or design. (The couple's earlier permission to draft email wording covers only the sign-in, invitation and reminder emails.) The text wording already has a first draft, which this feature revises to the couple's description.
 - Q: Which calendars? → A: Google Calendar, Apple Calendar and Outlook by name, plus a standard calendar file that any other calendar opens.
 
@@ -59,11 +61,12 @@ A guest opens the save the date email, or the text, and taps the link. Their dev
 1. **Given** a household that was sent a save the date, **When** a guest opens the personal link from that email or text, **Then** their device is signed in as the household and they land on the save the date page.
 2. **Given** an invitation (a later campaign), **When** a guest opens its personal link, **Then** they land on the RSVP as they do today, not on the save the date page. The same household link serves both; which message it came from decides where it lands.
 3. **Given** the same link opened again weeks later on a new device, **When** it is opened, **Then** it still signs in, and lands in the place appropriate to the link's message (a save the date link still shows the save the date).
-4. **Given** a signed-in guest, **When** the designer's page asks for the save the date details, **Then** it receives the wedding date, the place line, the note line and the calendar choices, and nothing about any other household.
+4. **Given** a signed-in guest, **When** the save the date page (the placeholder now, the designer's later) asks for the save the date details, **Then** it receives the wedding date, the place line, the note line and the calendar choices, and nothing about any other household.
 5. **Given** a visitor who is not signed in, **When** they ask for the save the date details, **Then** they are refused, as for the RSVP.
-6. **Given** a guest with an unanswered phone number and texting available, **When** they land on the save the date page, **Then** the save the date comes first and the text consent step is offered after it, never in front of it. (This changes the text-message spec's "before anything else"; see "What this changes".)
+6. **Given** a guest with an unanswered phone number and texting available, **When** they land on the save the date page, **Then** the save the date comes first and the text consent step is offered after it, never in front of it (on the placeholder, the existing consent step appears below the date). (This changes the text-message spec's "before anything else"; see "What this changes".)
 7. **Given** a link that is reissued, made up, or opened on or after the wedding day, **When** it is opened, **Then** the plain failure page appears, as today.
 8. **Given** the RSVP has not opened yet, **When** a save the date reader signs in, **Then** nothing invites them to RSVP, and an attempt to save answers is refused as "not open yet" (the existing RSVP on/off setting).
+9. **Given** the placeholder page, **When** a signed-in guest opens it, **Then** it shows the couple's names, the date, the place line, the note line and one button each for Google Calendar, Outlook, and Apple or other calendars (the file), with nothing else: no navigation, no RSVP, no household information. **When** a visitor who is not signed in opens it, **Then** they are sent to the sign-in prompt on the homepage and see no details.
 
 ---
 
@@ -211,7 +214,7 @@ After the send, the couple can see which households have opened their link and s
 - **FR-003**: The save the date details MUST be held in one place, editable by the couple and the planner in the admin console. The wedding date MUST come from the wedding event already chosen in the settings, not be entered twice. The couple's names MUST come from the existing settings. Changes MUST be recorded in the change history (field names only). Every surface (page, email, text, calendar entry) MUST use the same stored details.
 - **FR-004**: When a signed-in guest's household has a phone number not yet asked about and texting is available, the consent step MUST NOT stand in front of the save the date: the save the date is shown first and the consent step offered after it. The consent step's other rules stay.
 - **FR-005**: The RSVP being closed MUST be honored for guests who arrive from a save the date: nothing invites them to respond, and the existing refusal applies if they try.
-- **FR-006**: This feature MUST NOT build the save the date page or any other guest-facing screen. It MUST document the guest interface, the landing behavior and the calendar choices for the designer alongside the existing guest interface documentation, and the placeholder homepage MUST keep working unchanged until the designer's page exists.
+- **FR-006**: This feature MUST build one barebones placeholder save the date page, under the couple's narrow exception of 2026-11-11. It MUST show only what scenario 9 of User Story 1 lists, use the placeholder homepage's existing single stylesheet, add no design system, theming library or component library, carry no guest data beyond what the signed-in guest already sees, and be easy for the designer to replace or restyle provided the date, place, note and calendar buttons stay available. The placeholder homepage MAY gain one small link to it for signed-in guests and otherwise MUST keep working unchanged. No other guest-facing screen is added. The page, the landing behavior and the calendar choices MUST be documented for the designer alongside the existing guest interface documentation, and the exception MUST be recorded in `CLAUDE.md` and the placeholder homepage decision record, with its date, in the same change.
 
 **Calendar**
 
@@ -262,7 +265,8 @@ After the send, the couple can see which households have opened their link and s
 3. **The text-message spec's one-segment rule** for texts is relaxed for the save the date text only (FR-021).
 4. **The invite links spec's single landing path** is extended so a link can land by the message it arrived in (FR-001), without changing any other part of the personal link.
 5. **The privacy and terms pages are not changed** (FR-029), even though they currently say a number is texted "only after you opt in by ticking a box on this site" and that "you opt in by ticking an unticked box". See the next section.
-6. **The repository's rule against writing email content** stays in force for the save the date email (FR-020); the couple's earlier permission covers the sign-in, invitation and reminder emails only.
+6. **The scope rule against guest-facing screens** gains one more narrow exception, granted by the couple on 2026-11-11: a barebones placeholder save the date page (FR-006), replaceable by the designer. It is not a precedent for any other screen.
+7. **The repository's rule against writing email content** stays in force for the save the date email (FR-020); the couple's earlier permission covers the sign-in, invitation and reminder emails only.
 
 ### Known conflict with the locked legal pages
 
@@ -299,7 +303,7 @@ Carrier reviewers read these same pages, so the registration's opt-in descriptio
 
 ## Assumptions
 
-- **The save the date page is the designer's** (as the couple described: "by that point we'll have the visual design ready"). Until it exists, opened links land on the placeholder homepage and the couple's rehearsal checks the destination and the content endpoint, not a finished page. If the couple want a plain stand-in page to rehearse the whole flow, that needs a new narrow scope exception in `CLAUDE.md`, as the earlier exceptions were granted; this spec does not assume one.
+- **The save the date page is a placeholder** (the couple's exception of 2026-11-11, FR-006), so the whole flow can be rehearsed. The designer's version replaces it, taking its content from the same save the date details and calendar choices, so no backend change is needed then. Its wording is plain and first-draft; the couple polish it.
 - **The save the date email wording and design are supplied by the couple or the designer.** If the couple prefer a plain first draft, they can extend the earlier permission, and the registration slot is ready for it.
 - **The privacy and terms pages stay exactly as they are** (FR-029), and they describe only the on-site tick as the way to opt in; see "Known conflict with the locked legal pages".
 - **How pre-consent was collected matters to the text-message provider, not only to the site.** Twilio's registration asks how people opt in and accepts several routes (a consent form on a website or app, a verbal opt-in with a detailed script, a signed paper document, or a text keyword), and says consent applies per campaign ([Twilio, A2P 10DLC quickstart](https://www.twilio.com/docs/messaging/compliance/a2p-10dlc/quickstart); [Twilio, campaign onboarding guide](https://support.twilio.com/hc/en-us/articles/11847054539547-A2P-10DLC-Campaign-Onboarding-Guide)). Searching on 2026-11-11 found nothing from Twilio on what evidence it wants for consent collected elsewhere, so the registration's opt-in description should be written to match how the couple really collected it, and the couple should keep their own copy of that evidence. The note field on the consent mark (FR-011) exists to point at that evidence. This is not legal advice, and the couple should confirm with Twilio if unsure.

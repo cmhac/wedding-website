@@ -31,6 +31,7 @@
 
 ## Notes
 
+- The couple granted a narrow exception on 2026-11-11 for a barebones placeholder save the date page (FR-006), so the spec builds it; the designer replaces it.
 - Zero clarification markers: the couple's two mid-review answers (staff-marked consent; legal pages locked) closed the open questions. Remaining decisions are recorded as defaults in Assumptions.
 - One open conflict is documented, not hidden: the locked privacy and terms pages describe only an on-site tick as opt-in, which staff-marked consent contradicts ("Known conflict with the locked legal pages"). It needs the couple's decision before the first text is sent, not before planning.
 - The spec names a few existing things (the wedding event setting, the change history) because they are the couple's own vocabulary from earlier specs; the checklist treats them as domain terms, not implementation.
