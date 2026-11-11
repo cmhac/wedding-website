@@ -144,6 +144,7 @@ function renderEditor(
   campaign?: CampaignDetail,
   notice?: string,
   smsConfigured?: boolean,
+  smsEnabled?: boolean,
 ) {
   return render(
     <CampaignEditor
@@ -153,6 +154,7 @@ function renderEditor(
       households={households}
       notice={notice}
       smsConfigured={smsConfigured}
+      smsEnabled={smsEnabled}
     />,
   );
 }
@@ -538,5 +540,71 @@ describe("CampaignEditor channel", () => {
     expect((screen.getByLabelText("Send by") as HTMLSelectElement).value).toBe(
       "both",
     );
+  });
+});
+
+describe("AudiencePreviewView texts", () => {
+  const base = {
+    willSend: [{ householdId: "h1", name: "One", addresses: 1 }],
+    skipped: [],
+  };
+
+  it("shows who will be texted and why others will not, with totals", () => {
+    render(
+      <AudiencePreviewView
+        preview={{
+          ...base,
+          texts: {
+            switchedOff: false,
+            willText: [{ householdId: "h1", name: "One", texts: 2 }],
+            notTexted: [
+              { householdId: "h2", name: "Two", reason: "not_opted_in" },
+              { householdId: "h3", name: "Three", reason: "declined" },
+              { householdId: "h4", name: "Four", reason: "no_phone" },
+            ],
+          },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(/1 household will be texted \(2 texts in all/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/1 not opted in/)).toBeInTheDocument();
+    expect(screen.getByText(/1 declined/)).toBeInTheDocument();
+    expect(screen.getByText(/1 with no phone number/)).toBeInTheDocument();
+    expect(screen.getByText(/reach them another way/)).toBeInTheDocument();
+  });
+
+  it("says texts will be skipped when texting is switched off", () => {
+    render(
+      <AudiencePreviewView
+        preview={{
+          ...base,
+          texts: { switchedOff: true, willText: [], notTexted: [] },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText("Texting is switched off: texts will be skipped."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows nothing about texts without a text section", () => {
+    const { container } = render(<AudiencePreviewView preview={base} />);
+    expect(container.textContent).not.toMatch(/texted|texts|phone/i);
+  });
+});
+
+describe("CampaignEditor when texting is configured but switched off", () => {
+  it("says plainly that texts will be skipped", () => {
+    renderEditor(undefined, undefined, true, false);
+    expect(
+      screen.getByText("Texting is switched off: texts will be skipped."),
+    ).toBeInTheDocument();
+  });
+
+  it("says nothing of the kind when texting is on", () => {
+    renderEditor(undefined, undefined, true, true);
+    expect(screen.queryByText(/switched off/)).toBeNull();
   });
 });

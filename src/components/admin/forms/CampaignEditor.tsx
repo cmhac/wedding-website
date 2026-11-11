@@ -22,6 +22,8 @@ export type CampaignEditorProps = {
   notice?: string;
   /** True when the text provider is configured: only then is a channel offered. */
   smsConfigured?: boolean;
+  /** The couple's switch; when configured but off, the editor says texts will be skipped. */
+  smsEnabled?: boolean;
 };
 
 const READ_ONLY_NOTES: Record<string, string> = {
@@ -68,6 +70,7 @@ export function CampaignEditor({
   households,
   notice,
   smsConfigured = false,
+  smsEnabled = true,
 }: CampaignEditorProps) {
   const [saved, saveAction, saving] = useActionState(saveCampaign, null);
   const [previewed, previewAction, previewing] = useActionState(
@@ -152,6 +155,11 @@ export function CampaignEditor({
           label="Send by"
           hint="Texts go only to numbers that opted in. The invitation and the save the date have no text version, so they cannot be sent by text."
         >
+          {!smsEnabled ? (
+            <p className="muted">
+              Texting is switched off: texts will be skipped.
+            </p>
+          ) : null}
           <select id="channel" name="channel" defaultValue={text("channel")}>
             <option value="email">Email only</option>
             <option value="text">Text only</option>
