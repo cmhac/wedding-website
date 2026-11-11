@@ -37,7 +37,7 @@ The date is not stored here: it is the wedding event's `starts_at`, read as a ca
 Constraints changed:
 
 - `household_contacts_consent_source_known`: the known sources become `first_sign_in`, `sign_in_prompt`, `staff`, `import`.
-- `household_contacts_consent_complete`: a state other than `not_asked` still needs `at` and `source`; additionally, `by` is required when the source is `staff` or `import`, and `by`, `note` and `overrode_decline` must be empty or false when the state is `not_asked`.
+- `household_contacts_consent_complete`: a state other than `not_asked` still needs `at` and `source`; additionally `by`, `note` and `overrode_decline` must be empty or false when the state is `not_asked`. (`by` is filled by the functions for a staff or import mark, but is not required by the constraint, because it becomes empty if that staff account is later deleted.)
 - The reset trigger (a changed number is "not yet asked") also clears `by`, `note` and `overrode_decline`.
 
 Grants: unchanged. Staff cannot write these columns directly; only the functions below can.
