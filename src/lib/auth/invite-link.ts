@@ -28,13 +28,13 @@ function sign(householdId: string, version: number): string {
     .digest("base64url");
 }
 
-function encodeId(householdId: string): string {
+export function encodeId(householdId: string): string {
   return Buffer.from(householdId.replaceAll("-", ""), "hex").toString(
     "base64url",
   );
 }
 
-function decodeId(encoded: string): string | null {
+export function decodeId(encoded: string): string | null {
   const hex = Buffer.from(encoded, "base64url").toString("hex");
   if (!UUID_HEX.test(hex)) return null;
   return [

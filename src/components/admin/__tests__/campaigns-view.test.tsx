@@ -140,7 +140,12 @@ const events = [
 ];
 const households = [{ id: HOUSEHOLD, name: "The Examples" }];
 
-function renderEditor(campaign?: CampaignDetail, notice?: string) {
+function renderEditor(
+  campaign?: CampaignDetail,
+  notice?: string,
+  smsConfigured?: boolean,
+  smsEnabled?: boolean,
+) {
   return render(
     <CampaignEditor
       campaign={campaign}
@@ -148,6 +153,8 @@ function renderEditor(campaign?: CampaignDetail, notice?: string) {
       events={events}
       households={households}
       notice={notice}
+      smsConfigured={smsConfigured}
+      smsEnabled={smsEnabled}
     />,
   );
 }
@@ -504,5 +511,100 @@ describe("DeliveryView", () => {
   it("says so when nothing was sent yet", () => {
     render(<DeliveryView delivery={{ ...delivery, rows: [], counts: {} }} />);
     expect(screen.getByText(/no messages yet/i)).toBeInTheDocument();
+  });
+});
+
+describe("CampaignEditor channel", () => {
+  it("offers no channel while texting is not configured", () => {
+    const { container } = renderEditor();
+    expect(screen.queryByLabelText("Send by")).toBeNull();
+    expect(container.textContent).not.toMatch(/text message|texts/i);
+  });
+
+  it("offers email, text or both when configured, defaulting to email", () => {
+    renderEditor(undefined, undefined, true);
+    const select = screen.getByLabelText("Send by") as HTMLSelectElement;
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toEqual(["Email only", "Text only", "Email and text"]);
+    expect(select.value).toBe("email");
+    expect(
+      screen.getByText(/only to numbers that opted in/),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the saved channel of an existing campaign", () => {
+    renderEditor(detail({ channel: "both" }), undefined, true);
+    expect((screen.getByLabelText("Send by") as HTMLSelectElement).value).toBe(
+      "both",
+    );
+  });
+});
+
+describe("AudiencePreviewView texts", () => {
+  const base = {
+    willSend: [{ householdId: "h1", name: "One", addresses: 1 }],
+    skipped: [],
+  };
+
+  it("shows who will be texted and why others will not, with totals", () => {
+    render(
+      <AudiencePreviewView
+        preview={{
+          ...base,
+          texts: {
+            switchedOff: false,
+            willText: [{ householdId: "h1", name: "One", texts: 2 }],
+            notTexted: [
+              { householdId: "h2", name: "Two", reason: "not_opted_in" },
+              { householdId: "h3", name: "Three", reason: "declined" },
+              { householdId: "h4", name: "Four", reason: "no_phone" },
+            ],
+          },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(/1 household will be texted \(2 texts in all/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/1 not opted in/)).toBeInTheDocument();
+    expect(screen.getByText(/1 declined/)).toBeInTheDocument();
+    expect(screen.getByText(/1 with no phone number/)).toBeInTheDocument();
+    expect(screen.getByText(/reach them another way/)).toBeInTheDocument();
+  });
+
+  it("says texts will be skipped when texting is switched off", () => {
+    render(
+      <AudiencePreviewView
+        preview={{
+          ...base,
+          texts: { switchedOff: true, willText: [], notTexted: [] },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText("Texting is switched off: texts will be skipped."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows nothing about texts without a text section", () => {
+    const { container } = render(<AudiencePreviewView preview={base} />);
+    expect(container.textContent).not.toMatch(/texted|texts|phone/i);
+  });
+});
+
+describe("CampaignEditor when texting is configured but switched off", () => {
+  it("says plainly that texts will be skipped", () => {
+    renderEditor(undefined, undefined, true, false);
+    expect(
+      screen.getByText("Texting is switched off: texts will be skipped."),
+    ).toBeInTheDocument();
+  });
+
+  it("says nothing of the kind when texting is on", () => {
+    renderEditor(undefined, undefined, true, true);
+    expect(screen.queryByText(/switched off/)).toBeNull();
   });
 });

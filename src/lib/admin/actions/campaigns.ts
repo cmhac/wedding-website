@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { MESSAGE_TYPE_KEYS, type Audience } from "@/lib/campaigns/audience";
+import { getSmsState, isSmsConfigured } from "@/lib/sms/state";
 import { audienceFromForm } from "../audience-form";
 import { formatPacific, pacificLocalToIso } from "../time";
 import { runAdminAction, type ActionResult } from "./shared";
@@ -18,6 +19,15 @@ export type PreviewData = {
   /** `addresses` is how many emails the household will get (one per address). */
   willSend: { householdId: string; name: string; addresses: number }[];
   skipped: { householdId: string; name: string; reason: string }[];
+  /** Present only for a text or both campaign while texting is configured. */
+  texts?: {
+    /** True when texting is configured but switched off: every text will be skipped. */
+    switchedOff: boolean;
+    /** `texts` is how many texts the household will get (one per opted-in number). */
+    willText: { householdId: string; name: string; texts: number }[];
+    /** Why a number or household will not be texted: not_opted_in, declined or no_phone. */
+    notTexted: { householdId: string; name: string; reason: string }[];
+  };
 };
 
 const NAME_MESSAGE = "Enter a name for this campaign.";
@@ -47,12 +57,17 @@ function withAudience(
 const previewSchema = z
   .looseObject({
     message_type_key: z.enum(MESSAGE_TYPE_KEYS, TYPE_MESSAGE),
+    channel: z.enum(["email", "text", "both"]).optional(),
   })
   .transform((value, ctx) => {
     const box = withAudience(value, ctx);
     return box === z.NEVER
       ? z.NEVER
-      : { messageType: value.message_type_key, audience: box.audience };
+      : {
+          messageType: value.message_type_key,
+          audience: box.audience,
+          channel: value.channel,
+        };
   });
 
 function saveSchema(now: Date) {
@@ -63,6 +78,7 @@ function saveSchema(now: Date) {
       message_type_key: z.enum(MESSAGE_TYPE_KEYS, TYPE_MESSAGE),
       intent: z.enum(["draft", "schedule"]).default("draft"),
       scheduled_for: z.string().trim().default(""),
+      channel: z.enum(["email", "text", "both"]).optional(),
     })
     .transform((value, ctx) => {
       const box = withAudience(value, ctx);
@@ -99,6 +115,7 @@ function saveSchema(now: Date) {
         audience: box.audience,
         intent: value.intent,
         scheduledFor,
+        channel: value.channel,
       };
     });
 }
@@ -143,6 +160,7 @@ export async function previewAudience(
           const contacts = await supabase
             .from("household_contacts")
             .select("household_id")
+            .eq("kind", "email")
             .in("household_id", ids);
           if (contacts.error) return { error: contacts.error };
           for (const c of (contacts.data ?? []) as { household_id: string }[]) {
@@ -164,6 +182,66 @@ export async function previewAudience(
               reason: row.skip_reason ?? "other",
             });
           }
+        }
+        if (input.channel && input.channel !== "email" && isSmsConfigured()) {
+          const state = await getSmsState();
+          // A household is eligible for text when it is only out of the email
+          // audience for lack of an address; other reasons keep it out.
+          const eligible = rows.filter(
+            (r) => r.deliverable || r.skip_reason === "no_email",
+          );
+          const phones = new Map<string, string[]>();
+          if (eligible.length > 0) {
+            const found = await supabase
+              .from("household_contacts")
+              .select("household_id, sms_consent")
+              .eq("kind", "phone")
+              .in(
+                "household_id",
+                eligible.map((r) => r.household_id),
+              );
+            if (found.error) return { error: found.error };
+            for (const p of (found.data ?? []) as {
+              household_id: string;
+              sms_consent: string;
+            }[]) {
+              const list = phones.get(p.household_id) ?? [];
+              list.push(p.sms_consent);
+              phones.set(p.household_id, list);
+            }
+          }
+          const texts: NonNullable<PreviewData["texts"]> = {
+            switchedOff: !state.enabled,
+            willText: [],
+            notTexted: [],
+          };
+          for (const row of eligible) {
+            const consents = phones.get(row.household_id) ?? [];
+            const opted = consents.filter((c) => c === "opted_in").length;
+            if (state.enabled && opted > 0) {
+              texts.willText.push({
+                householdId: row.household_id,
+                name: row.display_name,
+                texts: opted,
+              });
+            }
+            if (consents.length === 0) {
+              texts.notTexted.push({
+                householdId: row.household_id,
+                name: row.display_name,
+                reason: "no_phone",
+              });
+            }
+            for (const c of consents) {
+              if (c === "opted_in") continue;
+              texts.notTexted.push({
+                householdId: row.household_id,
+                name: row.display_name,
+                reason: c === "declined" ? "declined" : "not_opted_in",
+              });
+            }
+          }
+          preview.texts = texts;
         }
         return { data: preview };
       },
@@ -189,6 +267,11 @@ export async function saveCampaign(
           message_type_key: input.messageType,
           audience: input.audience,
           scheduled_for: input.scheduledFor,
+          // The channel is saved only while texting is configured; otherwise
+          // a campaign is always email (the database default).
+          ...(input.channel && isSmsConfigured()
+            ? { channel: input.channel }
+            : {}),
         };
 
         if (!input.id) {

@@ -3,6 +3,7 @@ import { ImportHelp } from "@/components/admin/ImportHelp";
 import { ImportForm } from "@/components/admin/forms/ImportForm";
 import { PageHeader } from "@/components/admin/primitives";
 import { isForbidden, requireStaffPage } from "@/lib/admin/session";
+import { isSmsConfigured } from "@/lib/sms/state";
 
 export default async function ImportPage() {
   const session = await requireStaffPage();
@@ -14,7 +15,7 @@ export default async function ImportPage() {
         description="Upload a CSV or Excel file with one row per guest."
       />
       <div className="stack">
-        <ImportHelp />
+        <ImportHelp smsConfigured={isSmsConfigured()} />
         <ImportForm />
       </div>
     </>

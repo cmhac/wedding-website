@@ -25,6 +25,7 @@ import {
 } from "@/lib/admin/data/campaigns";
 import { messageFor } from "@/lib/admin/messages";
 import { isForbidden, requireStaffPage } from "@/lib/admin/session";
+import { getSmsState } from "@/lib/sms/state";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -55,6 +56,7 @@ export default async function CampaignsPage({
   const session = await requireStaffPage();
   if (isForbidden(session)) return <AccessDenied />;
   const { supabase } = session;
+  const sms = await getSmsState();
 
   const params = await searchParams;
   const tab = TABS.some((t) => t.value === first(params.tab))
@@ -127,6 +129,8 @@ export default async function CampaignsPage({
             events={events}
             households={households}
             notice={first(params.saved) ? "Saved." : undefined}
+            smsConfigured={sms.configured}
+            smsEnabled={sms.enabled}
           />
         </Card>
         {campaign && editable ? (
@@ -142,7 +146,9 @@ export default async function CampaignsPage({
   }
 
   if (tab === "delivery") {
-    const delivery = id ? await loadDelivery(id, supabase) : null;
+    const delivery = id
+      ? await loadDelivery(id, supabase, { includeTexts: sms.configured })
+      : null;
     return (
       <div className="stack">
         {header}

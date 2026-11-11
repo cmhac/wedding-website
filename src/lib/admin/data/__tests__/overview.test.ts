@@ -134,10 +134,32 @@ function makeDb(overrides: Record<string, unknown[]> = {}) {
       household_rsvp_progress: progress,
       // h3 and h4 have no address: they need paper.
       household_contacts: [
-        { id: "c1", household_id: "h1", value: "a@example.test" },
-        { id: "c2", household_id: "h1", value: "a2@example.test" },
-        { id: "c3", household_id: "h2", value: "b@example.test" },
-        { id: "c4", household_id: "h5", value: "e@example.test" },
+        {
+          id: "c1",
+          household_id: "h1",
+          kind: "email",
+          value: "a@example.test",
+        },
+        {
+          id: "c2",
+          household_id: "h1",
+          kind: "email",
+          value: "a2@example.test",
+        },
+        {
+          id: "c3",
+          household_id: "h2",
+          kind: "email",
+          value: "b@example.test",
+        },
+        {
+          id: "c4",
+          household_id: "h5",
+          kind: "email",
+          value: "e@example.test",
+        },
+        // A phone number is not an email address: h3 and h4 stay paper only.
+        { id: "c5", household_id: "h3", kind: "phone", value: "+12025550123" },
       ],
       settings: [
         {

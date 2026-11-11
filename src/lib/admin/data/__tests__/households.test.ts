@@ -100,6 +100,8 @@ function seed() {
       contact("c2", "h-b", "second@example.test", "2027-01-01T00:00:02Z", true),
       contact("c3", "h-a", "h-a@example.test"),
       contact("c4", "h-c", "h-c@example.test"),
+      // A phone number must never appear among a household's email contacts.
+      { ...contact("c9", "h-a", "+12025550123"), kind: "phone" },
     ],
     events: [
       { id: "e-party", slug: "welcome-party", name: "Welcome party" },
@@ -197,6 +199,18 @@ describe("normalizeForSearch", () => {
   it("lowercases, drops accents and trims", () => {
     expect(normalizeForSearch("  José ")).toBe("jose");
     expect(normalizeForSearch("ÉCOLE")).toBe("ecole");
+  });
+});
+
+describe("loadHouseholdList phone numbers", () => {
+  it("counts a household's numbers and how many have opted in, apart from its email contacts", async () => {
+    const { client } = build();
+    const list = await loadHouseholdList(query(), client);
+    const a = list.rows.find((r) => r.id === "h-a")!;
+    // The fixture holds one phone for h-a (not opted in), and one email.
+    expect(a.phones).toEqual({ total: 1, optedIn: 0 });
+    expect(a.contacts).toEqual(["h-a@example.test"]);
+    expect(list.rows.find((r) => r.id === "h-b")!.phones).toBeUndefined();
   });
 });
 

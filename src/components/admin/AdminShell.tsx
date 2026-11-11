@@ -59,6 +59,8 @@ export type AdminShellProps = {
   staff: { displayName: string; role: keyof typeof ROLE_LABELS };
   /** Server action the Sign out form posts to. */
   signOutAction: (formData: FormData) => void | Promise<void>;
+  /** A notice shown above every page, for example that texting is not set up. */
+  banner?: ReactNode;
   children: ReactNode;
 };
 
@@ -113,6 +115,7 @@ export function AdminShell({
   current,
   staff,
   signOutAction,
+  banner,
   children,
 }: AdminShellProps) {
   return (
@@ -153,7 +156,10 @@ export function AdminShell({
         </details>
       </header>
 
-      <main className="main">{children}</main>
+      <main className="main">
+        {banner}
+        {children}
+      </main>
     </div>
   );
 }

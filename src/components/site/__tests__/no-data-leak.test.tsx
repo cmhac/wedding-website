@@ -7,7 +7,7 @@ describe("Home for a visitor who is not signed in", () => {
   it("contains only the fixed sign-in copy", () => {
     const { container } = render(<Home signedIn={false} />);
     expect(container.textContent).toBe(
-      "Sign in to see what's comingEnter the email address we invited, and we'll send you a link.Email addressEmail me a link",
+      "Sign in to see what's comingEnter the email address we invited, and we'll send you a link.Email addressEmail me a linkPrivacy Policy · Terms",
     );
     expect(container.querySelector("input")?.getAttribute("value")).toBe("");
   });

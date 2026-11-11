@@ -13,11 +13,35 @@ const contactEq2 = jest.fn((_c: string, _v: string) => ({
   maybeSingle: contactMaybeSingle,
 }));
 const contactEq1 = jest.fn((_c: string, _v: string) => ({ eq: contactEq2 }));
-const from = jest.fn((_t: string) => ({
-  select: (_c: string) => ({ eq: contactEq1 }),
+const householdMaybeSingle = jest.fn();
+const from = jest.fn((table: string) => ({
+  select: (_c: string) =>
+    table === "households"
+      ? {
+          eq: (_k: string, _v: string) => ({
+            maybeSingle: householdMaybeSingle,
+          }),
+        }
+      : { eq: contactEq1 },
 }));
+const mockRpc = jest.fn();
 jest.mock("@/lib/supabase/admin", () => ({
-  createAdminSupabase: () => ({ from }),
+  createAdminSupabase: () => ({
+    from,
+    rpc: (...a: unknown[]) => mockRpc(...a),
+  }),
+}));
+const mockState = jest.fn();
+jest.mock("@/lib/sms/state", () => ({
+  getSmsState: (...a: unknown[]) => mockState(...a),
+}));
+const mockSendText = jest.fn();
+jest.mock("@/lib/sms/send", () => ({
+  sendText: (...a: unknown[]) => mockSendText(...a),
+}));
+const mockConfirm = jest.fn();
+jest.mock("@/lib/sms/consent", () => ({
+  sendConfirmationText: (...a: unknown[]) => mockConfirm(...a),
 }));
 const mockAllow = jest.fn();
 jest.mock("@/lib/auth/sign-in-limits", () => ({
@@ -91,6 +115,11 @@ beforeEach(() => {
   mockRender.mockResolvedValue({ subject: "s", html: "<p>h</p>", text: "t" });
   mockSend.mockResolvedValue({ ok: true, providerMessageId: "m1" });
   mockSignInWithOtp.mockResolvedValue({ data: {}, error: null });
+  mockState.mockResolvedValue({
+    configured: false,
+    enabled: false,
+    available: false,
+  });
 });
 
 describe("POST /api/guest/sign-in: a known address", () => {
@@ -319,6 +348,219 @@ describe("POST /api/guest/sign-in: request handling", () => {
     const res = await POST(request({ email: "guest@example.test" }));
     expect(JSON.stringify(await res.json())).not.toContain(
       "guest@example.test",
+    );
+  });
+});
+
+// ---- Phone numbers (texting available) --------------------------------------
+
+const NEUTRAL_BOTH = {
+  message:
+    "If that email address or mobile number is on the guest list, or belongs to a staff account, a link is on its way.",
+};
+
+function available() {
+  mockState.mockResolvedValue({
+    configured: true,
+    enabled: true,
+    available: true,
+  });
+  process.env.INVITE_LINK_SECRET =
+    "test-invite-secret-long-enough-for-hmac-0123456789";
+  householdMaybeSingle.mockResolvedValue({
+    data: { invite_link_version: 2 },
+    error: null,
+  });
+  mockRpc.mockImplementation(async (fn: string) => {
+    if (fn === "find_phone_contact")
+      return {
+        data: {
+          household_id: "5f1c2b8e-1111-4222-8333-944455556666",
+          contact_id: "c1",
+        },
+        error: null,
+      };
+    if (fn === "record_sms_consent_for_number")
+      return {
+        data: { found: true, contact_id: "c1", newly_opted_in: true },
+        error: null,
+      };
+    throw new Error(`unexpected rpc ${fn}`);
+  });
+  mockSendText.mockResolvedValue({ ok: true, sid: "SM1" });
+  mockConfirm.mockResolvedValue({ ok: true });
+}
+
+describe("POST /api/guest/sign-in: a typed phone number", () => {
+  beforeEach(available);
+
+  it("records the opt-in, confirms once, then texts the timed link to that number only", async () => {
+    const res = await POST(
+      request({ identifier: "(202) 555-0123", sms_consent: true }),
+    );
+    expect(res.status).toBe(202);
+    expect(await res.json()).toEqual(NEUTRAL_BOTH);
+    expect(mockAllow).toHaveBeenCalledWith(
+      expect.anything(),
+      "hash:+12025550123",
+    );
+    expect(mockRpc).toHaveBeenCalledWith("find_phone_contact", {
+      value: "+12025550123",
+    });
+    expect(mockRpc).toHaveBeenCalledWith("record_sms_consent_for_number", {
+      household_id: "5f1c2b8e-1111-4222-8333-944455556666",
+      value: "+12025550123",
+    });
+    expect(mockConfirm).toHaveBeenCalledWith("+12025550123");
+    expect(mockSendText).toHaveBeenCalledTimes(1);
+    const sent = mockSendText.mock.calls[0][0];
+    expect(sent.to).toBe("+12025550123");
+    expect(sent.body).toMatch(
+      /^Chris & Hannah's wedding sign-in: http:\/\/localhost:3000\/t\/[\w-]{22}\.[0-9a-z]{6}\.[\w-]{22} /,
+    );
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(loggedText()).not.toContain("2025550123");
+  });
+
+  it("does not confirm a number that had already opted in", async () => {
+    mockRpc.mockImplementation(async (fn: string) =>
+      fn === "find_phone_contact"
+        ? {
+            data: {
+              household_id: "5f1c2b8e-1111-4222-8333-944455556666",
+              contact_id: "c1",
+            },
+            error: null,
+          }
+        : {
+            data: { found: true, contact_id: "c1", newly_opted_in: false },
+            error: null,
+          },
+    );
+    await POST(request({ identifier: "202-555-0123", sms_consent: true }));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockSendText).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["no consent flag", { identifier: "(202) 555-0123" }],
+    ["consent false", { identifier: "(202) 555-0123", sms_consent: false }],
+    ["a non-US number", { identifier: "(416) 555-0123", sms_consent: true }],
+    ["an invalid number", { identifier: "555-0100", sms_consent: true }],
+    ["something that is neither", { identifier: "hello", sms_consent: true }],
+  ])(
+    "sends and records nothing for %s, with the same answer",
+    async (_n, body) => {
+      const res = await POST(request(body));
+      expect(res.status).toBe(202);
+      expect(await res.json()).toEqual(NEUTRAL_BOTH);
+      expect(mockRpc).not.toHaveBeenCalled();
+      expect(mockSendText).not.toHaveBeenCalled();
+      expect(mockConfirm).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    [
+      "an unknown number",
+      () =>
+        mockRpc.mockImplementation(async () => ({ data: null, error: null })),
+    ],
+    [
+      "a failed lookup",
+      () =>
+        mockRpc.mockImplementation(async () => ({
+          data: null,
+          error: { message: "x" },
+        })),
+    ],
+    ["the limit being reached", () => mockAllow.mockResolvedValue(false)],
+    [
+      "a refused text",
+      () => mockSendText.mockResolvedValue({ ok: false, code: "30006" }),
+    ],
+    [
+      "a thrown error",
+      () => mockSendText.mockRejectedValue(new Error("boom +12025550123")),
+    ],
+  ])("answers the same neutral 202 for %s", async (_n, arrange) => {
+    arrange();
+    const res = await POST(
+      request({ identifier: "(202) 555-0123", sms_consent: true }),
+    );
+    expect(res.status).toBe(202);
+    expect(await res.json()).toEqual(NEUTRAL_BOTH);
+    expect(loggedText()).not.toContain("2025550123");
+  });
+
+  it("records nothing for an unknown number", async () => {
+    mockRpc.mockImplementation(async (fn: string) =>
+      fn === "find_phone_contact"
+        ? { data: null, error: null }
+        : { data: { found: true, newly_opted_in: true }, error: null },
+    );
+    await POST(request({ identifier: "(202) 555-0123", sms_consent: true }));
+    expect(mockRpc).not.toHaveBeenCalledWith(
+      "record_sms_consent_for_number",
+      expect.anything(),
+    );
+    expect(mockSendText).not.toHaveBeenCalled();
+  });
+
+  it("checks the limit before any lookup", async () => {
+    mockAllow.mockResolvedValue(false);
+    await POST(request({ identifier: "(202) 555-0123", sms_consent: true }));
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("takes at least the same minimum time", async () => {
+    await POST(request({ identifier: "(202) 555-0123", sms_consent: true }));
+    expect(mockMinimum).toHaveBeenCalledWith(1500);
+  });
+});
+
+describe("POST /api/guest/sign-in: when texting is not available", () => {
+  it("treats a phone number as unknown: the original email-only answer, nothing called", async () => {
+    mockState.mockResolvedValue({
+      configured: true,
+      enabled: false,
+      available: false,
+    });
+    const res = await POST(
+      request({ identifier: "(202) 555-0123", sms_consent: true }),
+    );
+    expect(res.status).toBe(202);
+    expect(await res.json()).toEqual(NEUTRAL);
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockSendText).not.toHaveBeenCalled();
+    expect(mockAllow).not.toHaveBeenCalled();
+  });
+
+  it("never mentions mobile numbers in the answer", async () => {
+    const res = await POST(request({ email: "guest@example.test" }));
+    expect(JSON.stringify(await res.json())).not.toMatch(/mobile|phone|text/i);
+  });
+});
+
+describe("POST /api/guest/sign-in: the new field name and the old one", () => {
+  beforeEach(available);
+
+  it("accepts identifier for an email address and still accepts the old email field", async () => {
+    for (const body of [
+      { identifier: "Guest@Example.test" },
+      { email: "Guest@Example.test" },
+    ]) {
+      mockSend.mockClear();
+      const res = await POST(request(body));
+      expect(res.status).toBe(202);
+      expect(await res.json()).toEqual(NEUTRAL_BOTH);
+      expect(mockSend).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it("answers 422 for an identifier with an @ that is not an email address", async () => {
+    expect((await POST(request({ identifier: "not@an@email" }))).status).toBe(
+      422,
     );
   });
 });

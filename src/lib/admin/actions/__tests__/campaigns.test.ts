@@ -20,6 +20,17 @@ jest.mock("@/lib/log", () => ({
   log: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
+const mockConfigured = jest.fn();
+const mockSmsEnabled = jest.fn();
+jest.mock("@/lib/sms/state", () => ({
+  isSmsConfigured: () => mockConfigured(),
+  getSmsState: async () => ({
+    configured: mockConfigured(),
+    enabled: mockSmsEnabled(),
+    available: mockConfigured() && mockSmsEnabled(),
+  }),
+}));
+
 import { cancelCampaign, previewAudience, saveCampaign } from "../campaigns";
 
 const CAMPAIGN = "11111111-1111-4111-8111-111111111111";
@@ -34,8 +45,20 @@ function setup(
     {
       campaigns,
       household_contacts: [
-        { id: "c1", household_id: "h1", value: "a@example.test" },
-        { id: "c2", household_id: "h1", value: "b@example.test" },
+        {
+          id: "c1",
+          household_id: "h1",
+          kind: "email",
+          value: "a@example.test",
+        },
+        {
+          id: "c2",
+          household_id: "h1",
+          kind: "email",
+          value: "b@example.test",
+        },
+        // A phone number does not count as an address to email.
+        { id: "c3", household_id: "h1", kind: "phone", value: "+12025550123" },
       ],
     },
     { rpcResults: { resolve_audience: { data: rpcData } } },
@@ -393,5 +416,169 @@ describe("cancelCampaign", () => {
       supabase: client as never,
     });
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("saveCampaign channel", () => {
+  const save = (client: unknown, extra: Array<[string, string]>) =>
+    saveCampaign(null, form([...base, ["intent", "draft"], ...extra]), {
+      supabase: client as never,
+    }).catch((e) => e);
+
+  beforeEach(() => mockConfigured.mockReturnValue(true));
+
+  it.each(["email", "text", "both"])(
+    "saves the channel %s when texting is configured",
+    async (channel) => {
+      const { db, client } = setup();
+      await save(client, [["channel", channel]]);
+      expect(db.tables.campaigns[0].channel).toBe(channel);
+    },
+  );
+
+  it("saves no channel (so email) when none is sent", async () => {
+    const { db, client } = setup();
+    await save(client, []);
+    expect(db.tables.campaigns[0]).not.toHaveProperty("channel");
+  });
+
+  it("ignores a channel entirely while texting is not configured", async () => {
+    mockConfigured.mockReturnValue(false);
+    const { db, client } = setup();
+    await save(client, [["channel", "both"]]);
+    expect(db.tables.campaigns[0]).not.toHaveProperty("channel");
+  });
+
+  it("refuses a channel that is not email, text or both", async () => {
+    const { db, client } = setup();
+    const result = await saveCampaign(
+      null,
+      form([...base, ["intent", "draft"], ["channel", "pigeon"]]),
+      {
+        supabase: client as never,
+      },
+    );
+    expect(result).toMatchObject({ ok: false });
+    expect(db.tables.campaigns).toHaveLength(0);
+  });
+});
+
+describe("previewAudience for texts", () => {
+  const audienceRows = [
+    {
+      household_id: "h1",
+      display_name: "One",
+      deliverable: true,
+      skip_reason: null,
+    },
+    {
+      household_id: "h2",
+      display_name: "Two",
+      deliverable: false,
+      skip_reason: "no_email",
+    },
+    {
+      household_id: "h3",
+      display_name: "Three",
+      deliverable: true,
+      skip_reason: null,
+    },
+    {
+      household_id: "h4",
+      display_name: "Four",
+      deliverable: false,
+      skip_reason: "already_responded",
+    },
+  ];
+  const withPhones = (db: {
+    tables: Record<string, Array<Record<string, unknown>>>;
+  }) => {
+    db.tables.household_contacts.push(
+      {
+        id: "p1",
+        household_id: "h1",
+        kind: "phone",
+        value: "+12025550101",
+        sms_consent: "opted_in",
+      },
+      {
+        id: "p2",
+        household_id: "h1",
+        kind: "phone",
+        value: "+12025550102",
+        sms_consent: "not_asked",
+      },
+      {
+        id: "p3",
+        household_id: "h2",
+        kind: "phone",
+        value: "+12025550103",
+        sms_consent: "not_asked",
+      },
+      {
+        id: "p4",
+        household_id: "h4",
+        kind: "phone",
+        value: "+12025550104",
+        sms_consent: "opted_in",
+      },
+    );
+  };
+  const preview = (client: unknown, channel: string | null) =>
+    previewAudience(
+      null,
+      form(channel ? [...base, ["channel", channel]] : base),
+      { supabase: client as never },
+    );
+
+  beforeEach(() => {
+    mockConfigured.mockReturnValue(true);
+    mockSmsEnabled.mockReturnValue(true);
+  });
+
+  it("counts texts per household and says why each other number or household is not texted", async () => {
+    const { db, client } = setup([], audienceRows);
+    withPhones(db as never);
+    const result = await preview(client, "both");
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.data!.texts).toEqual({
+      switchedOff: false,
+      willText: [{ householdId: "h1", name: "One", texts: 1 }],
+      notTexted: expect.arrayContaining([
+        { householdId: "h1", name: "One", reason: "not_opted_in" },
+        { householdId: "h2", name: "Two", reason: "not_opted_in" },
+        { householdId: "h3", name: "Three", reason: "no_phone" },
+      ]),
+    });
+    // A household out of the audience for another reason is not texted either.
+    expect(
+      result.data!.texts!.notTexted.find((n) => n.householdId === "h4"),
+    ).toBeUndefined();
+  });
+
+  it("says texts will be skipped when texting is switched off", async () => {
+    mockSmsEnabled.mockReturnValue(false);
+    const { db, client } = setup([], audienceRows);
+    withPhones(db as never);
+    const result = await preview(client, "text");
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.data!.texts).toMatchObject({
+      switchedOff: true,
+      willText: [],
+    });
+  });
+
+  it("has no text section for an email campaign or while texting is not configured", async () => {
+    const { db, client } = setup([], audienceRows);
+    withPhones(db as never);
+    expect(
+      ((await preview(client, "email")) as { data: { texts?: unknown } }).data
+        .texts,
+    ).toBeUndefined();
+    mockConfigured.mockReturnValue(false);
+    expect(
+      ((await preview(client, "both")) as { data: { texts?: unknown } }).data
+        .texts,
+    ).toBeUndefined();
   });
 });

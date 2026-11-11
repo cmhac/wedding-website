@@ -36,6 +36,13 @@ export function ImportResultView({ outcome }: { outcome: ImportOutcome }) {
       {errors.length === 0 ? (
         <Alert variant="ok">All rows imported.</Alert>
       ) : null}
+      {data.phones_ignored ? (
+        <Alert variant="warn">
+          Phone numbers were ignored because texting is not set up (
+          {data.phones_ignored}). Nothing from those columns was saved: import
+          the file again once texting is set up.
+        </Alert>
+      ) : null}
       <div className="stats">
         <StatTile value={created.households} label="Households created" />
         <StatTile value={created.guests} label="Guests created" />

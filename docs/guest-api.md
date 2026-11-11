@@ -23,18 +23,21 @@ All endpoints return JSON. Errors use one shape:
 
 `issues` appears only on `422`. Messages never contain other households' data or reveal whether an email is on the guest list.
 
-| Method and path            | Purpose                                                             | Success | Errors                                                                    |
-| -------------------------- | ------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- |
-| `GET /i/[token]`           | Open a household's personal invite link: sign in and go to the RSVP | 302     | 302 to the sign-in failure path                                           |
-| `GET /auth/confirm`        | Complete a typed-address sign-in link                               | 302     | 302 to the sign-in failure path                                           |
-| `POST /auth/confirm`       | Same, for a frontend "Continue" page (form-encoded fields)          | 302     | 302 to the sign-in failure path                                           |
-| `POST /api/guest/sign-in`  | Email a sign-in link to the address typed                           | 202     | 422 invalid email format, 429 rate limited                                |
-| `POST /api/guest/sign-out` | End the session                                                     | 204     | none                                                                      |
-| `GET /api/guest/rsvp`      | Read the household, guests, events, menus                           | 200     | 401 not signed in, 403 not a guest                                        |
-| `PUT /api/guest/rsvp`      | Save answers, meals, dietary needs, message                         | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
-| `POST /api/guest/plus-one` | Name a plus-one placeholder                                         | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
-| `POST /api/guest/opt-out`  | Turn reminder emails off or on                                      | 200     | 401, 403, 422                                                             |
-| `GET /auth/callback`       | Completes sign-in from the emailed link                             | 302     | 302 to the sign-in failure path                                           |
+| Method and path               | Purpose                                                               | Success | Errors                                                                    |
+| ----------------------------- | --------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `GET /i/[token]`              | Open a household's personal invite link: sign in and go to the RSVP   | 302     | 302 to the sign-in failure path                                           |
+| `GET /t/[token]`              | Open the sign-in link texted to a typed phone number (15 minutes)     | 302     | 302 to the sign-in failure path                                           |
+| `GET /auth/confirm`           | Complete a typed-address sign-in link                                 | 302     | 302 to the sign-in failure path                                           |
+| `POST /auth/confirm`          | Same, for a frontend "Continue" page (form-encoded fields)            | 302     | 302 to the sign-in failure path                                           |
+| `POST /api/guest/sign-in`     | Email (or, once texting is on, text) a sign-in link to what was typed | 202     | 422 invalid email format, 429 rate limited                                |
+| `POST /api/guest/sign-out`    | End the session                                                       | 204     | none                                                                      |
+| `GET /api/guest/rsvp`         | Read the household, guests, events, menus                             | 200     | 401 not signed in, 403 not a guest                                        |
+| `PUT /api/guest/rsvp`         | Save answers, meals, dietary needs, message                           | 200     | 401, 403, 409 `rsvp_closed`, 422 `invalid_payload` or `invalid_meal`      |
+| `POST /api/guest/plus-one`    | Name a plus-one placeholder                                           | 200     | 401, 403, 409 `rsvp_closed`, `not_a_placeholder` or `duplicate_name`, 422 |
+| `POST /api/guest/opt-out`     | Turn reminder emails off or on                                        | 200     | 401, 403, 422                                                             |
+| `GET /api/guest/sms-consent`  | The numbers still to ask about (empty while texting is off)           | 200     | 401, 403                                                                  |
+| `POST /api/guest/sms-consent` | Record the consent step's answers                                     | 200     | 401, 403, 409 `texting_unavailable`, 422                                  |
+| `GET /auth/callback`          | Completes sign-in from the emailed link                               | 302     | 302 to the sign-in failure path                                           |
 
 ## Sign-in
 
@@ -45,6 +48,17 @@ A household has one shared sign-in; any of its people can use it, on any device,
 **Typed address, `POST /api/guest/sign-in`** with `{ "email": "..." }` always answers `202` with `{ "message": "If that address is on the guest list or belongs to a staff account, a link is on its way." }` after at least 1.5 seconds, whether the address is a household address, a staff address, unknown, over a limit, or something failed. For an address on a household, the site emails a link to **that address**. Any other address is tried as a staff address: Supabase emails a staff sign-in link only when a staff account exists (staff addresses are never household addresses), and the link opens `GET /auth/callback`, which lands on the admin console. The link opens `GET /auth/confirm?token_hash=...&type=email`, which sets the session cookie and redirects to the guest landing path. The same fields can be sent as a form `POST` to `/auth/confirm`, so a frontend can show a "Continue" page first (a mail scanner that only opens the link then does not use the token up). A link is single use and short lived; ask again for a new one. The home page's one prompt uses this endpoint for guests and staff alike; the admin console's own sign-in page still uses `POST /api/admin/sign-in`.
 
 Guests stay signed in until staff use "sign out everywhere" for the household (access ends on the next request) or `POST /api/guest/sign-out` ends this device's session only; other devices of the same household stay signed in.
+
+## Text messages (optional, off until the couple set it up)
+
+Everything here exists only while **texting is available**: the Twilio settings are on the server and the couple's switch is on. Otherwise no endpoint below does anything, the sign-in answer is the original email-only wording, and nothing about texting is shown.
+
+- **Sign-in body.** `POST /api/guest/sign-in` takes `{ "identifier": "<email or phone number>", "sms_consent": true }` (the old `{ "email": ... }` still works). A value with an `@` is the email path. A phone number is texted a link only when `sms_consent` is true, the number is on a household, and the sign-in limits allow it; its opt-in is recorded then. Every other case sends and records nothing, and the answer is the same: while texting is available, `{ "message": "If that email address or mobile number is on the guest list, or belongs to a staff account, a link is on its way." }`, after at least 1.5 seconds.
+- **Texted link, `GET /t/[token]`.** `/t/<household id>.<expiry>.<signature>`, valid 15 minutes and usable more than once in that window (a messaging app that opens it first does not use it up). It signs the household in on that device and redirects `302` to the guest landing path; every failure is a `302` to `/auth/error`. It does not stop on the wedding day, and ends when staff reissue the household's link or sign it out everywhere.
+- **Consent step.** `GET /api/guest/sms-consent` returns `{ "available": true, "pending": [{ "id", "masked": "(•••) •••-0123" }] }`, the household's numbers not yet asked about. `POST /api/guest/sms-consent` takes `{ "answers": [{ "id", "opt_in": true }] }` (a ticked box opts in, an unticked one declines and the step never returns for that number); one confirmation text is sent for each number newly opted in. While unavailable: `{ "available": false, "pending": [] }` and `409 texting_unavailable`. A frontend shows the consent step after a guest's first sign-in when `pending` is not empty.
+- **The consent statement** (shown with every unticked checkbox, separate from any agreement to the privacy and terms pages): "By ticking a box you agree to receive text messages from Chris & Hannah's wedding about our wedding (reminders, essential updates and sign-in links), about a dozen messages over six months. Msg & data rates may apply. Reply HELP for help, STOP to opt out." plus links to `/privacy` and `/terms`. Texts are optional and email always works. This wording matches what is registered with the carriers: change both together.
+- **Contacts.** `GET /api/guest/rsvp` also lists phone numbers masked as `(•••) •••-0123` in `contacts` (`{ "kind": "phone", "masked": ... }`) while texting is available. Guests cannot change them.
+- **STOP and START** are handled by the provider; the site keeps no opt-out list. A guest who replied STOP can use their email address, their personal link, or reply START.
 
 ## `GET /api/guest/rsvp` response
 

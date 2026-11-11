@@ -55,6 +55,16 @@ export const contactResponseSchema = z.object({
 });
 export type ContactResponse = z.infer<typeof contactResponseSchema>;
 
+export const phoneContactResponseSchema = z.object({
+  contact: z.object({
+    id: z.string(),
+    kind: z.literal("phone"),
+    value: z.string(),
+    sms_consent: z.string(),
+  }),
+});
+export type PhoneContactResponse = z.infer<typeof phoneContactResponseSchema>;
+
 export const removeContactResponseSchema = z.object({
   paper_only: z.boolean(),
 });
@@ -135,6 +145,9 @@ export const importResponseSchema = z.object({
     invitations: z.number().int(),
   }),
   errors: z.array(importErrorSchema),
+  /** Phone numbers saved, and phone cells ignored because texting is not set up. */
+  phones_saved: z.number().int().optional(),
+  phones_ignored: z.number().int().optional(),
   source: z.object({
     format: z.enum(["csv", "xlsx"]),
     sheet: z

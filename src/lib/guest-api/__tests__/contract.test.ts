@@ -85,6 +85,7 @@ describe("guest API documentation matches the route handlers", () => {
     "GET /auth/confirm",
     "POST /auth/confirm",
     "GET /i/[token]",
+    "GET /t/[token]",
   ];
 
   it("the contract table lists exactly the guest routes on disk, plus the sign-in routes", () => {
@@ -106,6 +107,7 @@ describe("guest API documentation matches the route handlers", () => {
       ]),
     );
     expect(endpointsOnDisk("app/i")).toEqual(["GET /i/[token]"]);
+    expect(endpointsOnDisk("app/t")).toEqual(["GET /t/[token]"]);
   });
 
   it("the published document lists the same endpoints as the contract", () => {

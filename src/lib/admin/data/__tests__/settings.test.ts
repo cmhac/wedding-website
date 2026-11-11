@@ -25,6 +25,7 @@ describe("loadSettings", () => {
       sign_in_limit_per_address: 3,
       sign_in_window_minutes: 10,
       sign_in_limit_global_per_hour: 60,
+      sms_enabled: false,
       row,
     });
   });

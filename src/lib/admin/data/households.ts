@@ -37,6 +37,8 @@ export type HouseholdRow = {
   unnamedSeats: number;
   /** Every address, oldest first. */
   contacts: string[];
+  /** Phone numbers and how many have opted in (shown only while texting is configured). */
+  phones?: { total: number; optedIn: number };
   /** Addresses with a delivery problem, masked (first character and domain only). */
   problemAddresses: string[];
   plusOnesAllowed: number;
@@ -96,6 +98,14 @@ export type HouseholdDetail = {
   id: string;
   displayName: string;
   contacts: { id: string; value: string; deliveryProblem: boolean }[];
+  /** Phone numbers with their opt-in state (shown only while texting is configured). */
+  phones?: {
+    id: string;
+    value: string;
+    deliveryProblem: boolean;
+    consent: string;
+    consentAt: string | null;
+  }[];
   plusOneAllowance: number;
   address: HouseholdAddress | null;
   notes: string | null;
@@ -191,6 +201,7 @@ export async function loadHouseholdList(
     households,
     guests,
     contacts,
+    phoneRows,
     progress,
     duplicates,
     eventRows,
@@ -203,7 +214,17 @@ export async function loadHouseholdList(
       db
         .from("household_contacts")
         .select("household_id, value, delivery_problem, created_at")
+        // Email only: phone numbers have their own list and are hidden while
+        // texting is not configured.
+        .eq("kind", "email")
         .order("created_at", { ascending: true }),
+    ),
+    rows(
+      "household_contacts",
+      db
+        .from("household_contacts")
+        .select("household_id, sms_consent")
+        .eq("kind", "phone"),
     ),
     rows(
       "household_rsvp_progress",
@@ -267,6 +288,18 @@ export async function loadHouseholdList(
     );
   }
 
+  const phonesByHousehold = new Map<
+    string,
+    { total: number; optedIn: number }
+  >();
+  for (const p of phoneRows) {
+    const key = p.household_id as string;
+    const entry = phonesByHousehold.get(key) ?? { total: 0, optedIn: 0 };
+    entry.total++;
+    if (p.sms_consent === "opted_in") entry.optedIn++;
+    phonesByHousehold.set(key, entry);
+  }
+
   const built: HouseholdRow[] = households.map((h) => {
     const id = h.id as string;
     const members = guestsByHousehold.get(id) ?? [];
@@ -278,6 +311,9 @@ export async function loadHouseholdList(
       guestNames: members.map(fullName).filter((n): n is string => n !== null),
       unnamedSeats: members.filter((g) => g.is_placeholder).length,
       contacts: addresses,
+      ...(phonesByHousehold.has(id)
+        ? { phones: phonesByHousehold.get(id) }
+        : {}),
       problemAddresses: problemsByHousehold.get(id) ?? [],
       plusOnesAllowed: num(h.plus_one_allowance),
       plusOnesNamed: members.filter((g) => g.is_plus_one && !g.is_placeholder)
@@ -377,7 +413,9 @@ export async function loadHouseholdDetail(
         "household_contacts",
         db
           .from("household_contacts")
-          .select("id, household_id, value, delivery_problem, created_at")
+          .select(
+            "id, household_id, kind, value, delivery_problem, created_at, sms_consent, sms_consent_at",
+          )
           .eq("household_id", id)
           .order("created_at", { ascending: true }),
       ),
@@ -423,11 +461,22 @@ export async function loadHouseholdDetail(
   return {
     id,
     displayName: h.display_name as string,
-    contacts: contacts.map((c) => ({
-      id: c.id as string,
-      value: String(c.value),
-      deliveryProblem: Boolean(c.delivery_problem),
-    })),
+    contacts: contacts
+      .filter((c) => c.kind !== "phone")
+      .map((c) => ({
+        id: c.id as string,
+        value: String(c.value),
+        deliveryProblem: Boolean(c.delivery_problem),
+      })),
+    phones: contacts
+      .filter((c) => c.kind === "phone")
+      .map((c) => ({
+        id: c.id as string,
+        value: String(c.value),
+        deliveryProblem: Boolean(c.delivery_problem),
+        consent: String(c.sms_consent ?? "not_asked"),
+        consentAt: text(c.sms_consent_at),
+      })),
     plusOneAllowance: num(h.plus_one_allowance),
     address: asAddress(h.address),
     notes: text(h.notes),

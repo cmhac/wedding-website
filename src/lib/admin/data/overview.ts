@@ -101,7 +101,10 @@ export async function loadOverview(
     rows("staff_households", supabase.rpc("staff_households")),
     rows(
       "household_contacts",
-      supabase.from("household_contacts").select("household_id"),
+      supabase
+        .from("household_contacts")
+        .select("household_id")
+        .eq("kind", "email"),
     ),
     rows(
       "find_duplicate_households",

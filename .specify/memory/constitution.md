@@ -68,6 +68,8 @@ older ones, and unrecorded exceptions get "fixed" later and break the toolchain.
 - **Backend:** Supabase for Postgres, Auth, API, and Edge Functions.
 - **Auth:** magic-link sign-in for everyone, the couple and guests alike.
 - **Email:** Resend for delivery, React Email for templates.
+- **Text:** Twilio for delivery of text messages, behind one wrapper in `src/lib/sms/twilio.ts`;
+  recorded in `docs/decisions/0014-text-messages.md`. Texting is off unless it is configured.
 - **Tests and quality:** Jest with React Testing Library, ESLint (flat config), Prettier,
   Husky, and lint-staged.
 - **Package manager and runtime:** npm; the Node version in `.nvmrc`.
@@ -104,4 +106,4 @@ MUST stay consistent with it.
 - **Compliance:** reviews and plans MUST verify compliance with these principles. Complexity
   or deviation MUST be justified in writing in the plan or the pull request.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-11-09
+**Version**: 1.2.0 | **Ratified**: 2026-10-18 | **Last Amended**: 2026-11-11

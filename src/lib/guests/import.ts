@@ -1,3 +1,4 @@
+import { parseUsPhone } from "../sms/phone.ts";
 import { parse } from "csv-parse/sync";
 import { z } from "zod";
 
@@ -7,7 +8,10 @@ import { z } from "zod";
  * One row per guest. Required columns: `household_name`, `first_name`,
  * `last_name`. Optional: `household_ref` (groups rows into a household; without
  * it rows are grouped by household name plus contact email), `contact_email` (and
- * `contact_email_2`, `contact_email_3`, ... for a household's further addresses),
+ * `contact_email_2`, `contact_email_3`, ... for a household's further addresses;
+ * `contact_phone`, `contact_phone_2`, ... for United States phone numbers, read
+ * only when texting is configured and otherwise ignored and counted; a number's
+ * opt-in is never in the file),
  * `plus_one_allowance` (integer >= 0, default 0), `guest_email`,
  * `dietary_notes`, `notes`, and one `event:<slug>` column per event, holding
  * yes/true/1/x to invite the guest or no/false/0 or blank.
@@ -32,6 +36,8 @@ export type ImportHousehold = {
   display_name: string;
   /** Every address of the household, lower-cased, in column order. */
   contacts: string[];
+  /** Phone numbers as E.164, in column order; present only when texting is configured. */
+  phones?: string[];
   /** True when the household has no email and needs a paper invitation. */
   paper_only: boolean;
   plus_one_allowance: number;
@@ -44,9 +50,15 @@ export type ImportResult = {
   households: ImportHousehold[];
   errors: ImportError[];
   counts: { households: number; guests: number; invitations: number };
+  /** Phone cells dropped because texting is not configured. */
+  phonesIgnored?: number;
 };
 
-export type ImportOptions = { eventSlugs: readonly string[] };
+export type ImportOptions = {
+  eventSlugs: readonly string[];
+  /** True when the text provider is configured: phone columns are then read. */
+  smsConfigured?: boolean;
+};
 
 const REQUIRED = ["household_name", "first_name", "last_name"] as const;
 const EVENT_PREFIX = "event:";
@@ -107,6 +119,14 @@ export function parseGuestImport(
     .map(({ h, i, m }) => ({ field: h, i, n: Number(m![1] ?? 1) }))
     .sort((a, b) => a.n - b.n);
 
+  const phoneColumns = header
+    .map((h, i) => ({ h, i, m: /^contact_phone(?:_(\d+))?$/.exec(h) }))
+    .filter(({ m }) => m !== null)
+    .map(({ h, i, m }) => ({ field: h, i, n: Number(m![1] ?? 1) }))
+    .sort((a, b) => a.n - b.n);
+  const smsConfigured = options.smsConfigured === true;
+  let phonesIgnored = 0;
+
   const known = new Set(options.eventSlugs);
   const eventColumns = header
     .map((h, i) => ({ h, i }))
@@ -120,6 +140,7 @@ export function parseGuestImport(
     firstRow: number;
     /** Which column each address came from, for errors. */
     contactFields: Map<string, string>;
+    phoneFields: Map<string, string>;
   };
   const groups = new Map<string, Group>();
   const order: Group[] = [];
@@ -155,6 +176,30 @@ export function parseGuestImport(
       } else {
         contacts.push(raw.toLowerCase());
         contactFields.set(raw.toLowerCase(), field);
+      }
+    }
+    const phones: string[] = [];
+    const phoneFields = new Map<string, string>();
+    for (const { field, i } of phoneColumns) {
+      const raw = (cells[i] ?? "").trim();
+      if (!raw) continue;
+      if (!smsConfigured) {
+        phonesIgnored++;
+        continue;
+      }
+      const parsedPhone = parseUsPhone(raw);
+      if (!parsedPhone.ok) {
+        fail(
+          field,
+          parsedPhone.reason === "not_us"
+            ? "Only United States numbers are supported"
+            : "Not a valid phone number",
+        );
+      } else if (phones.includes(parsedPhone.e164)) {
+        fail(field, "Repeats another number of this household");
+      } else {
+        phones.push(parsedPhone.e164);
+        phoneFields.set(parsedPhone.e164, field);
       }
     }
     const hasContactCells = contactColumns.some(
@@ -205,7 +250,8 @@ export function parseGuestImport(
           ref: ref || key,
           display_name: displayName,
           contacts,
-          paper_only: contacts.length === 0,
+          ...(smsConfigured ? { phones } : {}),
+          paper_only: contacts.length === 0 && phones.length === 0,
           plus_one_allowance: allowance,
           guests: [],
         },
@@ -213,6 +259,7 @@ export function parseGuestImport(
         seen: new Set(),
         firstRow: row,
         contactFields,
+        phoneFields,
       };
       groups.set(key, group);
       order.push(group);
@@ -278,6 +325,25 @@ export function parseGuestImport(
     }
   }
 
+  // The same holds for a phone number.
+  const phoneOwner = new Map<string, Group>();
+  for (const group of order) {
+    if (group.invalid) continue;
+    for (const number of group.household.phones ?? []) {
+      const first = phoneOwner.get(number);
+      if (first && first !== group) {
+        group.invalid = true;
+        errors.push({
+          row: group.firstRow,
+          field: group.phoneFields.get(number) ?? "contact_phone",
+          message: "Used by another household in this file",
+        });
+        break;
+      }
+      phoneOwner.set(number, group);
+    }
+  }
+
   const households = order.filter((g) => !g.invalid).map((g) => g.household);
   errors.sort((a, b) => a.row - b.row);
   return {
@@ -291,5 +357,6 @@ export function parseGuestImport(
         0,
       ),
     },
+    ...(phonesIgnored > 0 ? { phonesIgnored } : {}),
   };
 }

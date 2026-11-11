@@ -6,6 +6,9 @@ import { DispatchError, sendCampaign } from "@/lib/campaigns/dispatch";
 import { log } from "@/lib/log";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
+/** Allows one run to spend up to 45 seconds sending texts (decision 0014). */
+export const maxDuration = 60;
+
 type Context = { params: Promise<{ id: string }> };
 
 const idSchema = z.guid();

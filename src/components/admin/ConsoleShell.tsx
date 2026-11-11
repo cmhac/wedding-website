@@ -28,6 +28,7 @@ export function navKeyFor(pathname: string | null): NavKey {
 export function ConsoleShell({
   staff,
   signOutAction,
+  banner,
   children,
 }: Omit<AdminShellProps, "current"> & { children: ReactNode }) {
   return (
@@ -35,6 +36,7 @@ export function ConsoleShell({
       current={navKeyFor(usePathname())}
       staff={staff}
       signOutAction={signOutAction}
+      banner={banner}
     >
       {children}
     </AdminShell>

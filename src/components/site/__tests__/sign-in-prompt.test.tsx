@@ -24,7 +24,11 @@ describe("SignInPrompt", () => {
       "email",
     );
     expect(screen.getByLabelText("Email address")).toBeRequired();
-    expect(screen.queryByRole("link")).toBeNull();
+    // No staff sign-in link: the only links are the two legal pages.
+    expect(screen.getAllByRole("link").map((a) => a.textContent)).toEqual([
+      "Privacy Policy",
+      "Terms",
+    ]);
     expect(screen.getByRole("main")).toHaveClass("stage");
   });
 

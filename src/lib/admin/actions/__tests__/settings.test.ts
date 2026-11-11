@@ -12,7 +12,12 @@ jest.mock("@/lib/log", () => ({
   log: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
-import { saveSettings } from "../settings";
+import { saveSettings, saveSmsSwitch } from "../settings";
+
+const mockConfigured = jest.fn();
+jest.mock("@/lib/sms/state", () => ({
+  isSmsConfigured: () => mockConfigured(),
+}));
 
 function setup(role: "couple" | "planner" = "couple") {
   const auth = fakeSupabase({ user: { id: "user-1" }, staffRole: role });
@@ -165,5 +170,48 @@ describe("saveSettings", () => {
       ok: false,
       message: messageFor("server_error"),
     });
+  });
+});
+
+describe("saveSmsSwitch", () => {
+  const runSwitch = (client: unknown, entries: Array<[string, string]>) =>
+    saveSmsSwitch(null, form(entries), { supabase: client as never });
+
+  beforeEach(() => mockConfigured.mockReturnValue(true));
+
+  it("turns texting on for the couple, saying nobody is texted yet", async () => {
+    const { db, client } = setup("couple");
+    const result = await runSwitch(client, [["sms_enabled", "on"]]);
+    expect(result).toMatchObject({ ok: true });
+    expect((result as { data: { message: string } }).data.message).toMatch(
+      /Texting is on/,
+    );
+    expect(db.tables.settings[0].sms_enabled).toBe(true);
+  });
+
+  it("turns it off when the box is unticked", async () => {
+    const { db, client } = setup("couple");
+    db.tables.settings[0].sms_enabled = true;
+    const result = await runSwitch(client, []);
+    expect(result).toMatchObject({ ok: true });
+    expect(db.tables.settings[0].sms_enabled).toBe(false);
+  });
+
+  it("refuses a planner", async () => {
+    const { db, client } = setup("planner");
+    const result = await runSwitch(client, [["sms_enabled", "on"]]);
+    expect(result.ok).toBe(false);
+    expect(db.tables.settings[0].sms_enabled).toBeUndefined();
+  });
+
+  it("refuses while the provider is not configured, changing nothing", async () => {
+    mockConfigured.mockReturnValue(false);
+    const { db, client } = setup("couple");
+    const result = await runSwitch(client, [["sms_enabled", "on"]]);
+    expect(result).toMatchObject({
+      ok: false,
+      message: messageFor("texting_not_configured"),
+    });
+    expect(db.tables.settings[0].sms_enabled).toBeUndefined();
   });
 });

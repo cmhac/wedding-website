@@ -13,13 +13,14 @@ records answers to all seven decisions below, accepted on 2026-10-19.
 
 ## Components
 
-| Concern                  | Tool                                                                                                                                                                 | Lives in                        |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Frontend                 | Next.js, React; Tailwind for the designer's screens. Only the temporary v0 admin console and the placeholder homepage are built here, each with one plain stylesheet | `src/app`, `src/components`     |
-| Database, auth, API      | Supabase                                                                                                                                                             | `supabase/`, `src/lib/supabase` |
-| Backend logic            | Next.js server code and/or Supabase Edge Functions                                                                                                                   | `src/app`, `supabase/functions` |
-| Email content and design | Supplied separately (React Email suggested)                                                                                                                          | `emails/`                       |
-| Email delivery           | Resend                                                                                                                                                               | `src/lib/email`                 |
+| Concern                   | Tool                                                                                                                                                                 | Lives in                        |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Frontend                  | Next.js, React; Tailwind for the designer's screens. Only the temporary v0 admin console and the placeholder homepage are built here, each with one plain stylesheet | `src/app`, `src/components`     |
+| Database, auth, API       | Supabase                                                                                                                                                             | `supabase/`, `src/lib/supabase` |
+| Backend logic             | Next.js server code and/or Supabase Edge Functions                                                                                                                   | `src/app`, `supabase/functions` |
+| Email content and design  | Supplied separately (React Email suggested)                                                                                                                          | `emails/`                       |
+| Email delivery            | Resend                                                                                                                                                               | `src/lib/email`                 |
+| Text delivery and wording | Twilio, off and hidden until configured (decision 0014); wording registered like emails                                                                              | `src/lib/sms`, `texts/`         |
 
 ## Decisions
 

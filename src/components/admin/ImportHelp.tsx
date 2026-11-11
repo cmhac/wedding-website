@@ -4,7 +4,11 @@ import { Card } from "./primitives";
  * What the guest list file can contain. The columns for a household's email
  * addresses are the part that changed: a household can have several.
  */
-export function ImportHelp() {
+export function ImportHelp({
+  smsConfigured = false,
+}: {
+  smsConfigured?: boolean;
+}) {
   return (
     <Card heading="Columns">
       <div className="stack-sm">
@@ -22,6 +26,17 @@ export function ImportHelp() {
           household. Leave them all empty for a household that needs a paper
           invitation.
         </p>
+        {smsConfigured ? (
+          <p>
+            <strong>Phone numbers:</strong> put a household&apos;s first number
+            in <code>contact_phone</code>, and any more in{" "}
+            <code>contact_phone_2</code>, <code>contact_phone_3</code> and so
+            on. United States numbers only, in any common format. A number is
+            texted only after its owner opts in themselves, so nothing in the
+            file can switch texts on; the first message every household gets is
+            still the invitation email.
+          </p>
+        ) : null}
         <p>
           Optional: <code>household_ref</code> (groups rows into a household),{" "}
           <code>plus_one_allowance</code>, <code>guest_email</code>,{" "}

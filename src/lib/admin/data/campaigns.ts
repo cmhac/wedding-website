@@ -4,6 +4,8 @@ import { audienceSchema, type Audience } from "@/lib/campaigns/audience";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { describeAudience, type EventName } from "../audience-form";
 import { messageFor } from "../messages";
+import { formatPhoneForStaff } from "@/lib/sms/phone-format";
+import { plainErrorReason } from "@/lib/sms/status";
 import { formatPacific, isoToPacificLocal } from "../time";
 
 export type CampaignStatus =
@@ -31,6 +33,8 @@ export type CampaignDetail = {
   status: CampaignStatus;
   /** A Pacific `datetime-local` value, or "" when not scheduled. */
   scheduledLocal: string;
+  /** How it is sent; email when the column is absent. */
+  channel?: "email" | "text" | "both";
 };
 
 export type DeliveryRow = {
@@ -39,6 +43,8 @@ export type DeliveryRow = {
   householdName: string;
   /** The address this message was sent to (one row per address), or null when skipped. */
   address: string | null;
+  /** "text" for a text message to a phone number; absent (email) otherwise. */
+  channel?: "text";
   status: string;
   /** Plain-English detail, or "" when there is nothing to add. */
   detail: string;
@@ -87,7 +93,36 @@ function lastErrorWords(code: unknown): string | null {
   return LAST_ERRORS[code] ?? messageFor(code);
 }
 
+function textDetail(row: Row): string {
+  const status = row.status as string;
+  if (status === "skipped") {
+    switch (row.skip_reason) {
+      case "not_opted_in":
+        return "Not opted in to texts";
+      case "declined":
+        return "Declined texts";
+      case "no_phone":
+        return "No phone number on file";
+      case "texting_unavailable":
+        return "Texting was switched off";
+      case "invalid_number":
+        return "Not a valid United States number";
+      case "opted_out":
+        return "Opted out of reminders";
+      default:
+        return "Skipped";
+    }
+  }
+  if (status === "failed")
+    return plainErrorReason(row.error_code as string | null);
+  if (status === "bounced" || status === "complained") {
+    return "Household flagged with a delivery problem";
+  }
+  return "";
+}
+
 function messageDetail(row: Row): string {
+  if (row.channel === "text") return textDetail(row);
   const status = row.status as string;
   if (status === "skipped") {
     switch (row.skip_reason) {
@@ -201,7 +236,9 @@ export async function loadCampaign(
     "campaigns",
     client
       .from("campaigns")
-      .select("id, name, message_type_key, audience, status, scheduled_for")
+      .select(
+        "id, name, message_type_key, audience, status, scheduled_for, channel",
+      )
       .eq("id", id),
   );
   const r = rows[0];
@@ -214,6 +251,9 @@ export async function loadCampaign(
     audience: audience.success ? audience.data : { scope: "all" },
     status: r.status as CampaignStatus,
     scheduledLocal: isoToPacificLocal(r.scheduled_for as string | null),
+    ...(r.channel === "text" || r.channel === "both"
+      ? { channel: r.channel }
+      : {}),
   };
 }
 
@@ -221,6 +261,7 @@ export async function loadCampaign(
 export async function loadDelivery(
   id: string,
   supabase?: SupabaseClient,
+  options: { includeTexts?: boolean } = {},
 ): Promise<DeliveryData | null> {
   const client = await clientOr(supabase);
   const campaigns = await rowsOf(
@@ -230,13 +271,13 @@ export async function loadDelivery(
   const campaign = campaigns[0];
   if (!campaign) return null;
 
-  const [messages, households] = await Promise.all([
+  const [allMessages, households] = await Promise.all([
     rowsOf(
       "messages",
       client
         .from("messages")
         .select(
-          "id, household_id, to_email, status, skip_reason, error_code, queued_at, sent_at, last_event_at",
+          "id, household_id, to_email, channel, to_phone, status, skip_reason, error_code, queued_at, sent_at, last_event_at",
         )
         .eq("campaign_id", id)
         .order("queued_at", { ascending: true }),
@@ -244,6 +285,10 @@ export async function loadDelivery(
     loadHouseholdOptions(client),
   ]);
   const names = new Map(households.map((h) => [h.id, h.name]));
+  // Texts are shown only while texting is configured; otherwise they stay hidden.
+  const messages = options.includeTexts
+    ? allMessages
+    : allMessages.filter((m) => m.channel !== "text");
 
   const counts: Record<string, number> = {};
   const rows = messages.map((m): DeliveryRow => {
@@ -257,7 +302,13 @@ export async function loadDelivery(
       householdName: householdId
         ? (names.get(householdId) ?? "Unknown household")
         : "Deleted household",
-      address: (m.to_email as string | null) ?? null,
+      address:
+        m.channel === "text"
+          ? m.to_phone
+            ? formatPhoneForStaff(String(m.to_phone))
+            : null
+          : ((m.to_email as string | null) ?? null),
+      ...(m.channel === "text" ? { channel: "text" as const } : {}),
       status,
       detail: messageDetail(m),
       at: formatPacific(moment),

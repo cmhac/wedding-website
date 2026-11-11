@@ -244,3 +244,43 @@ body {
   font-size: 0.875rem;
   color: var(--muted);
 }
+
+/* The text-message consent checkbox and statement (sign-in prompt and consent step). */
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.875rem;
+}
+.consent input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 2px 0 0;
+}
+.consent-statement {
+  font-size: 0.875rem;
+  color: var(--text);
+}
+.prompt a {
+  color: var(--text);
+  text-underline-offset: 3px;
+}
+
+/* Small legal links at the foot of the home page, never over the centered line. */
+.legal-links {
+  position: fixed;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.legal-links a {
+  color: var(--muted);
+  text-underline-offset: 3px;
+}
+.legal-links a:hover {
+  color: var(--text);
+}

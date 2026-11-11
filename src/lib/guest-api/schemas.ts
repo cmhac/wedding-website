@@ -4,7 +4,43 @@
  */
 import { z } from "zod";
 
-export const signInRequestSchema = z.object({ email: z.email().max(320) });
+/**
+ * Sign-in request. `identifier` is an email address or a phone number (a value
+ * with an @ must be a valid email address; anything else is judged by the
+ * server). The old `email` field is still accepted. `sms_consent` is the ticked
+ * box and is only meaningful for a phone number.
+ */
+export const signInRequestSchema = z
+  .object({
+    identifier: z
+      .string()
+      .trim()
+      .min(1)
+      .max(320)
+      .refine((v) => !v.includes("@") || z.email().safeParse(v).success, {
+        message: "Not a valid email address",
+      })
+      .optional(),
+    email: z.email().max(320).optional(),
+    sms_consent: z.boolean().optional(),
+  })
+  .refine((v) => v.identifier !== undefined || v.email !== undefined, {
+    message: "identifier is required",
+    path: ["identifier"],
+  });
+/** One answer from the consent step: a ticked box opts a number in, an unticked one declines. */
+export const smsConsentRequestSchema = z.object({
+  answers: z
+    .array(z.object({ id: z.uuid(), opt_in: z.boolean() }))
+    .min(1)
+    .max(10),
+});
+export const smsConsentResponseSchema = z.object({ saved: z.number().int() });
+export const smsConsentStateSchema = z.object({
+  available: z.boolean(),
+  pending: z.array(z.object({ id: z.string(), masked: z.string() })),
+});
+
 export const signInResponseSchema = z.object({ message: z.string() });
 
 export const rsvpStatusSchema = z.enum(["attending", "declined"]);
@@ -107,7 +143,9 @@ export const rsvpResponseSchema = z.looseObject({
   guests: z.array(guestSchema),
   /** The household's addresses, masked (first character, then three dots, then the domain). */
   contacts: z
-    .array(z.looseObject({ kind: z.literal("email"), masked: z.string() }))
+    .array(
+      z.looseObject({ kind: z.enum(["email", "phone"]), masked: z.string() }),
+    )
     .optional(),
   /** True when every invited event is closed: the deadline passed or RSVPs are closed. */
   deadline_passed: z.boolean().optional(),
@@ -138,6 +176,8 @@ export const errorBodySchema = z.looseObject({
 });
 
 export type SignInRequest = z.infer<typeof signInRequestSchema>;
+export type SmsConsentRequest = z.infer<typeof smsConsentRequestSchema>;
+export type SmsConsentState = z.infer<typeof smsConsentStateSchema>;
 export type RsvpSubmit = z.infer<typeof rsvpSubmitSchema>;
 export type PlusOneRequest = z.infer<typeof plusOneRequestSchema>;
 export type OptOutRequest = z.infer<typeof optOutRequestSchema>;

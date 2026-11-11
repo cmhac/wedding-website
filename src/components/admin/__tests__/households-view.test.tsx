@@ -345,3 +345,66 @@ describe("DuplicatesView", () => {
     expect(screen.getByText("No possible duplicates.")).toBeInTheDocument();
   });
 });
+
+describe("HouseholdsListView phone numbers", () => {
+  const view = (
+    rows: HouseholdRow[],
+    sms?: { configured: boolean; available: boolean },
+  ) =>
+    render(
+      <HouseholdsListView
+        list={list(rows)}
+        query={query}
+        events={events}
+        duplicateCount={0}
+        sms={sms}
+      />,
+    );
+
+  it("shows nothing about phone numbers while texting is not configured", () => {
+    const { container } = view([row({ phones: { total: 2, optedIn: 1 } })]);
+    expect(container.textContent).not.toMatch(
+      /phone|opted in|text only|neither/i,
+    );
+  });
+
+  it("shows how many numbers have opted in when configured", () => {
+    view([row({ phones: { total: 2, optedIn: 1 } })], {
+      configured: true,
+      available: true,
+    });
+    expect(screen.getByText("2 numbers, 1 opted in")).toBeInTheDocument();
+  });
+
+  it("says a household with only a phone is reachable by neither channel while texting is not available", () => {
+    view(
+      [
+        row({
+          contacts: [],
+          paperOnly: true,
+          phones: { total: 1, optedIn: 1 },
+        }),
+      ],
+      { configured: true, available: false },
+    );
+    expect(
+      screen.getByText("Reachable by neither channel"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Paper only")).toBeNull();
+  });
+
+  it("does not call a household with a number paper only, and says it is text only when available", () => {
+    view(
+      [
+        row({
+          contacts: [],
+          paperOnly: true,
+          phones: { total: 1, optedIn: 0 },
+        }),
+      ],
+      { configured: true, available: true },
+    );
+    expect(screen.getByText("Text only")).toBeInTheDocument();
+    expect(screen.queryByText("Paper only")).toBeNull();
+  });
+});

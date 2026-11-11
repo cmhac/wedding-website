@@ -171,7 +171,58 @@ are never prefixed with `NEXT_PUBLIC_` and never exposed to the browser.
 | `SEND_EMAIL_HOOK_SECRET`        | server-only | Matches the Supabase Send Email hook secret                                                                                                              |
 | `RESEND_WEBHOOK_SECRET`         | server-only | Matches the Resend webhook signing secret                                                                                                                |
 | `CRON_SECRET`                   | server-only | Matches the `cron_secret` Vault secret                                                                                                                   |
+| `TWILIO_ACCOUNT_SID`            | server-only | Text messages. Texting is off and hidden until the four Twilio variables are set (see "Twilio text messages")                                            |
+| `TWILIO_AUTH_TOKEN`             | server-only | Also checks Twilio's delivery notifications                                                                                                              |
+| `TWILIO_MESSAGING_SERVICE_SID`  | server-only | The messaging service the approved campaign is attached to (or set `TWILIO_FROM_NUMBER`, the sending number, instead)                                    |
 | `GUEST_RSVP_PATH`               | public      | Where signed-in guests land; default `/` (the placeholder homepage). Not set in production; set it to the RSVP path when the designer's RSVP page exists |
+
+## Twilio text messages
+
+Text messages are off and invisible until you finish this, and the admin console
+shows a warning banner ("Text messaging is not set up") until the variables are
+set. Sign-in and every email work meanwhile. Do these in order. The design is in
+`docs/decisions/0014-text-messages.md`.
+
+1. **Check you qualify.** A sole-proprietor registration is for people with no
+   business tax number (no EIN) who file taxes under their own Social Security
+   number. With a tax number, register a standard brand instead.
+2. **Create a Twilio account and upgrade it.** The free trial only texts
+   verified numbers and has one sender.
+3. **Buy a United States local number** (about $1.15 a month). Every number must
+   be tied to an approved compliance profile, which the console walks you through.
+4. **Register the brand.** In the console: Communications, Numbers and senders,
+   Overview, Phone Numbers, then "Complete A2P registration". Use your own name as
+   the brand. You will need a valid non-disposable email, an address (a personal
+   one is fine) and a US or Canadian mobile number that is not a Twilio number;
+   Twilio texts it a code that you must answer within 24 hours.
+5. **Register the campaign** (use case "Sole Proprietor"): a detailed
+   description that matches the sample texts; how guests agree to texts and
+   proof of it (the sign-in checkbox and consent step; screenshots of the live
+   pages, viewable without a login); the live `/privacy` and `/terms` links;
+   and at least two sample texts that name the wedding site and include "STOP".
+   Describe only what the site really does. Twilio says a non-compliant opt-in
+   description is the most common reason for rejection; a rejected campaign can be
+   fixed and resubmitted (edit it rather than creating a new one). Approval takes
+   up to about five business days. The fees are about $4 for the brand, $15 for
+   campaign vetting and $2 a month for the campaign: confirm them on the console's
+   fee screen.
+6. **Set the variables on the host and redeploy:** `TWILIO_ACCOUNT_SID`,
+   `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID` (or
+   `TWILIO_FROM_NUMBER`). They are server-only; never put them in the repository.
+   After the redeploy the banner disappears and Settings shows "Text messaging".
+7. **Delivery notifications need no setup if you leave the messaging
+   service's own callback URL blank**: the site sets `<site>/api/webhooks/twilio`
+   on each text it sends, and checks Twilio's signature with `TWILIO_AUTH_TOKEN`.
+   Twilio signs the exact URL it calls, so if you do set a callback URL anywhere
+   it must be exactly that (same host, no trailing slash), or every notification
+   will be refused.
+8. **Turn texting on** in Settings, as a couple member. This texts nobody by
+   itself: guests are asked to opt in at their next sign-in, and only numbers that
+   opted in are ever texted. Keep it off until the carriers have approved the
+   campaign.
+
+To test without sending anything, use Twilio's test credentials with the magic
+sender `+15005550006` (it returns a fake message id and delivers nothing).
 
 ## Staff accounts
 

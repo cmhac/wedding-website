@@ -62,6 +62,26 @@ const COLUMNS: Column<PreviewRow>[] = [
   },
 ];
 
+function textLines(texts: NonNullable<PreviewData["texts"]>) {
+  const count = (reason: string) =>
+    texts.notTexted.filter((n) => n.reason === reason).length;
+  const total = texts.willText.reduce((n, r) => n + r.texts, 0);
+  const notAsked = count("not_opted_in");
+  const declined = count("declined");
+  const noPhone = count("no_phone");
+  const parts = [
+    notAsked
+      ? `${notAsked} not opted in (a household with only a phone and no opt-in needs you to reach them another way)`
+      : "",
+    declined ? `${declined} declined` : "",
+    noPhone ? `${noPhone} with no phone number` : "",
+  ].filter(Boolean);
+  return {
+    lead: `${texts.willText.length} ${plural(texts.willText.length, "household", "households")} will be texted (${total} ${plural(total, "text", "texts")} in all, only to numbers that opted in)`,
+    skipped: parts.length ? `Not texted: ${parts.join(", ")}` : "",
+  };
+}
+
 export function AudiencePreviewView({ preview }: { preview: PreviewData }) {
   const { willSend, skipped } = preview;
   if (willSend.length === 0 && skipped.length === 0) {
@@ -84,6 +104,7 @@ export function AudiencePreviewView({ preview }: { preview: PreviewData }) {
           <p>{`${emails} emails in all, one per address`}</p>
         ) : null}
         {skipped.length ? <p>{skippedLine(skipped)}</p> : null}
+        {preview.texts ? <TextSummary texts={preview.texts} /> : null}
         <DataTable
           columns={COLUMNS}
           rows={rows}
@@ -92,5 +113,18 @@ export function AudiencePreviewView({ preview }: { preview: PreviewData }) {
         />
       </div>
     </Card>
+  );
+}
+
+function TextSummary({ texts }: { texts: NonNullable<PreviewData["texts"]> }) {
+  if (texts.switchedOff) {
+    return <p>Texting is switched off: texts will be skipped.</p>;
+  }
+  const lines = textLines(texts);
+  return (
+    <>
+      <p className="strong">{lines.lead}</p>
+      {lines.skipped ? <p>{lines.skipped}</p> : null}
+    </>
   );
 }

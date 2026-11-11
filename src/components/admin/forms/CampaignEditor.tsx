@@ -20,6 +20,10 @@ export type CampaignEditorProps = {
   households: HouseholdOption[];
   /** A confirmation from the page, for example after the first save. */
   notice?: string;
+  /** True when the text provider is configured: only then is a channel offered. */
+  smsConfigured?: boolean;
+  /** The couple's switch; when configured but off, the editor says texts will be skipped. */
+  smsEnabled?: boolean;
 };
 
 const READ_ONLY_NOTES: Record<string, string> = {
@@ -65,6 +69,8 @@ export function CampaignEditor({
   events,
   households,
   notice,
+  smsConfigured = false,
+  smsEnabled = true,
 }: CampaignEditorProps) {
   const [saved, saveAction, saving] = useActionState(saveCampaign, null);
   const [previewed, previewAction, previewing] = useActionState(
@@ -99,6 +105,7 @@ export function CampaignEditor({
     name: campaign?.name ?? "",
     message_type_key: campaign?.messageTypeKey ?? messageTypes[0]?.key ?? "",
     scheduled_for: campaign?.scheduledLocal ?? "",
+    channel: campaign?.channel ?? "email",
     ...(campaign
       ? audienceToForm(campaign.audience)
       : { audience_scope: "all" }),
@@ -141,6 +148,25 @@ export function CampaignEditor({
           ))}
         </select>
       </Field>
+
+      {smsConfigured ? (
+        <Field
+          id="channel"
+          label="Send by"
+          hint="Texts go only to numbers that opted in. The save the date and the invitation can be sent by text as well as email."
+        >
+          {!smsEnabled ? (
+            <p className="muted">
+              Texting is switched off: texts will be skipped.
+            </p>
+          ) : null}
+          <select id="channel" name="channel" defaultValue={text("channel")}>
+            <option value="email">Email only</option>
+            <option value="text">Text only</option>
+            <option value="both">Email and text</option>
+          </select>
+        </Field>
+      ) : null}
 
       <Field id="audience_scope" label="Who receives it">
         <select
