@@ -45,12 +45,14 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "csv-parse": "^7.0.3",
+    "libphonenumber-js": "^1.13.16",
     "next": "^16.4.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "read-excel-file": "^9.3.12",
     "resend": "^6.34.1",
     "standardwebhooks": "^1.1.1",
+    "twilio": "^6.3.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
