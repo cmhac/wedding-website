@@ -20,6 +20,11 @@ jest.mock("@/lib/log", () => ({
   log: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
+const mockConfigured = jest.fn();
+jest.mock("@/lib/sms/state", () => ({
+  isSmsConfigured: () => mockConfigured(),
+}));
+
 import { cancelCampaign, previewAudience, saveCampaign } from "../campaigns";
 
 const CAMPAIGN = "11111111-1111-4111-8111-111111111111";
@@ -393,5 +398,49 @@ describe("cancelCampaign", () => {
       supabase: client as never,
     });
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("saveCampaign channel", () => {
+  const save = (client: unknown, extra: Array<[string, string]>) =>
+    saveCampaign(null, form([...base, ["intent", "draft"], ...extra]), {
+      supabase: client as never,
+    }).catch((e) => e);
+
+  beforeEach(() => mockConfigured.mockReturnValue(true));
+
+  it.each(["email", "text", "both"])(
+    "saves the channel %s when texting is configured",
+    async (channel) => {
+      const { db, client } = setup();
+      await save(client, [["channel", channel]]);
+      expect(db.tables.campaigns[0].channel).toBe(channel);
+    },
+  );
+
+  it("saves no channel (so email) when none is sent", async () => {
+    const { db, client } = setup();
+    await save(client, []);
+    expect(db.tables.campaigns[0]).not.toHaveProperty("channel");
+  });
+
+  it("ignores a channel entirely while texting is not configured", async () => {
+    mockConfigured.mockReturnValue(false);
+    const { db, client } = setup();
+    await save(client, [["channel", "both"]]);
+    expect(db.tables.campaigns[0]).not.toHaveProperty("channel");
+  });
+
+  it("refuses a channel that is not email, text or both", async () => {
+    const { db, client } = setup();
+    const result = await saveCampaign(
+      null,
+      form([...base, ["intent", "draft"], ["channel", "pigeon"]]),
+      {
+        supabase: client as never,
+      },
+    );
+    expect(result).toMatchObject({ ok: false });
+    expect(db.tables.campaigns).toHaveLength(0);
   });
 });

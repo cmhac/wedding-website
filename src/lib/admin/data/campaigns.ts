@@ -31,6 +31,8 @@ export type CampaignDetail = {
   status: CampaignStatus;
   /** A Pacific `datetime-local` value, or "" when not scheduled. */
   scheduledLocal: string;
+  /** How it is sent; email when the column is absent. */
+  channel?: "email" | "text" | "both";
 };
 
 export type DeliveryRow = {
@@ -201,7 +203,9 @@ export async function loadCampaign(
     "campaigns",
     client
       .from("campaigns")
-      .select("id, name, message_type_key, audience, status, scheduled_for")
+      .select(
+        "id, name, message_type_key, audience, status, scheduled_for, channel",
+      )
       .eq("id", id),
   );
   const r = rows[0];
@@ -214,6 +218,9 @@ export async function loadCampaign(
     audience: audience.success ? audience.data : { scope: "all" },
     status: r.status as CampaignStatus,
     scheduledLocal: isoToPacificLocal(r.scheduled_for as string | null),
+    ...(r.channel === "text" || r.channel === "both"
+      ? { channel: r.channel }
+      : {}),
   };
 }
 

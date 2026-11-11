@@ -140,7 +140,11 @@ const events = [
 ];
 const households = [{ id: HOUSEHOLD, name: "The Examples" }];
 
-function renderEditor(campaign?: CampaignDetail, notice?: string) {
+function renderEditor(
+  campaign?: CampaignDetail,
+  notice?: string,
+  smsConfigured?: boolean,
+) {
   return render(
     <CampaignEditor
       campaign={campaign}
@@ -148,6 +152,7 @@ function renderEditor(campaign?: CampaignDetail, notice?: string) {
       events={events}
       households={households}
       notice={notice}
+      smsConfigured={smsConfigured}
     />,
   );
 }
@@ -504,5 +509,34 @@ describe("DeliveryView", () => {
   it("says so when nothing was sent yet", () => {
     render(<DeliveryView delivery={{ ...delivery, rows: [], counts: {} }} />);
     expect(screen.getByText(/no messages yet/i)).toBeInTheDocument();
+  });
+});
+
+describe("CampaignEditor channel", () => {
+  it("offers no channel while texting is not configured", () => {
+    const { container } = renderEditor();
+    expect(screen.queryByLabelText("Send by")).toBeNull();
+    expect(container.textContent).not.toMatch(/text message|texts/i);
+  });
+
+  it("offers email, text or both when configured, defaulting to email", () => {
+    renderEditor(undefined, undefined, true);
+    const select = screen.getByLabelText("Send by") as HTMLSelectElement;
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toEqual(["Email only", "Text only", "Email and text"]);
+    expect(select.value).toBe("email");
+    expect(
+      screen.getByText(/only to numbers that opted in/),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the saved channel of an existing campaign", () => {
+    renderEditor(detail({ channel: "both" }), undefined, true);
+    expect((screen.getByLabelText("Send by") as HTMLSelectElement).value).toBe(
+      "both",
+    );
   });
 });

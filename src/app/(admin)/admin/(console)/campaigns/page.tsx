@@ -25,6 +25,7 @@ import {
 } from "@/lib/admin/data/campaigns";
 import { messageFor } from "@/lib/admin/messages";
 import { isForbidden, requireStaffPage } from "@/lib/admin/session";
+import { isSmsConfigured } from "@/lib/sms/state";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -127,6 +128,7 @@ export default async function CampaignsPage({
             events={events}
             households={households}
             notice={first(params.saved) ? "Saved." : undefined}
+            smsConfigured={isSmsConfigured()}
           />
         </Card>
         {campaign && editable ? (

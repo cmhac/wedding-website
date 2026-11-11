@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { MESSAGE_TYPE_KEYS, type Audience } from "@/lib/campaigns/audience";
+import { isSmsConfigured } from "@/lib/sms/state";
 import { audienceFromForm } from "../audience-form";
 import { formatPacific, pacificLocalToIso } from "../time";
 import { runAdminAction, type ActionResult } from "./shared";
@@ -63,6 +64,7 @@ function saveSchema(now: Date) {
       message_type_key: z.enum(MESSAGE_TYPE_KEYS, TYPE_MESSAGE),
       intent: z.enum(["draft", "schedule"]).default("draft"),
       scheduled_for: z.string().trim().default(""),
+      channel: z.enum(["email", "text", "both"]).optional(),
     })
     .transform((value, ctx) => {
       const box = withAudience(value, ctx);
@@ -99,6 +101,7 @@ function saveSchema(now: Date) {
         audience: box.audience,
         intent: value.intent,
         scheduledFor,
+        channel: value.channel,
       };
     });
 }
@@ -189,6 +192,11 @@ export async function saveCampaign(
           message_type_key: input.messageType,
           audience: input.audience,
           scheduled_for: input.scheduledFor,
+          // The channel is saved only while texting is configured; otherwise
+          // a campaign is always email (the database default).
+          ...(input.channel && isSmsConfigured()
+            ? { channel: input.channel }
+            : {}),
         };
 
         if (!input.id) {
