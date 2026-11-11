@@ -21,6 +21,21 @@ export type SaveTheDate = {
   calendar: { google: string; outlook: string; file: string } | null;
 };
 
+const LONG_DATE = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  // The date is a calendar date, not a moment: read it in UTC so no time zone moves it.
+  timeZone: "UTC",
+});
+
+/** `Saturday, September 18, 2027` from `2027-09-18`, with no time zone shift. */
+export function formatLongDate(date: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return LONG_DATE.format(new Date(Date.UTC(y, m - 1, d)));
+}
+
 export function eventTitle(coupleNames: string | null | undefined): string {
   const names = coupleNames?.trim();
   return names ? `${names}'s wedding` : "Our wedding";

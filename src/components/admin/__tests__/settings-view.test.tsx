@@ -7,6 +7,7 @@ jest.mock("next/navigation", () => ({
 }));
 jest.mock("@/lib/admin/actions/settings", () => ({
   saveSettings: jest.fn(async () => ({ ok: true })),
+  saveSaveTheDate: jest.fn(async () => ({ ok: true })),
 }));
 const grantStaff = jest.fn();
 const revokeStaff = jest.fn();
@@ -15,7 +16,7 @@ jest.mock("@/lib/admin-api/client", () => ({
   revokeStaff: (...args: unknown[]) => revokeStaff(...args),
 }));
 
-import { SettingsView } from "../SettingsView";
+import { SettingsView, type SettingsViewProps } from "../SettingsView";
 import { AddPlannerForm, RemoveAccessButton } from "../forms/StaffForms";
 
 const staff = [
@@ -330,5 +331,78 @@ describe("SettingsView text messaging", () => {
     const box = screen.getByRole("checkbox", { name: /Texting is on/ });
     expect(box).toBeChecked();
     expect(box).toBeDisabled();
+  });
+});
+
+describe("SettingsView save the date section", () => {
+  const saveTheDate: NonNullable<SettingsViewProps["saveTheDate"]> = {
+    date: "2027-09-18",
+    place: "Napa Valley, California",
+    note: "Invitation to follow",
+    coupleNames: "Chris & Hannah",
+    textPreview:
+      "Hi, it's Chris & Hannah! Time to save the date: https://x.test/i/abc",
+    textSegments: 2,
+  };
+  const show = (over: Partial<typeof saveTheDate> = {}) =>
+    render(
+      <SettingsView
+        role="planner"
+        currentUserId="u3"
+        settings={settings}
+        events={events}
+        staff={staff}
+        saveTheDate={{ ...saveTheDate, ...over }}
+      />,
+    );
+
+  it("has the place and note fields, filled in", () => {
+    show();
+    const card = screen
+      .getByRole("heading", { name: "Save the date" })
+      .closest("section")!;
+    expect(within(card).getByLabelText("Place")).toHaveValue(
+      "Napa Valley, California",
+    );
+    expect(within(card).getByLabelText("Note")).toHaveValue(
+      "Invitation to follow",
+    );
+  });
+
+  it("shows the wedding date read-only, from the wedding event, as a long date", () => {
+    show();
+    expect(
+      screen.getByText("Saturday, September 18, 2027"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Set the wedding event above to change it/),
+    ).toBeInTheDocument();
+  });
+
+  it("says the date is not set when there is none", () => {
+    show({ date: null });
+    expect(screen.getByText(/The wedding date is not set/)).toBeInTheDocument();
+  });
+
+  it("previews the page text, the text message with its segment count, and the calendar title", () => {
+    show();
+    expect(
+      screen.getByText(/Hi, it's Chris & Hannah! Time to save the date/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/2 segments/)).toBeInTheDocument();
+    expect(screen.getByText("Chris & Hannah's wedding")).toBeInTheDocument();
+  });
+
+  it("is left out when there are no details to show", () => {
+    render(
+      <SettingsView
+        role="planner"
+        currentUserId="u3"
+        settings={settings}
+        events={events}
+        staff={staff}
+      />,
+    );
+    expect(screen.queryByRole("heading", { name: "Save the date" })).toBeNull();
   });
 });

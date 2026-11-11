@@ -2,7 +2,9 @@ import { z } from "zod";
 import { authErrorResponse, requireStaff } from "@/lib/auth/guards";
 import { errorResponse } from "@/lib/api-errors";
 import { sendCampaignResponseSchema } from "@/lib/admin-api/campaign-schemas";
+import { dispatchFailure } from "@/lib/admin-api/campaign-routes";
 import { DispatchError, sendCampaign } from "@/lib/campaigns/dispatch";
+import { sendGate } from "@/lib/campaigns/send-gate";
 import { log } from "@/lib/log";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
@@ -29,9 +31,15 @@ export async function POST(_request: Request, { params }: Context) {
   }
 
   try {
-    const result = await sendCampaign(createAdminSupabase(), id.data);
+    const admin = createAdminSupabase();
+    // A real save the date is held back by a hard gap in the readiness list.
+    const blocked = await sendGate(admin, id.data);
+    if (blocked) return errorResponse(409, "not_ready", blocked.detail);
+    const result = await sendCampaign(admin, id.data);
     return Response.json(sendCampaignResponseSchema.parse(result));
   } catch (e) {
+    const failure = dispatchFailure(e);
+    if (failure) return failure;
     if (e instanceof DispatchError) {
       switch (e.code) {
         case "campaign_not_found":

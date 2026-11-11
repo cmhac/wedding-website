@@ -256,6 +256,18 @@ export const sendCampaign = (id: string) =>
     { method: "POST" },
   ) as Promise<ApiResult<SendCampaignResponse>>;
 
+/** Sends a rehearsal of a message to one household, labelled as a test. */
+export const sendTestCampaign = (body: {
+  message_type_key: string;
+  channel: "email" | "text" | "both";
+  household_id: string;
+}) =>
+  call(
+    sendCampaignResponseSchema,
+    "/api/admin/campaigns/test",
+    json("POST", body),
+  ) as Promise<ApiResult<SendCampaignResponse>>;
+
 export const grantStaff = (body: GrantStaffRequest) =>
   call(
     grantStaffResponseSchema,

@@ -8,6 +8,10 @@ jest.mock("@/lib/auth/guards", () => ({
 jest.mock("@/lib/supabase/admin", () => ({
   createAdminSupabase: () => ({ fake: "admin" }),
 }));
+const mockGate = jest.fn();
+jest.mock("@/lib/campaigns/send-gate", () => ({
+  sendGate: (...a: unknown[]) => mockGate(...a),
+}));
 const mockSend = jest.fn();
 jest.mock("@/lib/campaigns/dispatch", () => ({
   ...jest.requireActual("@/lib/campaigns/dispatch"),
@@ -41,6 +45,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockRequireStaff.mockResolvedValue({ kind: "staff", role: "planner" });
   mockSend.mockResolvedValue(result);
+  mockGate.mockResolvedValue(null);
 });
 
 describe("POST /api/admin/campaigns/[id]/send", () => {
@@ -61,6 +66,23 @@ describe("POST /api/admin/campaigns/[id]/send", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(result);
     expect(mockSend).toHaveBeenCalledWith({ fake: "admin" }, ID);
+  });
+
+  it("holds back a save the date with a hard gap, with its reason, sending nothing", async () => {
+    mockGate.mockResolvedValue({
+      key: "date",
+      label: "Wedding date",
+      status: "blocked",
+      detail: "The wedding date is not set.",
+    });
+    const res = await call();
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toEqual({
+      code: "not_ready",
+      message: "The wedding date is not set.",
+    });
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   it("returns 404 for an id that is not a uuid", async () => {

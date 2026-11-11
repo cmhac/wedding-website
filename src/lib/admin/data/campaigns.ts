@@ -23,6 +23,8 @@ export type CampaignListRow = {
   scheduledFor: string | null;
   /** Why the last attempt failed, in plain words, or null. */
   lastError: string | null;
+  /** A rehearsal send to one household, not the real send. */
+  isTest?: boolean;
 };
 
 export type CampaignDetail = {
@@ -198,7 +200,7 @@ export async function loadCampaigns(
       client
         .from("campaigns")
         .select(
-          "id, name, message_type_key, audience, status, scheduled_for, last_error_code, created_at",
+          "id, name, message_type_key, audience, status, scheduled_for, last_error_code, created_at, is_test",
         )
         .order("created_at", { ascending: false }),
     ),
@@ -222,6 +224,7 @@ export async function loadCampaigns(
         ? formatPacific(r.scheduled_for as string)
         : null,
       lastError: lastErrorWords(r.last_error_code),
+      ...(r.is_test === true ? { isTest: true } : {}),
     };
   });
 }

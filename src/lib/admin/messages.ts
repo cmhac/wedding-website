@@ -16,6 +16,8 @@ const MESSAGES = {
   not_us_phone:
     "Only United States numbers are supported. Use an email address instead.",
   phone_in_use: "That number already belongs to another household.",
+  not_ready:
+    "This save the date is not ready to send yet. Check the readiness list.",
   declined_needs_override:
     "This number declined texts at the site. Confirm to mark it anyway.",
   texting_not_configured:

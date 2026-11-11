@@ -1,22 +1,11 @@
-import type { SaveTheDate as Details } from "@/lib/calendar/details";
+import {
+  formatLongDate,
+  type SaveTheDate as Details,
+} from "@/lib/calendar/details";
 import { ConsentStep } from "./ConsentStep";
 import { LegalLinks } from "./LegalLinks";
 import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "./ThemeToggle";
-
-const LONG_DATE = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  // The date is a calendar date, not a moment: read it in UTC so no time zone moves it.
-  timeZone: "UTC",
-});
-
-function longDate(date: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return LONG_DATE.format(new Date(Date.UTC(y, m - 1, d)));
-}
 
 type Props = {
   details: Details;
@@ -38,7 +27,9 @@ export function SaveTheDate({ details, consent }: Props) {
           <h1>{details.couple_names ?? "Save the date"}</h1>
           {details.date ? (
             <>
-              <p className="save-the-date-date">{longDate(details.date)}</p>
+              <p className="save-the-date-date">
+                {formatLongDate(details.date)}
+              </p>
               {details.place ? <p>{details.place}</p> : null}
               {details.note ? <p className="muted">{details.note}</p> : null}
               {details.calendar ? (

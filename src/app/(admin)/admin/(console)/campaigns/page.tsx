@@ -7,6 +7,9 @@ import { ConfirmPanel } from "@/components/admin/ConfirmPanel";
 import { DeliveryView } from "@/components/admin/DeliveryView";
 import { CampaignEditor } from "@/components/admin/forms/CampaignEditor";
 import { SendCampaignForm } from "@/components/admin/forms/SendCampaignForm";
+import { SendTestForm } from "@/components/admin/forms/SendTestForm";
+import { ReadinessList } from "@/components/admin/ReadinessList";
+import { loadReadiness } from "@/lib/campaigns/readiness";
 import {
   Alert,
   Card,
@@ -110,6 +113,15 @@ export default async function CampaignsPage({
     }
     const editable =
       campaign?.status === "draft" || campaign?.status === "scheduled";
+    // The save the date has a readiness list; any message can be rehearsed.
+    const readiness =
+      campaign && editable && campaign.messageTypeKey === "save_the_date"
+        ? await loadReadiness(supabase as never, {
+            channel: campaign.channel ?? "email",
+            siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "",
+            sms: { configured: sms.configured, enabled: sms.enabled },
+          }).catch(() => null)
+        : null;
     return (
       <div className="stack">
         {header}
@@ -134,6 +146,20 @@ export default async function CampaignsPage({
             smsEnabled={sms.enabled}
           />
         </Card>
+        {readiness ? (
+          <Card heading="Ready to send?">
+            <ReadinessList items={readiness} />
+          </Card>
+        ) : null}
+        {campaign && editable ? (
+          <Card heading="Rehearse">
+            <SendTestForm
+              messageTypeKey={campaign.messageTypeKey}
+              channel={campaign.channel ?? "email"}
+              households={households}
+            />
+          </Card>
+        ) : null}
         {campaign && editable ? (
           <SendCampaignForm
             key={confirm ?? "idle"}
