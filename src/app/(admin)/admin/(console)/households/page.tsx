@@ -8,6 +8,7 @@ import {
   parseHouseholdQuery,
 } from "@/lib/admin/data/households";
 import { isForbidden, requireStaffPage } from "@/lib/admin/session";
+import { getSmsState } from "@/lib/sms/state";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -19,6 +20,8 @@ export default async function HouseholdsPage({
   const session = await requireStaffPage();
   if (isForbidden(session)) return <AccessDenied />;
   const { query, duplicates } = parseHouseholdQuery(await searchParams);
+  const { configured, available } = await getSmsState();
+  const sms = { configured, available };
   const [pairs, list, events] = await Promise.all([
     loadDuplicates(session.supabase),
     loadHouseholdList(query, session.supabase),
@@ -38,6 +41,7 @@ export default async function HouseholdsPage({
       query={query}
       events={events}
       duplicateCount={pairs.length}
+      sms={sms}
     />
   );
 }

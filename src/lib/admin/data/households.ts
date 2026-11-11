@@ -37,6 +37,8 @@ export type HouseholdRow = {
   unnamedSeats: number;
   /** Every address, oldest first. */
   contacts: string[];
+  /** Phone numbers and how many have opted in (shown only while texting is configured). */
+  phones?: { total: number; optedIn: number };
   /** Addresses with a delivery problem, masked (first character and domain only). */
   problemAddresses: string[];
   plusOnesAllowed: number;
@@ -199,6 +201,7 @@ export async function loadHouseholdList(
     households,
     guests,
     contacts,
+    phoneRows,
     progress,
     duplicates,
     eventRows,
@@ -215,6 +218,13 @@ export async function loadHouseholdList(
         // texting is not configured.
         .eq("kind", "email")
         .order("created_at", { ascending: true }),
+    ),
+    rows(
+      "household_contacts",
+      db
+        .from("household_contacts")
+        .select("household_id, sms_consent")
+        .eq("kind", "phone"),
     ),
     rows(
       "household_rsvp_progress",
@@ -278,6 +288,18 @@ export async function loadHouseholdList(
     );
   }
 
+  const phonesByHousehold = new Map<
+    string,
+    { total: number; optedIn: number }
+  >();
+  for (const p of phoneRows) {
+    const key = p.household_id as string;
+    const entry = phonesByHousehold.get(key) ?? { total: 0, optedIn: 0 };
+    entry.total++;
+    if (p.sms_consent === "opted_in") entry.optedIn++;
+    phonesByHousehold.set(key, entry);
+  }
+
   const built: HouseholdRow[] = households.map((h) => {
     const id = h.id as string;
     const members = guestsByHousehold.get(id) ?? [];
@@ -289,6 +311,9 @@ export async function loadHouseholdList(
       guestNames: members.map(fullName).filter((n): n is string => n !== null),
       unnamedSeats: members.filter((g) => g.is_placeholder).length,
       contacts: addresses,
+      ...(phonesByHousehold.has(id)
+        ? { phones: phonesByHousehold.get(id) }
+        : {}),
       problemAddresses: problemsByHousehold.get(id) ?? [],
       plusOnesAllowed: num(h.plus_one_allowance),
       plusOnesNamed: members.filter((g) => g.is_plus_one && !g.is_placeholder)

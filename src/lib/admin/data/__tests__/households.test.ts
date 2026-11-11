@@ -202,6 +202,18 @@ describe("normalizeForSearch", () => {
   });
 });
 
+describe("loadHouseholdList phone numbers", () => {
+  it("counts a household's numbers and how many have opted in, apart from its email contacts", async () => {
+    const { client } = build();
+    const list = await loadHouseholdList(query(), client);
+    const a = list.rows.find((r) => r.id === "h-a")!;
+    // The fixture holds one phone for h-a (not opted in), and one email.
+    expect(a.phones).toEqual({ total: 1, optedIn: 0 });
+    expect(a.contacts).toEqual(["h-a@example.test"]);
+    expect(list.rows.find((r) => r.id === "h-b")!.phones).toBeUndefined();
+  });
+});
+
 describe("loadHouseholdList", () => {
   it("sorts by display name and reports the total", async () => {
     const { client } = build();

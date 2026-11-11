@@ -53,7 +53,10 @@ export function HouseholdsListView({
   query,
   events,
   duplicateCount,
+  sms = { configured: false, available: false },
 }: {
+  /** Whether the text provider is configured and texting is on; phone content shows only when configured. */
+  sms?: { configured: boolean; available: boolean };
   list: HouseholdList;
   query: HouseholdQuery;
   events: { slug: string; name: string }[];
@@ -168,6 +171,24 @@ export function HouseholdsListView({
                   </>
                 ),
             },
+            ...(sms.configured
+              ? [
+                  {
+                    key: "phones",
+                    header: "Phone numbers",
+                    cell: (row: HouseholdRow) =>
+                      row.phones && row.phones.total > 0 ? (
+                        <span className="muted">
+                          {row.phones.total}{" "}
+                          {row.phones.total === 1 ? "number" : "numbers"},{" "}
+                          {row.phones.optedIn} opted in
+                        </span>
+                      ) : (
+                        <span className="muted">None</span>
+                      ),
+                  },
+                ]
+              : []),
             {
               key: "outstanding",
               header: "Outstanding",
@@ -185,7 +206,15 @@ export function HouseholdsListView({
                         : "Delivery problem"}
                     </Badge>
                   ) : null}
-                  {row.paperOnly ? (
+                  {row.paperOnly &&
+                  sms.configured &&
+                  (row.phones?.total ?? 0) > 0 ? (
+                    sms.available ? (
+                      <Badge>Text only</Badge>
+                    ) : (
+                      <Badge variant="warn">Reachable by neither channel</Badge>
+                    )
+                  ) : row.paperOnly ? (
                     <Badge variant="warn">Paper only</Badge>
                   ) : null}
                   {row.possibleDuplicate ? (
