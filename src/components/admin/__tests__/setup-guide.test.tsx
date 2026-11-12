@@ -173,6 +173,35 @@ describe("the guide panel", () => {
     expect(dialog).toHaveTextContent("redeploy");
   });
 
+  it("links a step set on the Settings page straight to its field and leaves the guide", async () => {
+    const a = actions();
+    render(<SetupGuide view={missingEventAndEmail()} actions={a} />);
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    const link = screen.getByRole("link", { name: /Wedding event/ });
+    expect(link).toHaveAttribute("href", "/admin/settings#wedding-event");
+    expect(link).toHaveTextContent("Opens Settings");
+    link.addEventListener("click", (e) => e.preventDefault());
+    await userEvent.click(link);
+    const sent = (a.leave as jest.Mock).mock.calls[0][1] as FormData;
+    expect(sent.get("step")).toBe("wedding_event");
+    await waitFor(() =>
+      expect(screen.getByRole("dialog", { hidden: true })).not.toBeVisible(),
+    );
+  });
+
+  it("keeps a step with no console page as a button that opens its detail", async () => {
+    const a = actions();
+    render(<SetupGuide view={missingEventAndEmail()} actions={a} />);
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    expect(screen.queryByRole("link", { name: /Email sending/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Texting/ })).toBeNull();
+    await userEvent.click(
+      screen.getByRole("button", { name: /Email sending/ }),
+    );
+    expect(a.leave).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toHaveTextContent("RESEND_API_KEY");
+  });
+
   it("calls Check again", async () => {
     const a = actions();
     render(<SetupGuide view={missingEventAndEmail()} actions={a} />);

@@ -66,6 +66,12 @@ describe("SettingsView for a couple member", () => {
     ).toBeInTheDocument();
   });
 
+  it("has a field for each address the setup guide links to", () => {
+    for (const id of ["wedding-event", "default-rsvp-deadline", "rsvp-open"]) {
+      expect(document.getElementById(id)).not.toBeNull();
+    }
+  });
+
   it("lets the wedding event be chosen, with the current one selected", () => {
     const select = screen.getByLabelText(/Wedding event/);
     expect(select).toHaveValue("e2");

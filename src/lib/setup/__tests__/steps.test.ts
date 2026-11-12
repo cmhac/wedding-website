@@ -55,6 +55,18 @@ describe("the step catalogue", () => {
     ]);
   });
 
+  it("points the steps set on the Settings page at their field", () => {
+    const pages = Object.fromEntries(
+      STEPS.filter((s) => s.page).map((s) => [s.key, s.page]),
+    );
+    expect(pages).toEqual({
+      wedding_event: "/admin/settings#wedding-event",
+      card_details: "/admin/settings#save-the-date-place",
+      rsvp_deadline: "/admin/settings#default-rsvp-deadline",
+      rsvp_closed: "/admin/settings#rsvp-open",
+    });
+  });
+
   it("finds a step by key and refuses an unknown one", () => {
     expect(stepByKey("site_url")?.label).toBe("Site address");
     expect(stepByKey("nope")).toBeUndefined();
