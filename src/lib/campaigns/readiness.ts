@@ -2,6 +2,7 @@ import "server-only";
 import { shapeSaveTheDate } from "@/lib/calendar/details";
 import { getTemplate, type TemplateRegistry } from "@/lib/email/templates";
 import { getText, type TextRegistry } from "@/lib/sms/texts";
+import { emailConfigured } from "@/lib/setup/facts";
 import { previewTextCost } from "./text-cost";
 import type { LooseDb } from "./props";
 
@@ -216,7 +217,7 @@ export async function loadReadiness(
         "Not needed: this send is text only.",
       ),
     );
-  } else if (env.RESEND_API_KEY && env.EMAIL_FROM) {
+  } else if (emailConfigured(env)) {
     items.push(
       item(
         "email_config",

@@ -5,6 +5,12 @@ from code. The tracking issue is https://github.com/cmhac/wedding-website/issues
 Record the final value (never a secret) next to each item when you set it.
 Never put a secret in this repository.
 
+The admin console's **Setup guide** (the banner at the top of every page, and the
+"Setup guide" link in the navigation) shows which of these are still missing and
+checks them for you. It never asks for a secret value: it names what to set
+here in the dashboard, and "Check again" re-reads the site afterwards. Hosting
+changes only show after a redeploy. This document stays the detailed reference.
+
 ## Supabase Auth
 
 | Setting                    | Where                                          | Value                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -75,6 +81,24 @@ Two layers sit in front of sign-in:
 `[auth.rate_limit]` in `supabase/config.toml`) is the control there. Keep it on,
 and review it before launch. Every valid sign-in request also takes at least
 1.5 seconds, so the response time does not reveal whether an address is known.
+
+## Vercel preview deployments
+
+A preview has a different address for every deployment, so its site address
+cannot be set ahead of time. With `NEXT_PUBLIC_SITE_URL` unset for previews
+(leave it a Production-only variable), the site uses the preview's own address
+(`VERCEL_URL`) for sign-in links and redirects. Supabase must also allow those
+addresses, or it refuses the staff sign-in redirect. In Supabase, Authentication,
+URL Configuration, add (replace the team slug with yours):
+
+- `https://wedding-website-*-<team slug>.vercel.app/auth/callback`
+- `https://wedding-website-*-<team slug>.vercel.app/auth/callback?audience=staff`
+
+Keep the Site URL set to production. Previews share the production database and
+the staff sign-in email is sent by the production site's Send Email hook, so a
+preview needs no email variables of its own. Do not use a bare `*.vercel.app`
+pattern: it would allow every Vercel app. Previews behind Vercel's Deployment
+Protection ask for a Vercel sign-in first.
 
 ## Personal invite links
 
@@ -179,7 +203,7 @@ are never prefixed with `NEXT_PUBLIC_` and never exposed to the browser.
 ## Twilio text messages
 
 Text messages are off and invisible until you finish this, and the admin console
-shows a warning banner ("Text messaging is not set up") until the variables are
+shows "Texting" as a recommended step in the setup guide until the variables are
 set. Sign-in and every email work meanwhile. Do these in order. The design is in
 `docs/decisions/0014-text-messages.md`.
 
@@ -209,7 +233,7 @@ set. Sign-in and every email work meanwhile. Do these in order. The design is in
 6. **Set the variables on the host and redeploy:** `TWILIO_ACCOUNT_SID`,
    `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID` (or
    `TWILIO_FROM_NUMBER`). They are server-only; never put them in the repository.
-   After the redeploy the banner disappears and Settings shows "Text messaging".
+   After the redeploy the setup guide marks "Texting" as set up (use Check again) and Settings shows "Text messaging".
 7. **Delivery notifications need no setup if you leave the messaging
    service's own callback URL blank**: the site sets `<site>/api/webhooks/twilio`
    on each text it sends, and checks Twilio's signature with `TWILIO_AUTH_TOKEN`.

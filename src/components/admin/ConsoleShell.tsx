@@ -29,6 +29,7 @@ export function ConsoleShell({
   staff,
   signOutAction,
   banner,
+  setup,
   children,
 }: Omit<AdminShellProps, "current"> & { children: ReactNode }) {
   return (
@@ -37,6 +38,7 @@ export function ConsoleShell({
       staff={staff}
       signOutAction={signOutAction}
       banner={banner}
+      setup={setup}
     >
       {children}
     </AdminShell>

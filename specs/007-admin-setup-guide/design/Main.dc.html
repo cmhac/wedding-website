@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Banner on the overview</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#1c1c1b;background:#f5f5f4}
+*{box-sizing:border-box}
+h1,h2,p{margin:0}
+.app{display:flex;width:1280px;height:720px;overflow:hidden}
+.side{width:232px;flex:none;background:#fff;border-right:1px solid #d6d6d3;padding:16px;display:flex;flex-direction:column;gap:16px}
+.brand{display:flex;gap:10px;align-items:center}
+.mark{width:32px;height:32px;border-radius:8px;background:#1c1c1b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}
+.nav a{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:6px;color:#1c1c1b;text-decoration:none}
+.nav a.on{background:#f0f0ee;font-weight:600}
+.nav-h{font-size:12px;color:#5a5a57;margin:12px 10px 4px;text-transform:uppercase;letter-spacing:.04em}
+.count{font-size:12px;background:#fffaeb;color:#8a3406;border:1px solid #fedf89;border-radius:999px;padding:0 8px}
+.main{flex:1;padding:24px 32px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.banner{display:flex;gap:16px;align-items:center;background:#fffaeb;border:1px solid #fedf89;border-radius:8px;padding:14px 16px;color:#8a3406}
+.banner .t{font-weight:600;font-size:15px}
+.banner .d{color:#6b3a14;margin-top:2px}
+.seg{display:flex;gap:4px;margin-top:10px;width:260px}
+.seg i{flex:1;height:6px;border-radius:3px;background:#fedf89}
+.seg i.f{background:#8a3406}
+.btn{font:inherit;border:1px solid #d6d6d3;background:#fff;color:#1c1c1b;border-radius:6px;padding:9px 16px;min-height:44px;font-weight:500}
+.btn-p{background:#1c1c1b;color:#fff;border-color:#1c1c1b}
+.card{background:#fff;border:1px solid #d6d6d3;border-radius:8px;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.big{font-size:28px;font-weight:600}
+.muted{color:#5a5a57}
+.row{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #e8e8e5}
+</style>
+</helmet>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="mark" aria-hidden="true">W</span><div><div style="font-weight:600">Wedding admin</div><div class="muted" style="font-size:12px">v0 test console</div></div></div>
+    <nav class="nav" aria-label="Main">
+      <a class="on" href="#">Overview</a>
+      <p class="nav-h">Guests</p>
+      <a href="#">Households</a><a href="#">Import</a>
+      <p class="nav-h">Plan</p>
+      <a href="#">Events</a><a href="#">Menus</a>
+      <p class="nav-h">Messages</p>
+      <a href="#">Campaigns</a><a href="#">Reports</a><a href="#">History</a>
+      <p class="nav-h">Site</p>
+      <a href="#">Settings</a>
+      <a href="#">Setup guide <span class="count">2 left</span></a>
+    </nav>
+  </aside>
+  <main class="main">
+    <section class="banner" role="status" aria-label="Setup">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a3406" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="flex:1">
+        <p class="t">Setup isn&#39;t finished: 3 of 5 required steps done</p>
+        <p class="d">Until the rest are set, guest links may never close and emails can&#39;t be sent.</p>
+        <div class="seg" aria-hidden="true"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></div>
+      </div>
+      <button class="btn btn-p" type="button">Start setup</button>
+    </section>
+    <h1 style="font-size:22px">Overview</h1>
+    <div class="grid">
+      <div class="card"><p class="muted">Households</p><p class="big">96</p></div>
+      <div class="card"><p class="muted">Replied</p><p class="big">0</p></div>
+      <div class="card"><p class="muted">Messages sent</p><p class="big">0</p></div>
+    </div>
+    <div class="card"><h2 style="font-size:15px;margin-bottom:6px">Recent activity</h2>
+      <div class="row"><span>Guest list imported</span><span class="muted">Today, 9:12 am</span></div>
+      <div class="row"><span>Settings changed</span><span class="muted">Yesterday</span></div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

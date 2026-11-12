@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guide: set it in the console</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#1c1c1b;background:#f5f5f4}
+*{box-sizing:border-box}
+h1,h2,h3,p{margin:0}
+.app{position:relative;display:flex;width:1280px;height:860px;overflow:hidden}
+.side{width:232px;flex:none;background:#fff;border-right:1px solid #d6d6d3;padding:16px;display:flex;flex-direction:column;gap:16px}
+.brand{display:flex;gap:10px;align-items:center}
+.mark{width:32px;height:32px;border-radius:8px;background:#1c1c1b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}
+.nav a{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:6px;color:#1c1c1b;text-decoration:none}
+.nav a.on{background:#f0f0ee;font-weight:600}
+.nav-h{font-size:12px;color:#5a5a57;margin:12px 10px 4px;text-transform:uppercase;letter-spacing:.04em}
+.count{font-size:12px;background:#fffaeb;color:#8a3406;border:1px solid #fedf89;border-radius:999px;padding:0 8px}
+.main{flex:1;padding:24px 32px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.banner{display:flex;gap:16px;align-items:center;background:#fffaeb;border:1px solid #fedf89;border-radius:8px;padding:14px 16px;color:#8a3406}
+.card{background:#fff;border:1px solid #d6d6d3;border-radius:8px;padding:16px}
+.muted{color:#5a5a57}
+.scrim{position:absolute;inset:0;background:rgba(28,28,27,.32)}
+.panel{position:absolute;top:0;right:0;bottom:0;width:480px;background:#fff;border-left:1px solid #d6d6d3;box-shadow:-12px 0 32px rgba(28,28,27,.14);display:flex;flex-direction:column}
+.ph{padding:20px 24px 16px;border-bottom:1px solid #e8e8e5}
+.seg{display:flex;gap:4px;margin-top:12px}
+.seg i{flex:1;height:6px;border-radius:3px;background:#e8e8e5}
+.seg i.f{background:#05603a}
+.x{width:44px;height:44px;border:1px solid transparent;background:transparent;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:-8px -10px 0 0}
+.steps{list-style:none;margin:0;padding:12px 16px 4px}
+.steps li{display:flex;gap:12px;align-items:center;padding:8px;border-radius:6px;min-height:40px}
+.steps li.cur{background:#f5f5f4;font-weight:600}
+.dot{width:22px;height:22px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px}
+.dot.d{background:#05603a;color:#fff}
+.dot.o{border:2px solid #8a8a86;background:#fff}
+.dot.c{border:2px solid #1c1c1b;background:#1c1c1b;color:#fff}
+.tag{font-size:12px;border-radius:999px;padding:0 8px;border:1px solid #d6d6d3;color:#5a5a57;margin-left:auto;font-weight:400}
+.detail{margin:8px 24px 0;padding:20px 0 0;border-top:1px solid #e8e8e5;flex:1;overflow:hidden}
+.lbl{display:block;font-weight:600;margin:16px 0 6px}
+.sel{width:100%;min-height:44px;border:1px solid #8a8a86;border-radius:6px;padding:0 12px;font:inherit;background:#fff;display:flex;align-items:center;justify-content:space-between}
+.hint{background:#fafaf9;border:1px solid #e8e8e5;border-radius:6px;padding:10px 12px;margin-top:12px;color:#3a3a38}
+.btn{font:inherit;border:1px solid #d6d6d3;background:#fff;color:#1c1c1b;border-radius:6px;padding:9px 16px;min-height:44px;font-weight:500}
+.btn-p{background:#1c1c1b;color:#fff;border-color:#1c1c1b}
+.btn-q{border-color:transparent;background:transparent;text-decoration:underline;text-underline-offset:3px;color:#1c1c1b}
+.foot{border-top:1px solid #e8e8e5;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;background:#fafaf9}
+.kbd{font-size:12px;border:1px solid #d6d6d3;border-radius:4px;padding:0 5px;background:#fff}
+</style>
+</helmet>
+<div class="app">
+  <aside class="side" aria-hidden="true">
+    <div class="brand"><span class="mark">W</span><div><div style="font-weight:600">Wedding admin</div><div class="muted" style="font-size:12px">v0 test console</div></div></div>
+    <nav class="nav">
+      <a href="#">Overview</a>
+      <p class="nav-h">Guests</p><a href="#">Households</a><a href="#">Import</a>
+      <p class="nav-h">Site</p><a class="on" href="#">Settings</a>
+      <a href="#">Setup guide <span class="count">2 left</span></a>
+    </nav>
+  </aside>
+  <main class="main" aria-hidden="true">
+    <div class="banner"><div style="flex:1;font-weight:600">Setup isn&#39;t finished: 3 of 5 required steps done</div></div>
+    <h1 style="font-size:22px">Settings</h1>
+    <div class="card"><h2 style="font-size:15px">Wedding event</h2><p class="muted" style="margin-top:6px">Personal links stop working on this event&#39;s date.</p></div>
+    <div class="card"><h2 style="font-size:15px">Sign-in limits</h2></div>
+  </main>
+  <div class="scrim"></div>
+  <section class="panel" role="dialog" aria-labelledby="g-title" aria-modal="false">
+    <div class="ph">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><h2 id="g-title" style="font-size:18px">Setup guide</h2><p class="muted" style="margin-top:2px">3 of 5 required steps done</p></div>
+        <button class="x" type="button" aria-label="Close setup guide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1c1c1b" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="seg" aria-hidden="true"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></div>
+    </div>
+    <ol class="steps">
+      <li><span class="dot d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>Site address<span class="tag">Done</span></li>
+      <li class="cur" aria-current="step"><span class="dot c">2</span>Choose the wedding event<span class="tag" style="background:#fff">Required</span></li>
+      <li><span class="dot o"></span>Email sending<span class="tag">Required</span></li>
+      <li><span class="dot d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>Personal link key<span class="tag">Done</span></li>
+      <li><span class="dot d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>Scheduled sending key<span class="tag">Done</span></li>
+    </ol>
+    <div class="detail">
+      <h3 style="font-size:17px">Choose the wedding event</h3>
+      <p style="margin-top:6px;color:#3a3a38">Guests&#39; personal links stop working on this event&#39;s date. It also supplies the date on the save the date page, email and calendar entry.</p>
+      <div class="hint"><strong>If you leave this unset:</strong> links never close and the save the date has no date.</div>
+      <label class="lbl" for="ev">Wedding event</label>
+      <div class="sel" id="ev"><span>Ceremony and reception, 12 June 2027</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1c1c1b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></div>
+      <p class="muted small" style="margin-top:6px;font-size:12px">Only the couple can change this. You are signed in as a couple member.</p>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:20px">
+        <button class="btn btn-p" type="button">Save and continue</button>
+        <button class="btn btn-q" type="button">Skip this step</button>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn" type="button">Not now</button>
+      <span class="muted" style="font-size:12px"><span class="kbd">Esc</span> closes. Your place is saved.</span>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

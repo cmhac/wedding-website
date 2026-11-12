@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phone: banner and guide</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#1c1c1b;background:#f5f5f4}
+*{box-sizing:border-box}
+h1,h2,h3,p{margin:0}
+.app{position:relative;width:390px;height:844px;overflow:hidden;background:#f5f5f4}
+.top{height:56px;background:#fff;border-bottom:1px solid #d6d6d3;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.mark{width:28px;height:28px;border-radius:7px;background:#1c1c1b;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:600;margin-right:8px}
+.btn{font:inherit;border:1px solid #d6d6d3;background:#fff;color:#1c1c1b;border-radius:6px;padding:0 16px;min-height:44px;font-weight:500}
+.btn-p{background:#1c1c1b;color:#fff;border-color:#1c1c1b}
+.banner{margin:16px;display:flex;flex-direction:column;gap:10px;background:#fffaeb;border:1px solid #fedf89;border-radius:8px;padding:14px;color:#8a3406}
+.muted{color:#5a5a57}
+.scrim{position:absolute;inset:0;background:rgba(28,28,27,.32)}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:640px;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(28,28,27,.18);display:flex;flex-direction:column}
+.grab{width:40px;height:4px;border-radius:2px;background:#d6d6d3;margin:8px auto 0}
+.ph{padding:8px 16px 12px;border-bottom:1px solid #e8e8e5}
+.seg{display:flex;gap:4px;margin-top:10px}
+.seg i{flex:1;height:6px;border-radius:3px;background:#e8e8e5}
+.seg i.f{background:#05603a}
+.x{width:44px;height:44px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;margin:-6px -10px 0 0}
+.cur{display:flex;gap:10px;align-items:center;background:#f5f5f4;border-radius:6px;padding:8px;margin:12px 12px 0;font-weight:600}
+.dot{width:22px;height:22px;border-radius:50%;background:#1c1c1b;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.tag{font-size:12px;border-radius:999px;padding:0 8px;border:1px solid #d6d6d3;color:#5a5a57;margin-left:auto;font-weight:400;background:#fff}
+.detail{padding:16px;flex:1;overflow:hidden}
+.hint{background:#fafaf9;border:1px solid #e8e8e5;border-radius:6px;padding:10px 12px;margin-top:12px;color:#3a3a38}
+.sel{width:100%;min-height:44px;border:1px solid #8a8a86;border-radius:6px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.foot{border-top:1px solid #e8e8e5;padding:12px 16px;display:flex;gap:10px;background:#fafaf9}
+.q{font:inherit;background:transparent;border:0;text-decoration:underline;text-underline-offset:3px;min-height:44px;padding:0 8px;color:#1c1c1b}
+</style>
+</helmet>
+<div class="app">
+  <header class="top" aria-hidden="true"><span style="display:flex;align-items:center"><span class="mark">W</span><strong>Wedding admin</strong></span><span class="btn" style="display:flex;align-items:center">Menu</span></header>
+  <section class="banner" aria-hidden="true">
+    <div style="font-weight:600">Setup isn&#39;t finished: 3 of 5 required steps done</div>
+    <button class="btn btn-p" type="button">Start setup</button>
+  </section>
+  <h1 style="font-size:20px;margin:0 16px" aria-hidden="true">Overview</h1>
+  <div class="scrim"></div>
+  <section class="sheet" role="dialog" aria-labelledby="g-title" aria-modal="false">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="ph">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><h2 id="g-title" style="font-size:17px">Setup guide</h2><p class="muted" style="margin-top:2px">Step 2 of 5 · 3 required steps done</p></div>
+        <button class="x" type="button" aria-label="Close setup guide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1c1c1b" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="seg" aria-hidden="true"><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></div>
+    </div>
+    <div class="cur" aria-current="step"><span class="dot">2</span>Choose the wedding event<span class="tag">Required</span></div>
+    <div class="detail">
+      <p style="color:#3a3a38">Guests&#39; personal links stop working on this event&#39;s date. It also supplies the date on the save the date page.</p>
+      <div class="hint"><strong>If left unset:</strong> links never close.</div>
+      <label for="ev" style="display:block;font-weight:600;margin-top:16px">Wedding event</label>
+      <div class="sel" id="ev"><span>Ceremony, 12 June 2027</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1c1c1b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></div>
+    </div>
+    <div class="foot">
+      <button class="btn btn-p" type="button" style="flex:1">Save and continue</button>
+      <button class="q" type="button">Skip</button>
+    </div>
+    <div style="padding:0 16px 12px;background:#fafaf9;display:flex;justify-content:space-between;align-items:center">
+      <button class="q" type="button" style="padding-left:0">Not now</button>
+      <span class="muted" style="font-size:12px">Your place is saved</span>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

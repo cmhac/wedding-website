@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Required steps done, recommended left</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#1c1c1b;background:#f5f5f4}
+*{box-sizing:border-box}
+h1,h2,h3,p{margin:0}
+.app{position:relative;display:flex;width:1280px;height:860px;overflow:hidden}
+.side{width:232px;flex:none;background:#fff;border-right:1px solid #d6d6d3;padding:16px;display:flex;flex-direction:column;gap:16px}
+.brand{display:flex;gap:10px;align-items:center}
+.mark{width:32px;height:32px;border-radius:8px;background:#1c1c1b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}
+.nav a{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:6px;color:#1c1c1b;text-decoration:none}
+.nav a.on{background:#f0f0ee;font-weight:600}
+.nav-h{font-size:12px;color:#5a5a57;margin:12px 10px 4px;text-transform:uppercase;letter-spacing:.04em}
+.count{font-size:12px;background:#f0f0ee;color:#5a5a57;border:1px solid #d6d6d3;border-radius:999px;padding:0 8px}
+.main{flex:1;padding:24px 32px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.card{background:#fff;border:1px solid #d6d6d3;border-radius:8px;padding:16px}
+.muted{color:#5a5a57}
+.scrim{position:absolute;inset:0;background:rgba(28,28,27,.32)}
+.panel{position:absolute;top:0;right:0;bottom:0;width:480px;background:#fff;border-left:1px solid #d6d6d3;box-shadow:-12px 0 32px rgba(28,28,27,.14);display:flex;flex-direction:column}
+.ph{padding:20px 24px 16px;border-bottom:1px solid #e8e8e5}
+.seg{display:flex;gap:4px;margin-top:12px}
+.seg i{flex:1;height:6px;border-radius:3px;background:#05603a}
+.x{width:44px;height:44px;border:1px solid transparent;background:transparent;border-radius:6px;display:flex;align-items:center;justify-content:center;margin:-8px -10px 0 0}
+.ok{margin:16px 24px 0;display:flex;gap:12px;background:#ecfdf3;border:1px solid #abefc6;color:#05603a;border-radius:8px;padding:12px 14px}
+.grp{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#5a5a57;margin:18px 24px 4px}
+.steps{list-style:none;margin:0;padding:0 16px}
+.steps li{display:flex;gap:12px;align-items:center;padding:6px 8px;border-radius:6px;min-height:40px}
+.dot{width:22px;height:22px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center}
+.dot.d{background:#05603a}
+.dot.o{border:2px solid #8a8a86;background:#fff}
+.tag{font-size:12px;border-radius:999px;padding:0 8px;border:1px solid #d6d6d3;color:#5a5a57;margin-left:auto;font-weight:400}
+.chg{font:inherit;font-size:13px;background:transparent;border:0;text-decoration:underline;text-underline-offset:3px;color:#1c1c1b;min-height:44px;padding:0 8px;margin-left:auto}
+.btn{font:inherit;border:1px solid #d6d6d3;background:#fff;color:#1c1c1b;border-radius:6px;padding:9px 16px;min-height:44px;font-weight:500}
+.btn-sm{min-height:44px;padding:0 12px;font-size:13px}
+.foot{margin-top:auto;border-top:1px solid #e8e8e5;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;background:#fafaf9}
+.kbd{font-size:12px;border:1px solid #d6d6d3;border-radius:4px;padding:0 5px;background:#fff}
+</style>
+</helmet>
+<div class="app">
+  <aside class="side" aria-hidden="true">
+    <div class="brand"><span class="mark">W</span><div><div style="font-weight:600">Wedding admin</div><div class="muted" style="font-size:12px">v0 test console</div></div></div>
+    <nav class="nav">
+      <a class="on" href="#">Overview</a>
+      <p class="nav-h">Site</p><a href="#">Settings</a>
+      <a href="#">Setup guide <span class="count">3 recommended</span></a>
+    </nav>
+  </aside>
+  <main class="main" aria-hidden="true">
+    <h1 style="font-size:22px">Overview</h1>
+    <div class="card"><h2 style="font-size:15px">Recent activity</h2><p class="muted" style="margin-top:6px">No setup banner: every required step is done.</p></div>
+  </main>
+  <div class="scrim"></div>
+  <section class="panel" role="dialog" aria-labelledby="g-title" aria-modal="false">
+    <div class="ph">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><h2 id="g-title" style="font-size:18px">Setup guide</h2><p class="muted" style="margin-top:2px">All 5 required steps done</p></div>
+        <button class="x" type="button" aria-label="Close setup guide"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1c1c1b" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="seg" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="ok" role="status">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05603a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+      <div><strong>Setup complete.</strong> The site can send email and its links close on the wedding day. The three steps below are optional.</div>
+    </div>
+    <p class="grp">Required</p>
+    <ul class="steps">
+      <li><span class="dot d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>Site address<button class="chg" type="button">Change</button></li>
+      <li><span class="dot d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>Wedding event<button class="chg" type="button">Change</button></li>
+      <li><span class="dot d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>Email sending<button class="chg" type="button">Check</button></li>
+      <li><span class="dot d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>Personal link key<span class="tag">Done</span></li>
+      <li><span class="dot d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span>Scheduled sending key<span class="tag">Done</span></li>
+    </ul>
+    <p class="grp">Recommended</p>
+    <ul class="steps">
+      <li><span class="dot o"></span>Place line and note for the card<button class="btn btn-sm" type="button" style="margin-left:auto">Set up</button></li>
+      <li><span class="dot o"></span>Close the RSVP until invitations go out<button class="btn btn-sm" type="button" style="margin-left:auto">Set up</button></li>
+      <li><span class="dot o"></span>Texting<button class="btn btn-sm" type="button" style="margin-left:auto">Set up</button></li>
+    </ul>
+    <div class="foot">
+      <button class="btn" type="button">Restart setup</button>
+      <button class="btn" type="button" style="background:#1c1c1b;color:#fff;border-color:#1c1c1b">Close</button>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
