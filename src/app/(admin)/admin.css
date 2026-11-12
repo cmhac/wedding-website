@@ -955,6 +955,13 @@ fieldset.group legend {
   text-align: left;
   cursor: pointer;
 }
+.setup-step {
+  text-decoration: none;
+}
+.setup-goto {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
 .setup-step:hover {
   background: var(--bg);
 }

@@ -26,6 +26,10 @@ This feature adds one **setup guide**: a single list of what must be set, shown 
 - Q: What does leaving the guide do to the banner? → A: Closing the guide by any route (close button, Escape, "Not now") leaves the compact reminder in place of the full banner, for that person, until they restart setup or a new required step appears, which brings the full banner back. Only finishing the required steps removes the reminder.
 - Q: When is the status worked out, and what happens if it cannot be? → A: Fresh on every admin page load and on every "Check again" (no cached copy). If it cannot be worked out, the page renders without any banner, and the failure is logged without personal or secret data.
 
+### Session 2026-11-12 (after the first release)
+
+- Q: What happens when someone chooses a step in the guide's list? → A: A step whose setting lives on a console page (wedding event, place line and note, default RSVP deadline, close the RSVP) takes the person straight to that setting on its page. The guide closes the way "Not now" does, so the compact reminder and "Resume setup" stay available and bring the person back to the step. A step with no console page (set in hosting, set by hand, or the texting step, whose instructions and switch stay in the guide) still opens its detail inside the guide.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - See what is missing and be led through it (Priority: P1)
@@ -43,6 +47,8 @@ A couple member or the planner opens any admin page on a site where required set
 3. **Given** the guide is open on a step whose value is set outside the console (for example at the hosting or email provider), **When** the staff member follows the shown instructions and chooses "Check again", **Then** the step is marked done if the value is now present and otherwise stays open with a plain reason.
 4. **Given** the last required step is finished, **When** the guide updates, **Then** it shows a short "Setup complete" message, lists any recommended steps still open, and the warning banner is gone from every page.
 5. **Given** no required value is missing, **When** a staff member opens any admin page, **Then** no setup banner appears.
+6. **Given** the guide is open, **When** the staff member chooses a step whose setting lives on a console page (for example "Wedding event"), **Then** they land on that page at that setting, the guide is closed with the compact reminder showing, and "Resume setup" reopens the guide on that step.
+7. **Given** the guide is open, **When** the staff member chooses a step with no console page (for example "Email sending"), **Then** the step's detail opens inside the guide and the page does not change.
 
 ---
 
@@ -121,6 +127,7 @@ Some setup is useful but not needed for the site to work (for example the place 
 **The guide**
 
 - **FR-006**: The guide MUST present the steps one at a time, in a fixed order, with a visible list of all steps showing each as done, open or skipped, and the progress line.
+- **FR-030**: In the guide's step list, a step whose setting lives on a console page MUST be a link that goes directly to that setting (the page and the field, for example the wedding event choice on the Settings page). It MUST say in text that it opens the Settings page, and choosing it MUST close the guide as "Not now" does (saving the step as the person's place, leaving the compact reminder) so "Resume setup" returns to it. Every other step MUST keep opening its detail inside the guide. Which step goes where is part of the step catalogue.
 - **FR-007**: Each step MUST say, in plain words, what the value is for and what happens if it stays unset.
 - **FR-008**: A step whose value can be set in the console MUST let the staff member set it inside the guide, using the same validation as the existing setting.
 - **FR-009**: A step whose value is set outside the console MUST show the exact steps to take (with the name of the value and where it goes) and a "Check again" control. It MUST NOT ask the staff member to type a secret into the console.

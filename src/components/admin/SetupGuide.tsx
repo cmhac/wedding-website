@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { ActionResult } from "@/lib/admin/actions/shared";
@@ -199,6 +200,16 @@ export function SetupGuide({
     setOpen(true);
   };
 
+  // Choosing a step set on a console page goes there. The guide closes as
+  // "Not now" does, remembering the step, so Resume setup comes back to it.
+  const goTo = (key: string) => {
+    if (closing.current) return;
+    closing.current = true;
+    run(actions.leave, { step: key, seen: openRequired.join(",") });
+    setOpen(false);
+    stopParam();
+  };
+
   const select = (key: string) => {
     setCurrent(key);
     run(actions.recordPosition, { step: key });
@@ -316,16 +327,29 @@ export function SetupGuide({
                 .filter((s) => s.group === group)
                 .map((s) => (
                   <li key={s.key}>
-                    <button
-                      type="button"
-                      className="setup-step"
-                      aria-current={s.key === current ? "step" : undefined}
-                      onClick={() => select(s.key)}
-                    >
-                      <Marker step={s} />
-                      <span className="setup-step-label">{s.label}</span>
-                      <span className="setup-tag">{statusWord(s)}</span>
-                    </button>
+                    {s.page ? (
+                      <Link
+                        href={s.page}
+                        className="setup-step"
+                        onClick={() => goTo(s.key)}
+                      >
+                        <Marker step={s} />
+                        <span className="setup-step-label">{s.label}</span>
+                        <span className="setup-tag">{statusWord(s)}</span>
+                        <span className="setup-goto">Opens Settings</span>
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className="setup-step"
+                        aria-current={s.key === current ? "step" : undefined}
+                        onClick={() => select(s.key)}
+                      >
+                        <Marker step={s} />
+                        <span className="setup-step-label">{s.label}</span>
+                        <span className="setup-tag">{statusWord(s)}</span>
+                      </button>
+                    )}
                   </li>
                 ))}
             </ol>

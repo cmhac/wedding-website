@@ -18,6 +18,17 @@ No new HTTP route: the guide is part of the admin console and uses server action
 | `email_tracking` | Email delivery tracking                 | recommended | outside           | The provider's webhook signing key is present                         | n/a (hosting)       |
 | `sending_domain` | Sending domain verified                 | recommended | manual            | A staff member has confirmed it (shared mark)                         | Couple and planner  |
 
+**Where it lives.** Each `console` step may carry a `page`: the console address of its setting, including the field. In the guide's step list a step with a `page` is a link to it; every other step selects its detail in the guide.
+
+| Key             | `page`                                  |
+| --------------- | --------------------------------------- |
+| `wedding_event` | `/admin/settings#wedding-event`         |
+| `card_details`  | `/admin/settings#save-the-date-place`   |
+| `rsvp_deadline` | `/admin/settings#default-rsvp-deadline` |
+| `rsvp_closed`   | `/admin/settings#rsvp-open`             |
+
+Steps set outside the console, the manual step and `texting` have no `page`.
+
 Order is the table order. A step's text (purpose, "if unset", instructions, the names of the hosting values to set) lives in the catalogue beside it, so one edit changes the guide, the banner count and the tests.
 
 ## `evaluateSetup(inputs)` (pure)
@@ -32,15 +43,15 @@ Output: `{ steps: [{ key, status: "done" | "open", reason?: string }], requiredO
 
 ## Server actions (`src/lib/admin/actions/setup.ts`, staff only, each returns `ActionResult`)
 
-| Action                                    | Effect                                                                                        |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `leaveGuide`                              | Sets `left_guide` true and `seen_required` to the current required keys; records `last_step`. |
-| `resumeGuide`                             | Sets `left_guide` false.                                                                      |
-| `skipStep(key)`                           | Adds the key to `skipped_steps` and moves `last_step` to the next open step.                  |
-| `restartGuide`                            | Deletes the person's row (clears skips, position and left state). Changes no site value.      |
-| `recordPosition(key)`                     | Saves `last_step` as the person moves between steps.                                          |
-| `confirmStep(key)` / `unconfirmStep(key)` | Insert or delete a shared mark; only for `manual` steps.                                      |
-| `checkAgain`                              | Revalidates the console layout and returns the fresh status of one step.                      |
+| Action                                    | Effect                                                                                                                                                                      |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `leaveGuide`                              | Sets `left_guide` true and `seen_required` to the current required keys; records `last_step`. Also what choosing a step with a `page` calls, with that step as `last_step`. |
+| `resumeGuide`                             | Sets `left_guide` false.                                                                                                                                                    |
+| `skipStep(key)`                           | Adds the key to `skipped_steps` and moves `last_step` to the next open step.                                                                                                |
+| `restartGuide`                            | Deletes the person's row (clears skips, position and left state). Changes no site value.                                                                                    |
+| `recordPosition(key)`                     | Saves `last_step` as the person moves between steps.                                                                                                                        |
+| `confirmStep(key)` / `unconfirmStep(key)` | Insert or delete a shared mark; only for `manual` steps.                                                                                                                    |
+| `checkAgain`                              | Revalidates the console layout and returns the fresh status of one step.                                                                                                    |
 
 An unknown step key is refused. Every action checks `is_staff()` through the existing session guard. Console steps save through the existing settings and details actions.
 

@@ -268,6 +268,7 @@ export function SettingsView({
                 </Field>
                 <label className="check">
                   <input
+                    id="rsvp-open"
                     type="checkbox"
                     name="rsvp_open"
                     defaultChecked={

@@ -26,6 +26,8 @@ export type StepDef = {
   coupleOnly?: boolean;
   /** Where to set it, for steps set outside the console. */
   where?: string;
+  /** The console address of the setting, field included, for steps set on a console page. */
+  page?: string;
 };
 
 const HOSTING = "your hosting project, Settings, Environment Variables";
@@ -48,6 +50,7 @@ export const STEPS: readonly StepDef[] = [
     group: "required",
     kind: "console",
     form: "event",
+    page: "/admin/settings#wedding-event",
     purpose:
       "Guests' personal links stop working on this event's date. It also supplies the date on the save the date page, email and calendar entry.",
     ifUnset: "Links never close and the save the date has no date.",
@@ -91,6 +94,7 @@ export const STEPS: readonly StepDef[] = [
     group: "recommended",
     kind: "console",
     form: "card",
+    page: "/admin/settings#save-the-date-place",
     purpose:
       "The place line and note printed on the save the date card, so the page, email, text and calendar entry match it.",
     ifUnset: "The save the date shows the date without a place.",
@@ -101,6 +105,7 @@ export const STEPS: readonly StepDef[] = [
     group: "recommended",
     kind: "console",
     form: "deadline",
+    page: "/admin/settings#default-rsvp-deadline",
     purpose:
       "The date guests are asked to reply by, unless an event has its own.",
     ifUnset: "Guests see no reply-by date.",
@@ -111,6 +116,7 @@ export const STEPS: readonly StepDef[] = [
     group: "recommended",
     kind: "console",
     form: "rsvp",
+    page: "/admin/settings#rsvp-open",
     purpose:
       "Guests who sign in from the save the date could otherwise answer before invitations are sent.",
     ifUnset: "Guests can answer the RSVP early.",
