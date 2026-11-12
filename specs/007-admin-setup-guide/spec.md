@@ -16,6 +16,16 @@ Today the admin console tells staff about missing setup in scattered places: one
 
 This feature adds one **setup guide**: a single list of what must be set, shown as a banner on every admin page while anything required is missing, which opens an interactive walk through the steps. The guide only ever reads the real state of the site, so it cannot disagree with it. Leaving the guide is always allowed, and a small reminder keeps the way back in sight until setup is done.
 
+## Clarifications
+
+### Session 2026-11-12
+
+- Q: Which steps are required (they raise the banner) and which are only recommended? → A: Required: site address, wedding event, email sending (the key and the from address), the personal-link key, and the scheduled-sending key. Recommended: place line and note for the card, default RSVP deadline, close the RSVP until invitations go out, texting, email delivery tracking (the provider's webhook signing key), and, as "confirm by hand", the sending domain verified at the email provider.
+- Q: Who may change each step's value? → A: Every staff member (couple and planner) may change every console-settable step, matching the existing Settings page, except the texting switch, which only the couple may change. A planner sees that step read-only with "Only the couple can change this" and may skip it.
+- Q: Where is a person's guide state kept? → A: On the server, one record per staff member that only that member can read or change. Confirm-by-hand marks are one shared record per step. Neither is ever used to decide whether a value is set.
+- Q: What does leaving the guide do to the banner? → A: Closing the guide by any route (close button, Escape, "Not now") leaves the compact reminder in place of the full banner, for that person, until they restart setup or a new required step appears, which brings the full banner back. Only finishing the required steps removes the reminder.
+- Q: When is the status worked out, and what happens if it cannot be? → A: Fresh on every admin page load and on every "Check again" (no cached copy). If it cannot be worked out, the page renders without any banner, and the failure is logged without personal or secret data.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - See what is missing and be led through it (Priority: P1)
@@ -50,7 +60,7 @@ A staff member who does not want to do setup right now can leave at any time: cl
 2. **Given** a step is open, **When** the staff member chooses "Skip this step", **Then** the step is marked skipped (not done), the guide moves on, and the skipped step is still counted as missing in the progress line.
 3. **Given** the staff member left the guide on a step, **When** they later choose "Resume setup", **Then** the guide opens on that step, or on the next unfinished one if that step has since been finished.
 4. **Given** the staff member left the guide, **When** they sign in again, on the same device or a different one, **Then** the compact reminder shows the same progress and skipped steps.
-5. **Given** the staff member chose "Stop showing the full banner", **When** any admin page opens, **Then** only the compact reminder appears (never nothing, while a required value is missing).
+5. **Given** the staff member left the guide, **When** any admin page opens, **Then** only the compact reminder appears (never nothing, while a required value is missing), until they restart setup or a new required step appears.
 
 ---
 
@@ -124,7 +134,7 @@ Some setup is useful but not needed for the site to work (for example the place 
 - **FR-014**: Staff MUST be able to skip any single step. A skipped step counts as not done in every progress line and in the banner.
 - **FR-015**: While a required step is open, leaving the guide MUST leave a compact reminder in place of the full banner text, showing the progress and a "Resume setup" button. Nothing the staff member does short of finishing setup may remove the reminder.
 - **FR-016**: "Resume setup" MUST open the guide at the step the staff member last viewed, or at the first open step if that step is done.
-- **FR-017**: Each staff member's skipped steps, last position, and whether they have collapsed the full banner MUST be remembered per staff member, so they follow the person to another browser or device.
+- **FR-017**: Each staff member's skipped steps, last position, and whether they have left the guide MUST be remembered per staff member, so they follow the person to another browser or device.
 - **FR-018**: Staff MUST be able to restart the guide, which clears that person's skipped marks and position and opens the first open step. Restarting MUST NOT change any site value.
 - **FR-019**: A standing "Setup guide" link in the console navigation MUST open the guide at any time, including when setup is complete, in which case each step is shown done with a "Change" control.
 
@@ -171,7 +181,7 @@ Some setup is useful but not needed for the site to work (for example the place 
 - **Who it is for**: the couple and the planner, the only staff roles. The guide is part of the temporary plain admin console, so it is deliberately plain and the creative director's version may replace it. This extends the console scope already granted; it adds no guest-facing screen.
 - **What counts as required** (to be confirmed against the code in planning): the wedding event is chosen, the site's public address is set, the email sending key and from address are set, and the keys that personal invite links and scheduled sending depend on are present. **Recommended**: the place line and note on the save the date card, the default RSVP deadline, closing the RSVP until invitations go out, texting (replacing today's texting banner), and the sending-domain check at the email provider (confirm by hand). The catalogue lives in one place so it is easy to change.
 - **Values set outside the console** (hosting environment values, the email provider's dashboard) cannot be saved from the guide. The guide shows the steps and checks for presence only. Hosting changes may need a redeploy before "Check again" sees them.
-- **Per-person state is stored server-side**, not in the browser, so a person's skips and position follow them between devices (see research). A skipped step is remembered, but it still counts as missing.
+- **Per-person state is stored server-side** (confirmed in clarification), not in the browser, so a person's skips and position follow them between devices (see research). A skipped step is remembered, but it still counts as missing.
 - **Leaving never removes the warning**: the user asked for the banner whenever required values are missing and for an escape from the guide, so leaving shrinks the banner to a compact reminder, and only finishing the required steps removes it. A staff member who finds even the compact reminder unwelcome can finish or confirm the steps; there is no "hide forever" while a required value is missing.
 - **A role that cannot change a step** (if the existing Settings page restricts a setting to the couple) can skip it or open it read-only; leaving a note for the other role is out of scope for this version.
 - **Where the first run starts**: the guide never opens by itself on top of the page; the banner invites and the staff member chooses. This avoids interrupting someone who came to do something else.
