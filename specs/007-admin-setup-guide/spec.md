@@ -141,7 +141,7 @@ Some setup is useful but not needed for the site to work (for example the place 
 **Who can do what**
 
 - **FR-020**: Every staff role (couple and planner) MUST see the banner and the guide. A step MUST show who may change its value and MUST NOT let a role save a value it may not change; the same rules as the existing Settings page apply.
-- **FR-021**: One staff member's skips, position and collapsed state MUST NOT change what another staff member sees. Whether a step is done is the same for everyone.
+- **FR-021**: One staff member's skips, position and left-the-guide state MUST NOT change what another staff member sees. Whether a step is done is the same for everyone.
 - **FR-022**: Guests, signed-out visitors and non-staff accounts MUST NOT see the banner or the guide or be able to read or change guide state.
 
 **Accessibility and layout**
@@ -161,7 +161,7 @@ Some setup is useful but not needed for the site to work (for example the place 
 
 - **Setup step**: one thing to set. Has a name, a plain-language purpose, whether it is required or recommended, who may change it, how it is set (in the console, or outside it with instructions), and a live status of done or open (never stored). The catalogue of steps is defined in the product, not entered by staff.
 - **Setup status**: the live result of checking every step: for each, done or open, and a plain reason when open. Shared by everyone.
-- **Guide state (per staff member)**: which steps this person skipped, which step they last viewed, and whether they collapsed the full banner. Interface state only; never affects the status.
+- **Guide state (per staff member)**: which steps this person skipped, which step they last viewed, and whether they have left the guide (so the compact reminder shows). Interface state only; never affects the status.
 - **Confirmed-by-hand marks**: for steps the site cannot check, a record that a staff member confirmed it, with who and when. Shared by everyone, and cleared by restarting only for that person's own view, not for the site.
 
 ## Success Criteria _(mandatory)_
