@@ -1,5 +1,6 @@
 import { SAVE_THE_DATE_PATH } from "@/lib/auth/destination";
 import type { SessionKind } from "@/lib/auth/session";
+import { siteUrl } from "@/lib/site/url";
 
 /**
  * Where sign-in routes send people. Shared by `/auth/callback` (staff),
@@ -38,7 +39,7 @@ export function allowedNext(
 
 /** A 302 to a path on the site. Sign-in responses are never cached or indexed. */
 export function redirectTo(path: string): Response {
-  const base = process.env.NEXT_PUBLIC_SITE_URL;
+  const base = siteUrl() || undefined;
   return new Response(null, {
     status: 302,
     headers: {

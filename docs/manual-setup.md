@@ -82,6 +82,24 @@ Two layers sit in front of sign-in:
 and review it before launch. Every valid sign-in request also takes at least
 1.5 seconds, so the response time does not reveal whether an address is known.
 
+## Vercel preview deployments
+
+A preview has a different address for every deployment, so its site address
+cannot be set ahead of time. With `NEXT_PUBLIC_SITE_URL` unset for previews
+(leave it a Production-only variable), the site uses the preview's own address
+(`VERCEL_URL`) for sign-in links and redirects. Supabase must also allow those
+addresses, or it refuses the staff sign-in redirect. In Supabase, Authentication,
+URL Configuration, add (replace the team slug with yours):
+
+- `https://wedding-website-*-<team slug>.vercel.app/auth/callback`
+- `https://wedding-website-*-<team slug>.vercel.app/auth/callback?audience=staff`
+
+Keep the Site URL set to production. Previews share the production database and
+the staff sign-in email is sent by the production site's Send Email hook, so a
+preview needs no email variables of its own. Do not use a bare `*.vercel.app`
+pattern: it would allow every Vercel app. Previews behind Vercel's Deployment
+Protection ask for a Vercel sign-in first.
+
 ## Personal invite links
 
 | Item                             | Where                                   | Value                                                                                                                                                                                                                                                             |

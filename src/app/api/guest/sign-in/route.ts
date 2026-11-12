@@ -18,6 +18,7 @@ import { sendText } from "@/lib/sms/send";
 import { getSmsState, type SmsState } from "@/lib/sms/state";
 import { renderText } from "@/lib/sms/texts";
 import { statusCallbackUrl } from "@/lib/sms/urls";
+import { siteUrl } from "@/lib/site/url";
 
 // The per-IP limiter in front. The per-address and overall limits are durable
 // and live in the database (research R12).
@@ -77,7 +78,7 @@ async function sendEmailLink(typed: string): Promise<string> {
   const tokenHash = await generateHouseholdTokenHash(contact.data.household_id);
   if (!tokenHash) return "no_token";
 
-  const signInUrl = new URL("/auth/confirm", process.env.NEXT_PUBLIC_SITE_URL);
+  const signInUrl = new URL("/auth/confirm", siteUrl() || undefined);
   signInUrl.searchParams.set("token_hash", tokenHash);
   signInUrl.searchParams.set("type", "email");
 

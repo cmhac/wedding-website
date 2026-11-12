@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { siteUrl } from "@/lib/site/url";
 
 /**
  * Asks Supabase to email a staff sign-in link to the address typed. Shared by the
@@ -30,7 +31,7 @@ export async function requestStaffLink(
       email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?audience=staff`,
+        emailRedirectTo: `${siteUrl()}/auth/callback?audience=staff`,
       },
     });
     if (!error) return "requested";
