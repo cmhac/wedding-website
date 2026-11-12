@@ -8,7 +8,7 @@
 
 **Input**: User description: "A smoother onboarding process for admins. If any required values are not set, a warning banner is displayed at the top of the page which prompts you to set them up and guides you interactively through each step. Users can escape this setup mode if they wish, and also restart it and resume their progress."
 
-Design research behind this spec, with sources: [research.md](./research.md).
+Design research behind this spec, with sources: [design-research.md](./design-research.md).
 
 ## Overview
 
