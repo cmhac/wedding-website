@@ -55,15 +55,21 @@ describe("the step catalogue", () => {
     ]);
   });
 
-  it("points the steps set on the Settings page at their field", () => {
+  it("points each step set on a console page at the page where it is set up", () => {
     const pages = Object.fromEntries(
       STEPS.filter((s) => s.page).map((s) => [s.key, s.page]),
     );
     expect(pages).toEqual({
-      wedding_event: "/admin/settings#wedding-event",
-      card_details: "/admin/settings#save-the-date-place",
-      rsvp_deadline: "/admin/settings#default-rsvp-deadline",
-      rsvp_closed: "/admin/settings#rsvp-open",
+      wedding_event: { href: "/admin/events", name: "Events" },
+      card_details: {
+        href: "/admin/settings#save-the-date-place",
+        name: "Settings",
+      },
+      rsvp_deadline: {
+        href: "/admin/settings#default-rsvp-deadline",
+        name: "Settings",
+      },
+      rsvp_closed: { href: "/admin/settings#rsvp-open", name: "Settings" },
     });
   });
 
