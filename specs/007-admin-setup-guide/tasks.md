@@ -98,3 +98,8 @@
 ## Implementation strategy
 
 MVP is Phase 2 plus US1: required steps show a banner and a guide that completes them. Add US2 next because the user asked for leave and resume directly, then US3, US4 and polish. Docker is not available here: the database test in T008 is verified by CI, and generating the database types stays a follow-up for a machine with Docker.
+
+## Phase 8: Convergence
+
+- [ ] T036 Make Restart open the guide at the first open step: in `src/components/admin/SetupGuide.tsx` the compact reminder's "Restart" and the panel's "Restart setup" must, after calling `restartGuide`, set the viewed step to the first open step, open the panel, and announce it; write the failing tests first in `src/components/admin/__tests__/setup-guide.test.tsx` (restart from the reminder opens the panel on the first open step; restart inside the panel moves to the first open step; skipped marks are gone afterward) per FR-018 and US3/AC2 (partial)
+- [ ] T037 Add an automated accessibility check for the guide in `src/components/admin/__tests__/setup-guide.test.tsx` using `jest-axe` (add it as a dev dependency at its newest release, and record nothing else since it is a normal tooling addition): run it on the open dialog, the full banner and the compact reminder and require no serious or critical violations, per SC-005 (partial)
