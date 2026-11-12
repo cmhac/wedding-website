@@ -28,7 +28,8 @@ This feature adds one **setup guide**: a single list of what must be set, shown 
 
 ### Session 2026-11-12 (after the first release)
 
-- Q: What happens when someone chooses a step in the guide's list? → A: A step whose setting lives on a console page (wedding event, place line and note, default RSVP deadline, close the RSVP) takes the person straight to that setting on its page. The guide closes the way "Not now" does, so the compact reminder and "Resume setup" stay available and bring the person back to the step. A step with no console page (set in hosting, set by hand, or the texting step, whose instructions and switch stay in the guide) still opens its detail inside the guide.
+- Q: What happens when someone chooses a step in the guide's list? → A: A step whose setting lives on a console page takes the person straight to the page where that thing is actually set up: the wedding event goes to the Events page (where the event and its date are made), and place line and note, default RSVP deadline and close the RSVP go to their field on the Settings page. A step with no console page (set in hosting, set by hand, or the texting step, whose instructions and switch stay in the guide) still opens its detail inside the guide.
+- Q: Does the guide close when it takes someone to another page? → A: No (revised after the step links first shipped, which closed it). The guide stays open beside the page, showing the step that was chosen, so the person can do the work on the page and carry on in the guide. For that the guide no longer blocks the page behind it: no dimmed backdrop, and the page makes room for the panel.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -47,7 +48,7 @@ A couple member or the planner opens any admin page on a site where required set
 3. **Given** the guide is open on a step whose value is set outside the console (for example at the hosting or email provider), **When** the staff member follows the shown instructions and chooses "Check again", **Then** the step is marked done if the value is now present and otherwise stays open with a plain reason.
 4. **Given** the last required step is finished, **When** the guide updates, **Then** it shows a short "Setup complete" message, lists any recommended steps still open, and the warning banner is gone from every page.
 5. **Given** no required value is missing, **When** a staff member opens any admin page, **Then** no setup banner appears.
-6. **Given** the guide is open, **When** the staff member chooses a step whose setting lives on a console page (for example "Wedding event"), **Then** they land on that page at that setting, the guide is closed with the compact reminder showing, and "Resume setup" reopens the guide on that step.
+6. **Given** the guide is open, **When** the staff member chooses a step whose setting lives on a console page (for example "Wedding event"), **Then** they land on the page where it is set up (the Events page), the guide stays open on that step, and they can use the page while it is open.
 7. **Given** the guide is open, **When** the staff member chooses a step with no console page (for example "Email sending"), **Then** the step's detail opens inside the guide and the page does not change.
 
 ---
@@ -127,7 +128,8 @@ Some setup is useful but not needed for the site to work (for example the place 
 **The guide**
 
 - **FR-006**: The guide MUST present the steps one at a time, in a fixed order, with a visible list of all steps showing each as done, open or skipped, and the progress line.
-- **FR-030**: In the guide's step list, a step whose setting lives on a console page MUST be a link that goes directly to that setting (the page and the field, for example the wedding event choice on the Settings page). It MUST say in text that it opens the Settings page, and choosing it MUST close the guide as "Not now" does (saving the step as the person's place, leaving the compact reminder) so "Resume setup" returns to it. Every other step MUST keep opening its detail inside the guide. Which step goes where is part of the step catalogue.
+- **FR-030**: In the guide's step list, a step whose setting lives on a console page MUST be a link that goes directly to the page where it is set up, and to the field when the page has one for it: the wedding event goes to the Events page; place line and note, default RSVP deadline and close the RSVP go to their field on the Settings page. The link MUST say in text which page it opens. Choosing it MUST keep the guide open and make that step the current one (saved as the person's place). Every other step MUST keep opening its detail inside the guide. Which step goes where is part of the step catalogue.
+- **FR-031**: While the guide is open the page beside it MUST stay usable: the guide MUST NOT dim, cover or disable the page, and the page MUST make room for the panel (beside it on wide screens, above it at phone width) so nothing on the page is hidden behind the panel. Closing the guide gives the page its full width back.
 - **FR-007**: Each step MUST say, in plain words, what the value is for and what happens if it stays unset.
 - **FR-008**: A step whose value can be set in the console MUST let the staff member set it inside the guide, using the same validation as the existing setting.
 - **FR-009**: A step whose value is set outside the console MUST show the exact steps to take (with the name of the value and where it goes) and a "Check again" control. It MUST NOT ask the staff member to type a secret into the console.
@@ -153,7 +155,7 @@ Some setup is useful but not needed for the site to work (for example the place 
 
 **Accessibility and layout**
 
-- **FR-023**: The guide MUST be fully usable by keyboard. When it opens, focus moves into it. Escape closes it. When it closes, focus returns to the control that opened it. Focus MUST never be trapped.
+- **FR-023**: The guide MUST be fully usable by keyboard. When it opens, focus moves into it. Escape, pressed inside the guide, closes it. When it closes, focus returns to the control that opened it. Focus MUST never be trapped.
 - **FR-024**: The guide MUST have an accessible name, and the banner MUST be announced politely (not as an interruption) when it appears or its count changes.
 - **FR-025**: The banner and guide MUST work at phone width without sideways scrolling, and in the console's light and dark appearance.
 - **FR-026**: The page MUST NOT flash a banner and then remove it on first load when nothing is missing.

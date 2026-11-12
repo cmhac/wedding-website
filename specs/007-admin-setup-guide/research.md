@@ -48,6 +48,8 @@ Design-side research (what makes a good setup guide, with sources) is in [design
 
 **Decision**: the panel is a native `<dialog>` opened with `showModal()`: it names itself with `aria-labelledby`, moves focus in, closes on Escape, returns focus to the opener, and the browser prevents focus escaping into the page behind while open. The banner is `role="status"` (polite). Step changes announce through a visually hidden live region.
 
+**Revised (step links keep the guide open, FR-031)**: the panel is now opened with `show()`, not `showModal()`, and has no backdrop, so the page beside it stays usable while a person follows a step to the Events or Settings page. It keeps the native element's name, focus moving in on open, Escape (from inside the panel) and focus returning on close. Nothing traps focus. The page makes room for it through a class on the root element while it is open.
+
 **Rationale**: the native element gives the common requirements free, which design-research.md found is the usual advice. Escape and the close button always work, so there is no keyboard trap.
 
 ## T8. Failure and performance

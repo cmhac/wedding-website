@@ -103,14 +103,16 @@ export function SetupGuide({
     if (wantsOpen) setOpen(true);
   }
 
-  // Native dialog: modal where supported, a plain open attribute where not.
+  // Native dialog, opened non-modally so the page beside it stays usable while
+  // a step's link takes the person there. A plain open attribute where the
+  // element has no methods. The root class makes the page leave it room.
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (open && !dialog.open) {
       closing.current = false;
       openerRef.current = document.activeElement as HTMLElement | null;
-      if (typeof dialog.showModal === "function") dialog.showModal();
+      if (typeof dialog.show === "function") dialog.show();
       else dialog.setAttribute("open", "");
       closeRef.current?.focus();
     }
@@ -118,7 +120,13 @@ export function SetupGuide({
       if (typeof dialog.close === "function") dialog.close();
       else dialog.removeAttribute("open");
     }
+    document.documentElement.classList.toggle("setup-guide-open", open);
   }, [open]);
+
+  useEffect(
+    () => () => document.documentElement.classList.remove("setup-guide-open"),
+    [],
+  );
 
   // When the step being viewed becomes done, say so and move to the next one.
   useEffect(() => {
@@ -198,16 +206,6 @@ export function SetupGuide({
         : "Setup restarted. Every step is done.",
     );
     setOpen(true);
-  };
-
-  // Choosing a step set on a console page goes there. The guide closes as
-  // "Not now" does, remembering the step, so Resume setup comes back to it.
-  const goTo = (key: string) => {
-    if (closing.current) return;
-    closing.current = true;
-    run(actions.leave, { step: key, seen: openRequired.join(",") });
-    setOpen(false);
-    stopParam();
   };
 
   const select = (key: string) => {
@@ -328,15 +326,18 @@ export function SetupGuide({
                 .map((s) => (
                   <li key={s.key}>
                     {s.page ? (
+                      // Goes to the page where it is set up; the guide stays
+                      // open beside it on this step.
                       <Link
-                        href={s.page}
+                        href={s.page.href}
                         className="setup-step"
-                        onClick={() => goTo(s.key)}
+                        aria-current={s.key === current ? "step" : undefined}
+                        onClick={() => select(s.key)}
                       >
                         <Marker step={s} />
                         <span className="setup-step-label">{s.label}</span>
                         <span className="setup-tag">{statusWord(s)}</span>
-                        <span className="setup-goto">Opens Settings</span>
+                        <span className="setup-goto">Opens {s.page.name}</span>
                       </Link>
                     ) : (
                       <button
@@ -487,8 +488,8 @@ function ConsoleForm({
   if (step.form === "event") {
     return view.events.length === 0 ? (
       <p className="alert alert-info">
-        There are no events yet. Add the wedding on the Events page, then come
-        back.
+        There are no events yet. Add the wedding on the{" "}
+        <Link href="/admin/events">Events page</Link>, then choose it here.
       </p>
     ) : (
       <ActionForm

@@ -173,20 +173,70 @@ describe("the guide panel", () => {
     expect(dialog).toHaveTextContent("redeploy");
   });
 
-  it("links a step set on the Settings page straight to its field and leaves the guide", async () => {
+  it("links Wedding event to the Events page, where the event is made", async () => {
+    render(<SetupGuide view={missingEventAndEmail()} actions={actions()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    const link = screen.getByRole("link", { name: /Wedding event/ });
+    expect(link).toHaveAttribute("href", "/admin/events");
+    expect(link).toHaveTextContent("Opens Events");
+  });
+
+  it("links a step set on Settings to its field there", async () => {
+    render(<SetupGuide view={missingEventAndEmail()} actions={actions()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    const link = screen.getByRole("link", { name: /Default RSVP deadline/ });
+    expect(link).toHaveAttribute(
+      "href",
+      "/admin/settings#default-rsvp-deadline",
+    );
+    expect(link).toHaveTextContent("Opens Settings");
+  });
+
+  it("stays open on the step after following its link", async () => {
     const a = actions();
     render(<SetupGuide view={missingEventAndEmail()} actions={a} />);
     await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    // Start somewhere else so the link visibly moves the guide.
+    await userEvent.click(
+      screen.getByRole("button", { name: /Email sending/ }),
+    );
     const link = screen.getByRole("link", { name: /Wedding event/ });
-    expect(link).toHaveAttribute("href", "/admin/settings#wedding-event");
-    expect(link).toHaveTextContent("Opens Settings");
     link.addEventListener("click", (e) => e.preventDefault());
     await userEvent.click(link);
-    const sent = (a.leave as jest.Mock).mock.calls[0][1] as FormData;
+    expect(a.leave).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeVisible();
+    expect(link).toHaveAttribute("aria-current", "step");
+    expect(
+      within(dialog).getByRole("heading", { name: "Wedding event" }),
+    ).toBeInTheDocument();
+    const sent = (a.recordPosition as jest.Mock).mock.calls.at(
+      -1,
+    )[1] as FormData;
     expect(sent.get("step")).toBe("wedding_event");
-    await waitFor(() =>
-      expect(screen.getByRole("dialog", { hidden: true })).not.toBeVisible(),
+  });
+
+  it("points to the Events page when there is no event to choose yet", async () => {
+    const noEvents = buildSetupView(
+      {
+        ...allSet,
+        settings: {
+          ...allSet.settings,
+          weddingEventId: null,
+          weddingEventDate: null,
+        },
+      },
+      null,
+      "couple",
+      { ...extras, events: [] },
     );
+    render(<SetupGuide view={noEvents} actions={actions()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("There are no events yet.");
+    expect(
+      within(dialog).getByRole("link", { name: "Events page" }),
+    ).toHaveAttribute("href", "/admin/events");
   });
 
   it("keeps a step with no console page as a button that opens its detail", async () => {
@@ -402,6 +452,50 @@ describe("leaving, resuming and restarting", () => {
       screen.getByRole("button", { name: "Restart setup" }),
     );
     expect(a.restart).toHaveBeenCalled();
+  });
+});
+
+describe("beside the page, not over it", () => {
+  const proto = HTMLDialogElement.prototype as unknown as Record<
+    string,
+    unknown
+  >;
+  let show: jest.Mock;
+  let showModal: jest.Mock;
+  beforeEach(() => {
+    show = jest.fn(function (this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    });
+    showModal = jest.fn(function (this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    });
+    proto.show = show;
+    proto.showModal = showModal;
+    proto.close = jest.fn(function (this: HTMLDialogElement) {
+      this.removeAttribute("open");
+    });
+  });
+  afterEach(() => {
+    delete proto.show;
+    delete proto.showModal;
+    delete proto.close;
+    document.documentElement.classList.remove("setup-guide-open");
+  });
+
+  it("opens without blocking the page behind it", async () => {
+    render(<SetupGuide view={missingEventAndEmail()} actions={actions()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    expect(show).toHaveBeenCalled();
+    expect(showModal).not.toHaveBeenCalled();
+  });
+
+  it("makes the page leave room for the panel only while it is open", async () => {
+    render(<SetupGuide view={missingEventAndEmail()} actions={actions()} />);
+    expect(document.documentElement).not.toHaveClass("setup-guide-open");
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    expect(document.documentElement).toHaveClass("setup-guide-open");
+    await userEvent.click(screen.getByRole("button", { name: "Not now" }));
+    expect(document.documentElement).not.toHaveClass("setup-guide-open");
   });
 });
 
