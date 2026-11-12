@@ -6,11 +6,14 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { axe, toHaveNoViolations } from "jest-axe";
 import { SetupGuide, type SetupActions } from "../SetupGuide";
 import { AdminShell } from "../AdminShell";
 import { buildSetupView } from "@/lib/setup/view";
 import type { SetupInputs } from "@/lib/setup/status";
 import type { GuideState } from "@/lib/setup/banner";
+
+expect.extend(toHaveNoViolations);
 
 let search = "";
 jest.mock("next/navigation", () => ({
@@ -465,5 +468,103 @@ describe("secrets", () => {
     expect(container.innerHTML + document.body.innerHTML).not.toMatch(
       /sk_|SENTINEL/,
     );
+  });
+});
+
+describe("restart", () => {
+  const stateWithSkips: GuideState = {
+    skipped_steps: ["wedding_event"],
+    last_step: "email_sending",
+    left_guide: true,
+    seen_required: ["wedding_event", "email_sending"],
+  };
+
+  it("from the compact reminder restarts and opens the guide on the first open step", async () => {
+    const a = actions();
+    render(
+      <SetupGuide
+        view={buildSetupView(
+          {
+            ...allSet,
+            env: { ...allSet.env, emailKey: false, emailFrom: false },
+            settings: {
+              ...allSet.settings,
+              weddingEventId: null,
+              weddingEventDate: null,
+            },
+          },
+          stateWithSkips,
+          "couple",
+          extras,
+        )}
+        actions={a}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Restart" }));
+    expect(a.restart).toHaveBeenCalled();
+    expect(
+      await screen.findByRole("dialog", { name: "Setup guide" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Wedding event" }),
+    ).toBeInTheDocument();
+  });
+
+  it("inside the panel moves to the first open step", async () => {
+    const a = actions();
+    render(<SetupGuide view={missingEventAndEmail()} actions={a} />);
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /Email sending/ }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Email sending" }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Restart setup" }),
+    );
+    expect(a.restart).toHaveBeenCalled();
+    expect(
+      screen.getByRole("heading", { name: "Wedding event" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("automated accessibility check", () => {
+  it("finds no violations in the full banner", async () => {
+    const { container } = render(
+      <SetupGuide view={missingEventAndEmail()} actions={actions()} />,
+    );
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("finds no violations in the compact reminder", async () => {
+    const { container } = render(
+      <SetupGuide
+        view={view(
+          { env: { emailKey: false } },
+          {
+            skipped_steps: [],
+            last_step: null,
+            left_guide: true,
+            seen_required: ["email_sending"],
+          },
+        )}
+        actions={actions()}
+      />,
+    );
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("finds no violations in the open guide", async () => {
+    const { container } = render(
+      <SetupGuide view={missingEventAndEmail()} actions={actions()} />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Start setup" }));
+    expect(await axe(container)).toHaveNoViolations();
+    await userEvent.click(
+      screen.getByRole("button", { name: /Email sending/ }),
+    );
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

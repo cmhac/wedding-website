@@ -184,6 +184,21 @@ export function SetupGuide({
   const done = view.requiredTotal - view.requiredOpen;
   const progress = `${done} of ${view.requiredTotal} required steps done`;
 
+  // Restart forgets this person's skips and position, then starts over on the
+  // first open step, with the guide open.
+  const restart = (opener?: HTMLElement | null) => {
+    if (opener) openerRef.current = opener;
+    run(actions.restart);
+    const first = view.steps.find((s) => s.status === "open");
+    setCurrent(first?.key ?? null);
+    setAnnouncement(
+      first
+        ? `Setup restarted. Starting with ${first.label}.`
+        : "Setup restarted. Every step is done.",
+    );
+    setOpen(true);
+  };
+
   const select = (key: string) => {
     setCurrent(key);
     run(actions.recordPosition, { step: key });
@@ -229,7 +244,7 @@ export function SetupGuide({
             <button
               type="button"
               className="btn btn-quiet"
-              onClick={() => run(actions.restart)}
+              onClick={(e) => restart(e.currentTarget)}
             >
               Restart
             </button>
@@ -336,11 +351,7 @@ export function SetupGuide({
         </p>
 
         <div className="setup-foot">
-          <button
-            type="button"
-            className="btn"
-            onClick={() => run(actions.restart)}
-          >
+          <button type="button" className="btn" onClick={() => restart()}>
             Restart setup
           </button>
           <button type="button" className="btn" onClick={leave}>
