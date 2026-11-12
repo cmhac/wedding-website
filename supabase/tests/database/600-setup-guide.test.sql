@@ -108,6 +108,16 @@ select throws_ok(
 );
 select tests.clear_auth();
 select tests.authenticate_as(:'planner_user');
+select lives_ok(
+  format($$insert into public.setup_confirmations (step_key, confirmed_by) values ('sending_domain', %L)
+           on conflict (step_key) do nothing$$, :'planner_user'),
+  'confirming an already confirmed step is quietly ignored (the app uses do nothing)'
+);
+select throws_ok(
+  format($$insert into public.setup_confirmations (step_key, confirmed_by) values ('sending_domain', %L)
+           on conflict (step_key) do update set confirmed_by = excluded.confirmed_by$$, :'planner_user'),
+  '42501', null, 'but nobody can rewrite a mark (no update access)'
+);
 select is((select count(*)::int from public.setup_confirmations), 1, 'another staff member sees the confirmation');
 select is(
   (with d as (delete from public.setup_confirmations returning 1) select count(*)::int from d), 1,

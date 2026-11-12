@@ -33,13 +33,22 @@ export type SetupActions = {
   saveSmsSwitch: GuideAction;
 };
 
+/**
+ * The next step worth showing: open and not skipped, after `key` first and
+ * then from the top. `except` leaves out a step just skipped that the server
+ * has not marked yet. Null when nothing is left to do.
+ */
 function nextOpenAfter(
   steps: SetupStepView[],
   key: string | null,
+  except?: string,
 ): string | null {
   const from = key ? steps.findIndex((s) => s.key === key) : -1;
-  const open = (s: SetupStepView) => s.status === "open";
-  return steps.slice(from + 1).find(open)?.key ?? steps.find(open)?.key ?? null;
+  const worth = (s: SetupStepView) =>
+    s.status === "open" && !s.skipped && s.key !== except;
+  return (
+    steps.slice(from + 1).find(worth)?.key ?? steps.find(worth)?.key ?? null
+  );
 }
 
 function Marker({ step }: { step: SetupStepView }) {
@@ -82,6 +91,8 @@ export function SetupGuide({
   const closeRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const previous = useRef<Record<string, string>>({});
+  // Escape can arrive as both a key press and a dialog cancel: leave once.
+  const closing = useRef(false);
 
   // A link such as the navigation's "Setup guide" opens it with ?setup=1.
   // Adjusted while rendering, which React prefers to an effect for this.
@@ -96,6 +107,7 @@ export function SetupGuide({
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (open && !dialog.open) {
+      closing.current = false;
       openerRef.current = document.activeElement as HTMLElement | null;
       if (typeof dialog.showModal === "function") dialog.showModal();
       else dialog.setAttribute("open", "");
@@ -157,6 +169,8 @@ export function SetupGuide({
   };
 
   const leave = () => {
+    if (closing.current) return;
+    closing.current = true;
     run(actions.leave, {
       step: current ?? "",
       seen: openRequired.join(","),
@@ -312,7 +326,7 @@ export function SetupGuide({
             run={run}
             onSkip={() => {
               run(actions.skip, { step: step.key });
-              setCurrent(nextOpenAfter(view.steps, step.key));
+              setCurrent(nextOpenAfter(view.steps, step.key, step.key));
             }}
           />
         ) : null}
@@ -442,7 +456,11 @@ function ConsoleForm({
         back.
       </p>
     ) : (
-      <ActionForm action={actions.saveValue} submitLabel={label}>
+      <ActionForm
+        action={actions.saveValue}
+        submitLabel={label}
+        successMessage="Saved."
+      >
         {({ fieldErrors }) => (
           <>
             <input type="hidden" name="step" value="wedding_event" />
@@ -474,7 +492,11 @@ function ConsoleForm({
   }
   if (step.form === "card") {
     return (
-      <ActionForm action={actions.saveValue} submitLabel={label}>
+      <ActionForm
+        action={actions.saveValue}
+        submitLabel={label}
+        successMessage="Saved."
+      >
         {({ fieldErrors }) => (
           <>
             <input type="hidden" name="step" value="card_details" />
@@ -509,7 +531,11 @@ function ConsoleForm({
   }
   if (step.form === "deadline") {
     return (
-      <ActionForm action={actions.saveValue} submitLabel={label}>
+      <ActionForm
+        action={actions.saveValue}
+        submitLabel={label}
+        successMessage="Saved."
+      >
         {({ fieldErrors }) => (
           <>
             <input type="hidden" name="step" value="rsvp_deadline" />

@@ -204,9 +204,11 @@ export async function confirmStep(
     async ({ input, supabase, user }) => {
       const { error } = await supabase
         .from("setup_confirmations")
+        // Do nothing if it is already confirmed: staff may insert and delete
+        // these marks but not update them, so a plain upsert would be refused.
         .upsert(
           { step_key: input.step, confirmed_by: user.id },
-          { onConflict: "step_key" },
+          { onConflict: "step_key", ignoreDuplicates: true },
         );
       if (!error) refreshConsole();
       return { error };

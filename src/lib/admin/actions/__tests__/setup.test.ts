@@ -187,6 +187,23 @@ describe("confirmStep and unconfirmStep", () => {
     expect(db.tables.setup_confirmations).toEqual([]);
   });
 
+  it("confirming twice leaves one mark and never rewrites the first", async () => {
+    const { db, client } = setup("couple", {
+      setup_confirmations: [
+        { step_key: "sending_domain", confirmed_by: "user-2" },
+      ],
+    });
+    await confirmStep(null, form([["step", "sending_domain"]]), {
+      supabase: client,
+    });
+    expect(db.tables.setup_confirmations).toEqual([
+      expect.objectContaining({
+        step_key: "sending_domain",
+        confirmed_by: "user-2",
+      }),
+    ]);
+  });
+
   it("refuses a step the site checks itself", async () => {
     const { db, client } = setup();
     const result = await confirmStep(null, form([["step", "site_url"]]), {

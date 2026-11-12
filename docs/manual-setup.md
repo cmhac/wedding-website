@@ -185,7 +185,7 @@ are never prefixed with `NEXT_PUBLIC_` and never exposed to the browser.
 ## Twilio text messages
 
 Text messages are off and invisible until you finish this, and the admin console
-shows a warning banner ("Text messaging is not set up") until the variables are
+shows "Texting" as a recommended step in the setup guide until the variables are
 set. Sign-in and every email work meanwhile. Do these in order. The design is in
 `docs/decisions/0014-text-messages.md`.
 
@@ -215,7 +215,7 @@ set. Sign-in and every email work meanwhile. Do these in order. The design is in
 6. **Set the variables on the host and redeploy:** `TWILIO_ACCOUNT_SID`,
    `TWILIO_AUTH_TOKEN` and `TWILIO_MESSAGING_SERVICE_SID` (or
    `TWILIO_FROM_NUMBER`). They are server-only; never put them in the repository.
-   After the redeploy the banner disappears and Settings shows "Text messaging".
+   After the redeploy the setup guide marks "Texting" as set up (use Check again) and Settings shows "Text messaging".
 7. **Delivery notifications need no setup if you leave the messaging
    service's own callback URL blank**: the site sets `<site>/api/webhooks/twilio`
    on each text it sends, and checks Twilio's signature with `TWILIO_AUTH_TOKEN`.
