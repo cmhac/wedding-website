@@ -48,6 +48,7 @@ The two interfaces are published for the designer as [docs/guest-api.md](docs/gu
 | `src/lib/supabase`                         | Supabase client helpers (browser, server, middleware)                           |
 | `src/lib/email`                            | Resend client and send helpers                                                  |
 | `src/lib/calendar`                         | Save the date details and the calendar file and links (pure, no personal data)  |
+| `src/lib/setup`                            | Admin setup guide: step catalogue, live status, banner mode, per-person view    |
 | `src/lib/sms`                              | Text messages: availability state, Twilio wrapper, phone parsing, consent       |
 | `texts`                                    | Text wording registry (first drafts for Chris to polish)                        |
 | `src/app/t`                                | Timed sign-in link from a text (`/t/[token]`, redirects only)                   |

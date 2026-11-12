@@ -53,14 +53,19 @@ const NAV_GROUPS: {
 
 const ROLE_LABELS = { couple: "Couple", planner: "Planner" } as const;
 
+/** What the "Setup guide" navigation link shows: how much is left. */
+export type SetupSummary = { requiredOpen: number; recommendedOpen: number };
+
 export type AdminShellProps = {
   /** Which page is showing; its link gets aria-current="page". */
   current: NavKey;
   staff: { displayName: string; role: keyof typeof ROLE_LABELS };
   /** Server action the Sign out form posts to. */
   signOutAction: (formData: FormData) => void | Promise<void>;
-  /** A notice shown above every page, for example that texting is not set up. */
+  /** The setup banner and guide, shown above every page. */
   banner?: ReactNode;
+  /** Adds the standing "Setup guide" link with its count. */
+  setup?: SetupSummary;
   children: ReactNode;
 };
 
@@ -73,7 +78,20 @@ function HomeLink() {
   );
 }
 
-function NavLinks({ current }: { current: NavKey }) {
+function setupLabel(setup: SetupSummary): string | null {
+  if (setup.requiredOpen > 0) return `${setup.requiredOpen} left`;
+  if (setup.recommendedOpen > 0) return `${setup.recommendedOpen} recommended`;
+  return null;
+}
+
+function NavLinks({
+  current,
+  setup,
+}: {
+  current: NavKey;
+  setup?: SetupSummary;
+}) {
+  const count = setup ? setupLabel(setup) : null;
   return (
     <>
       {NAV_GROUPS.map((group) => (
@@ -90,6 +108,25 @@ function NavLinks({ current }: { current: NavKey }) {
           ))}
         </div>
       ))}
+      {setup ? (
+        <div className="nav-group">
+          <p className="nav-h">Help</p>
+          <Link href="?setup=1" scroll={false}>
+            Setup guide
+            {count ? (
+              <span
+                className={
+                  setup.requiredOpen > 0
+                    ? "setup-count setup-count-warn"
+                    : "setup-count"
+                }
+              >
+                {count}
+              </span>
+            ) : null}
+          </Link>
+        </div>
+      ) : null}
     </>
   );
 }
@@ -116,6 +153,7 @@ export function AdminShell({
   staff,
   signOutAction,
   banner,
+  setup,
   children,
 }: AdminShellProps) {
   return (
@@ -132,7 +170,7 @@ export function AdminShell({
           </div>
         </div>
         <nav className="nav" aria-label="Main">
-          <NavLinks current={current} />
+          <NavLinks current={current} setup={setup} />
         </nav>
         <Who staff={staff} signOutAction={signOutAction} />
       </aside>
@@ -150,7 +188,7 @@ export function AdminShell({
           </summary>
           <nav className="m-drawer" aria-label="Main menu">
             <HomeLink />
-            <NavLinks current={current} />
+            <NavLinks current={current} setup={setup} />
             <Who staff={staff} signOutAction={signOutAction} />
           </nav>
         </details>

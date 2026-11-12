@@ -5,6 +5,12 @@ from code. The tracking issue is https://github.com/cmhac/wedding-website/issues
 Record the final value (never a secret) next to each item when you set it.
 Never put a secret in this repository.
 
+The admin console's **Setup guide** (the banner at the top of every page, and the
+"Setup guide" link in the navigation) shows which of these are still missing and
+checks them for you. It never asks for a secret value: it names what to set
+here in the dashboard, and "Check again" re-reads the site afterwards. Hosting
+changes only show after a redeploy. This document stays the detailed reference.
+
 ## Supabase Auth
 
 | Setting                    | Where                                          | Value                                                                                                                                                                                                                                                                                                                                                                                                 |
