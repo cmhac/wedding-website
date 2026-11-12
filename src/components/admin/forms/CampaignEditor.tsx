@@ -61,6 +61,7 @@ const FILTERS: Array<{
     label: "Has not already received this message type",
   },
   { name: "delivery_problem", label: "Delivery problem only" },
+  { name: "not_opened", label: "Has not opened the site" },
 ];
 
 export function CampaignEditor({

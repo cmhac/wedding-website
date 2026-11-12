@@ -23,6 +23,7 @@ const filtersSchema = z
     meals_not_chosen: z.literal(true),
     not_yet_sent_message_type: z.enum(MESSAGE_TYPE_KEYS),
     delivery_problem: z.literal(true),
+    not_opened: z.literal(true),
   })
   .partial()
   .refine((f) => Object.keys(f).length > 0, {

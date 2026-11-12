@@ -4,6 +4,7 @@
  * nothing here contains copy, subjects or designs.
  */
 import registry from "../../../emails";
+import type { SaveTheDate } from "../calendar/details";
 
 export type RenderedEmail = { subject: string; html: string; text: string };
 
@@ -31,6 +32,16 @@ export type CampaignProps = {
     status: "pending" | "attending" | "declined";
   }[];
   pending: { required_events: number; optional_events: number; meals: number };
+};
+
+/**
+ * What the save the date email is given: everything a campaign email gets, plus
+ * the card's facts and the site's address. The email wording and design are
+ * supplied by the couple or the designer (spec FR-020).
+ */
+export type SaveTheDateProps = CampaignProps & {
+  details: SaveTheDate;
+  site_url: string;
 };
 
 export type TemplateKey =

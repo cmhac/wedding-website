@@ -90,6 +90,51 @@ export async function saveSettings(
   );
 }
 
+const saveTheDateSchema = z.object({
+  save_the_date_place: z
+    .string()
+    .trim()
+    .max(200, "Keep the place to 200 characters or fewer.")
+    .default(""),
+  save_the_date_note: z
+    .string()
+    .trim()
+    .max(300, "Keep the note to 300 characters or fewer.")
+    .default(""),
+});
+
+/**
+ * Saves the card's place line and note (staff). The date is the wedding
+ * event's, not typed here. Changing either raises the details revision in the
+ * database, which the calendar file carries so programs can replace an earlier
+ * entry. Blank clears a field.
+ */
+export async function saveSaveTheDate(
+  _previous: ActionResult<{ message: string }> | null,
+  formData: FormData,
+  options: { supabase?: SupabaseClient } = {},
+): Promise<ActionResult<{ message: string }>> {
+  return runAdminAction(
+    saveTheDateSchema,
+    formData,
+    async ({ input, supabase }) => {
+      const { error } = await supabase
+        .from("settings")
+        .update({
+          save_the_date_place: input.save_the_date_place || null,
+          save_the_date_note: input.save_the_date_note || null,
+        })
+        .eq("id", true);
+      return {
+        error,
+        revalidate: ["/admin/settings"],
+        data: { message: "Save the date details saved." },
+      };
+    },
+    { supabase: options.supabase },
+  );
+}
+
 const smsSwitchSchema = z.object({
   // A ticked checkbox posts a value; an unticked one posts nothing.
   sms_enabled: z.string().optional(),

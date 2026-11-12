@@ -1,7 +1,10 @@
 # 0014: Text messages
 
 Status: accepted (the couple chose Twilio on 2026-11-10 and the opt-in design on
-2026-11-11). Replaces the "no consent tracking" decision made while planning the
+2026-11-11). Superseded in part by [0015](./0015-save-the-date-outreach.md): since
+2026-11-11 the couple or the planner can also record a number's consent (one at
+a time, in a batch, or by import), so the statement below that staff cannot mark
+a number opted in no longer holds. Replaces the "no consent tracking" decision made while planning the
 personal invite links, and extends [0011](./0011-household-sign-in-and-invite-links.md)
 (a typed phone number now gets a text link) and
 [0013](./0013-placeholder-homepage.md) (the consent step and two legal pages).
@@ -23,8 +26,8 @@ full design is in [`specs/005-sms-support`](../../specs/005-sms-support/plan.md)
   one-time consent step after first sign-in or on the sign-in prompt when they
   type a number. The site records each number's opt-in (not asked, opted in,
   declined, with when and where) on the contact itself, so it goes when the
-  number or household goes. Only two database functions can set it; staff cannot
-  mark a number opted in by any route. The site keeps no opt-out list: the
+  number or household goes. Only database functions can set it (the guest's two, and, since
+  decision 0015, the staff and import functions that record who and when). The site keeps no opt-out list: the
   provider's STOP and START apply, and a refused text counts as a failed delivery.
 - **Configured and available are different.** Configured means the Twilio
   settings are on the server (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and a

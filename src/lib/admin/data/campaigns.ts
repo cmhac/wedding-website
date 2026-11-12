@@ -23,6 +23,8 @@ export type CampaignListRow = {
   scheduledFor: string | null;
   /** Why the last attempt failed, in plain words, or null. */
   lastError: string | null;
+  /** A rehearsal send to one household, not the real send. */
+  isTest?: boolean;
 };
 
 export type CampaignDetail = {
@@ -53,7 +55,13 @@ export type DeliveryRow = {
 };
 
 export type DeliveryData = {
-  campaign: { id: string; name: string; status: CampaignStatus };
+  campaign: {
+    id: string;
+    name: string;
+    status: CampaignStatus;
+    /** A rehearsal send to one household, not the real send. */
+    isTest?: boolean;
+  };
   rows: DeliveryRow[];
   counts: Record<string, number>;
 };
@@ -198,7 +206,7 @@ export async function loadCampaigns(
       client
         .from("campaigns")
         .select(
-          "id, name, message_type_key, audience, status, scheduled_for, last_error_code, created_at",
+          "id, name, message_type_key, audience, status, scheduled_for, last_error_code, created_at, is_test",
         )
         .order("created_at", { ascending: false }),
     ),
@@ -222,6 +230,7 @@ export async function loadCampaigns(
         ? formatPacific(r.scheduled_for as string)
         : null,
       lastError: lastErrorWords(r.last_error_code),
+      ...(r.is_test === true ? { isTest: true } : {}),
     };
   });
 }
@@ -266,7 +275,7 @@ export async function loadDelivery(
   const client = await clientOr(supabase);
   const campaigns = await rowsOf(
     "campaigns",
-    client.from("campaigns").select("id, name, status").eq("id", id),
+    client.from("campaigns").select("id, name, status, is_test").eq("id", id),
   );
   const campaign = campaigns[0];
   if (!campaign) return null;
@@ -325,6 +334,7 @@ export async function loadDelivery(
       id: campaign.id as string,
       name: campaign.name as string,
       status: campaign.status as CampaignStatus,
+      ...(campaign.is_test === true ? { isTest: true } : {}),
     },
     rows,
     counts,

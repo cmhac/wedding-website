@@ -54,6 +54,14 @@ export function DeliveryView({ delivery }: { delivery: DeliveryData }) {
   }
   return (
     <div className="stack">
+      {delivery.campaign.isTest ? (
+        <p>
+          <Badge>Test</Badge>{" "}
+          <span className="muted">
+            A rehearsal to one household. It does not count as the real send.
+          </span>
+        </p>
+      ) : null}
       <div className="stats">
         {STATUSES.filter((s) => delivery.counts[s.key]).map((s) => (
           <StatTile

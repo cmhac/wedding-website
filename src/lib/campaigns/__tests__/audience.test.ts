@@ -16,8 +16,10 @@ describe("audienceSchema", () => {
         meals_not_chosen: true,
         not_yet_sent_message_type: "invitation",
         delivery_problem: true,
+        not_opened: true,
       },
     },
+    { scope: "filter", filters: { not_opened: true } },
   ])("accepts %j", (audience) => {
     expect(audienceSchema.safeParse(audience).success).toBe(true);
   });
@@ -59,5 +61,16 @@ describe("audienceSchema", () => {
         }).success,
       ).toBe(true);
     }
+  });
+});
+
+describe("the not opened filter", () => {
+  it.each([false, "yes", 1, null])("refuses not_opened of %j", (value) => {
+    expect(
+      audienceSchema.safeParse({
+        scope: "filter",
+        filters: { not_opened: value },
+      }).success,
+    ).toBe(false);
   });
 });

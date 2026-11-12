@@ -1,3 +1,4 @@
+import { SAVE_THE_DATE_PATH } from "@/lib/auth/destination";
 import type { SessionKind } from "@/lib/auth/session";
 
 /**
@@ -28,6 +29,8 @@ export function allowedNext(
   if (!next || !/^\/[A-Za-z0-9/_-]*$/.test(next) || next.includes("//")) {
     return null;
   }
+  // The save the date page is the one other landing a message may ask for.
+  if (next === SAVE_THE_DATE_PATH) return next;
   const prefixes = kind === "staff" ? [ADMIN_PATH, guestPath()] : [guestPath()];
   const ok = prefixes.some((p) => next === p || next.startsWith(`${p}/`));
   return ok ? next : null;

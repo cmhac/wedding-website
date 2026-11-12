@@ -12,7 +12,7 @@ jest.mock("@/lib/log", () => ({
   log: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
-import { saveSettings, saveSmsSwitch } from "../settings";
+import { saveSaveTheDate, saveSettings, saveSmsSwitch } from "../settings";
 
 const mockConfigured = jest.fn();
 jest.mock("@/lib/sms/state", () => ({
@@ -213,5 +213,69 @@ describe("saveSmsSwitch", () => {
       message: messageFor("texting_not_configured"),
     });
     expect(db.tables.settings[0].sms_enabled).toBeUndefined();
+  });
+});
+
+describe("saveSaveTheDate", () => {
+  it("saves the place and the note, trimmed, touching nothing else", async () => {
+    const { db, client } = setup();
+    const result = await saveSaveTheDate(
+      null,
+      form([
+        ["save_the_date_place", "  Napa Valley, California "],
+        ["save_the_date_note", " Invitation to follow "],
+      ]),
+      { supabase: client as never },
+    );
+    expect(result.ok).toBe(true);
+    expect(db.tables.settings[0]).toMatchObject({
+      save_the_date_place: "Napa Valley, California",
+      save_the_date_note: "Invitation to follow",
+      rsvp_open: true,
+    });
+    expect(revalidatePath).toHaveBeenCalledWith("/admin/settings");
+  });
+
+  it("clears a blank field to nothing", async () => {
+    const { db, client } = setup();
+    db.tables.settings[0].save_the_date_place = "Old";
+    await saveSaveTheDate(
+      null,
+      form([
+        ["save_the_date_place", "   "],
+        ["save_the_date_note", ""],
+      ]),
+      { supabase: client as never },
+    );
+    expect(db.tables.settings[0].save_the_date_place).toBeNull();
+    expect(db.tables.settings[0].save_the_date_note).toBeNull();
+  });
+
+  it("refuses a place over 200 characters or a note over 300, saving nothing", async () => {
+    const { db, client } = setup();
+    const long = await saveSaveTheDate(
+      null,
+      form([["save_the_date_place", "x".repeat(201)]]),
+      { supabase: client as never },
+    );
+    expect(long.ok).toBe(false);
+    if (!long.ok) expect(long.fieldErrors?.save_the_date_place).toBeTruthy();
+    const note = await saveSaveTheDate(
+      null,
+      form([["save_the_date_note", "x".repeat(301)]]),
+      { supabase: client as never },
+    );
+    expect(note.ok).toBe(false);
+    expect(db.tables.settings[0].save_the_date_place).toBeUndefined();
+  });
+
+  it("is refused for someone who is not staff", async () => {
+    const auth = fakeSupabase({ user: { id: "g" }, staffRole: null });
+    const result = await saveSaveTheDate(
+      null,
+      form([["save_the_date_place", "x"]]),
+      { supabase: auth.client as never },
+    );
+    expect(result.ok).toBe(false);
   });
 });

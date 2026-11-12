@@ -284,3 +284,36 @@ body {
 .legal-links a:hover {
   color: var(--text);
 }
+
+/* The placeholder save the date page: plain, replaced when the design arrives. */
+.save-the-date {
+  width: 100%;
+  max-width: 480px;
+  display: grid;
+  gap: 12px;
+  text-align: center;
+}
+.save-the-date h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+}
+.save-the-date p {
+  margin: 0;
+}
+.save-the-date-date {
+  font-size: 1.25rem;
+}
+.save-the-date .muted {
+  color: var(--muted);
+}
+.save-the-date-calendar {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}

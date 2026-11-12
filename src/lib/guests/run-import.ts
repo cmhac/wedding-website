@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../types/database.ts";
+import { callRpc } from "../guest-api/request.ts";
 import { createHouseholdAuthUser } from "./household-access.ts";
 import { parseGuestImport, type ImportError } from "./import.ts";
 
@@ -31,6 +32,8 @@ export type RunImportResult =
       /** Phone numbers saved, and phone cells dropped (texting not configured, or no service-role client). */
       phonesSaved?: number;
       phonesIgnored?: number;
+      /** Numbers recorded as consented by the import's consent column. */
+      phonesConsented?: number;
     }
   /** The file itself cannot be read (empty, not CSV, or missing columns). */
   | { kind: "invalid"; errors: ImportError[] };
@@ -80,7 +83,11 @@ export async function runGuestImport(
   supabase: SupabaseClient<Database>,
   csv: string,
   admin?: SupabaseClient<Database>,
-  options: { smsConfigured?: boolean } = {},
+  options: {
+    smsConfigured?: boolean;
+    /** The staff member running the import: recorded as who marked imported consent. */
+    importedBy?: string;
+  } = {},
 ): Promise<RunImportResult> {
   const events = await supabase.from("events").select("slug");
   if (events.error) throw new Error("The import could not be completed.");
@@ -123,8 +130,10 @@ export async function runGuestImport(
 
   // Phone numbers are saved by a service-role function, one at a time, after
   // the households exist; a number another household already has is reported
-  // by row and column, and the rest carry on. Nothing here can set an opt-in.
+  // by row and column, and the rest carry on. A number marked yes in a consent
+  // column is then recorded as consented "by import".
   let phonesSaved = 0;
+  let phonesConsented = 0;
   let phonesIgnored = parsed.phonesIgnored ?? 0;
   const idByRef = new Map(
     (rpcHouseholdIds ?? []).map((h) => [h.ref, h.household_id]),
@@ -141,16 +150,29 @@ export async function runGuestImport(
       continue;
     }
     for (const value of phones) {
-      const { error } = await (
-        admin as unknown as {
-          rpc: (
-            fn: string,
-            args: Record<string, unknown>,
-          ) => PromiseLike<{ error: { message?: string } | null }>;
-        }
-      ).rpc("add_phone_contact", { household_id: id, value });
+      const { error } = await callRpc(admin, "add_phone_contact", {
+        household_id: id,
+        value,
+      });
       if (!error) {
         phonesSaved++;
+        if ((household.consented_phones ?? []).includes(value)) {
+          const marked = await callRpc(admin, "import_phone_consent", {
+            household_id: id,
+            value,
+            marked_by: options.importedBy ?? null,
+            override_declined: false,
+          });
+          if (marked.error) {
+            errors.push({
+              row: household.guests[0]?.row ?? 1,
+              field: "contact_phone_consent",
+              message: "The consent mark was not saved",
+            });
+          } else {
+            phonesConsented++;
+          }
+        }
         continue;
       }
       errors.push({
@@ -177,6 +199,7 @@ export async function runGuestImport(
     householdIds,
     accounts,
     ...(phonesSaved > 0 ? { phonesSaved } : {}),
+    ...(phonesConsented > 0 ? { phonesConsented } : {}),
     ...(phonesIgnored > 0 ? { phonesIgnored } : {}),
   };
 }

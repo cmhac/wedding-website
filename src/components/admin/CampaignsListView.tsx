@@ -33,6 +33,7 @@ const COLUMNS: Column<CampaignListRow>[] = [
     cell: (c) => (
       <>
         <span className="strong">{c.name}</span>
+        {c.isTest ? <Badge>Test</Badge> : null}
         <span className="table-sub">{c.messageTypeLabel}</span>
         {c.lastError ? <span className="table-sub">{c.lastError}</span> : null}
       </>

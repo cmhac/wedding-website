@@ -4,7 +4,9 @@ import type {
   HouseholdQuery,
   HouseholdRow,
 } from "@/lib/admin/data/households";
+import { formatPacific } from "@/lib/admin/time";
 import { DataTable } from "./DataTable";
+import { BATCH_FORM_ID, BatchConsentForm } from "./forms/BatchConsentForm";
 import { HouseholdsChrome } from "./HouseholdsChrome";
 import { Badge } from "./primitives";
 
@@ -15,6 +17,8 @@ const SHOW_OPTIONS: { value: HouseholdQuery["show"]; label: string }[] = [
   { value: "meals", label: "Meals outstanding" },
   { value: "delivery_problem", label: "Delivery problem" },
   { value: "paper_only", label: "Paper only (no email)" },
+  { value: "not_opened", label: "Has not opened the site" },
+  { value: "texting_not_consented", label: "Texting not yet consented" },
 ];
 
 function pageHref(query: HouseholdQuery, page: number): string {
@@ -100,7 +104,10 @@ export function HouseholdsListView({
             <div className="field field-filter">
               <label htmlFor="household-show">Show</label>
               <select id="household-show" name="show" defaultValue={query.show}>
-                {SHOW_OPTIONS.map((option) => (
+                {SHOW_OPTIONS.filter(
+                  (option) =>
+                    sms.configured || option.value !== "texting_not_consented",
+                ).map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -112,8 +119,31 @@ export function HouseholdsListView({
             </button>
           </form>
         </div>
+        {sms.configured ? (
+          <div className="card-b">
+            <BatchConsentForm matchingIds={list.matchingIds} />
+          </div>
+        ) : null}
         <DataTable
           columns={[
+            ...(sms.configured
+              ? [
+                  {
+                    key: "select",
+                    header: "Select",
+                    hideHeader: true,
+                    cell: (row: HouseholdRow) => (
+                      <input
+                        type="checkbox"
+                        name="household"
+                        value={row.id}
+                        form={BATCH_FORM_ID}
+                        aria-label={`Select ${row.displayName}`}
+                      />
+                    ),
+                  },
+                ]
+              : []),
             {
               key: "household",
               header: "Household",
@@ -193,6 +223,18 @@ export function HouseholdsListView({
               key: "outstanding",
               header: "Outstanding",
               cell: (row) => <Outstanding row={row} />,
+            },
+            {
+              key: "opened",
+              header: "Opened the site",
+              cell: (row) =>
+                row.openedAt ? (
+                  <span className="muted">
+                    {formatPacific(row.openedAt, { date: true })}
+                  </span>
+                ) : (
+                  <span className="muted">Not yet</span>
+                ),
             },
             {
               key: "status",

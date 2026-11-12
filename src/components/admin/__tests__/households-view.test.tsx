@@ -6,6 +6,11 @@ import type {
   HouseholdRow,
 } from "@/lib/admin/data/households";
 import { DuplicatesView } from "../DuplicatesView";
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: jest.fn() }),
+}));
+jest.mock("@/lib/admin-api/client", () => ({ setBatchConsent: jest.fn() }));
 import { HouseholdsListView } from "../HouseholdsListView";
 
 const row = (over: Partial<HouseholdRow> = {}): HouseholdRow => ({
@@ -21,6 +26,7 @@ const row = (over: Partial<HouseholdRow> = {}): HouseholdRow => ({
   deliveryProblem: false,
   paperOnly: false,
   possibleDuplicate: false,
+  openedAt: null,
   ...over,
 });
 
@@ -30,6 +36,7 @@ const list = (
 ): HouseholdList => ({
   rows,
   total: rows.length,
+  matchingIds: rows.map((r) => r.id),
   totalAll: 118,
   totalGuests: 231,
   page: 1,
@@ -406,5 +413,68 @@ describe("HouseholdsListView phone numbers", () => {
     );
     expect(screen.getByText("Text only")).toBeInTheDocument();
     expect(screen.queryByText("Paper only")).toBeNull();
+  });
+});
+
+describe("HouseholdsListView follow-up and batch edit", () => {
+  const sms = { configured: true, available: true };
+  const renderSms = (rows: HouseholdRow[]) =>
+    render(
+      <HouseholdsListView
+        list={list(rows)}
+        query={query}
+        events={events}
+        duplicateCount={0}
+        sms={sms}
+      />,
+    );
+
+  it("shows when each household first opened the site, or that it has not", () => {
+    renderList([
+      row({
+        id: "h1",
+        displayName: "Opened family",
+        openedAt: "2027-02-03T18:00:00Z",
+      }),
+      row({ id: "h2", displayName: "Unopened family", openedAt: null }),
+    ]);
+    expect(
+      screen.getByRole("columnheader", { name: "Opened the site" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Not yet")).toBeInTheDocument();
+    expect(screen.getByText("Feb 3")).toBeInTheDocument();
+  });
+
+  it("offers the not opened filter always, and the texting filter only while texting is configured", () => {
+    const { unmount } = renderList([row()]);
+    expect(
+      screen.getByRole("option", { name: "Has not opened the site" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("option", { name: "Texting not yet consented" }),
+    ).toBeNull();
+    unmount();
+    renderSms([row()]);
+    expect(
+      screen.getByRole("option", { name: "Texting not yet consented" }),
+    ).toBeInTheDocument();
+  });
+
+  it("has no checkboxes or batch edit while texting is not configured", () => {
+    renderList([row()]);
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.queryByText("Batch edit")).toBeNull();
+  });
+
+  it("has a checkbox per household tied to the batch form, and the batch edit, while texting is configured", () => {
+    renderSms([
+      row({ id: "h1", displayName: "One family" }),
+      row({ id: "h2", displayName: "Two family" }),
+    ]);
+    expect(screen.getByText("Batch edit")).toBeInTheDocument();
+    const box = screen.getByRole("checkbox", { name: "Select One family" });
+    expect(box).toHaveAttribute("form", "batch-consent");
+    expect(box).toHaveAttribute("name", "household");
+    expect(box).toHaveAttribute("value", "h1");
   });
 });

@@ -50,6 +50,9 @@ export function audienceFromForm(formData: FormData): AudienceFormResult {
     if (ticked(formData, "filter_delivery_problem")) {
       filters.delivery_problem = true;
     }
+    if (ticked(formData, "filter_not_opened")) {
+      filters.not_opened = true;
+    }
     for (const name of ["invited_to_event", "optional_event_unanswered"]) {
       if (!ticked(formData, `filter_${name}`)) continue;
       const slug = text(formData, name);
@@ -112,6 +115,7 @@ export function describeAudience(
     parts.push(`Not yet sent the ${word}`);
   }
   if (f.delivery_problem) parts.push("Delivery problem");
+  if (f.not_opened) parts.push("Has not opened the site");
   // Join in sentence case: only the first part keeps its capital.
   return parts
     .map((part, i) => (i === 0 ? part : part[0].toLowerCase() + part.slice(1)))
@@ -134,6 +138,7 @@ export function audienceToForm(audience: Audience): Record<string, string> {
   }
   if (f.meals_not_chosen) values.filter_meals_not_chosen = "on";
   if (f.delivery_problem) values.filter_delivery_problem = "on";
+  if (f.not_opened) values.filter_not_opened = "on";
   if (f.invited_to_event) {
     values.filter_invited_to_event = "on";
     values.invited_to_event = f.invited_to_event;

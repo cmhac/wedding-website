@@ -65,6 +65,19 @@ export const phoneContactResponseSchema = z.object({
 });
 export type PhoneContactResponse = z.infer<typeof phoneContactResponseSchema>;
 
+export const consentCountsResponseSchema = z.object({
+  counts: z.object({
+    marked: z.number(),
+    cleared: z.number(),
+    already: z.number(),
+    declined_skipped: z.number(),
+    households_without_phone: z.number(),
+    households: z.number(),
+    dry_run: z.boolean(),
+  }),
+});
+export type ConsentCountsResponse = z.infer<typeof consentCountsResponseSchema>;
+
 export const removeContactResponseSchema = z.object({
   paper_only: z.boolean(),
 });
@@ -147,6 +160,8 @@ export const importResponseSchema = z.object({
   errors: z.array(importErrorSchema),
   /** Phone numbers saved, and phone cells ignored because texting is not set up. */
   phones_saved: z.number().int().optional(),
+  /** Numbers recorded as consented by the import's consent column. */
+  phones_consented: z.number().int().optional(),
   phones_ignored: z.number().int().optional(),
   source: z.object({
     format: z.enum(["csv", "xlsx"]),

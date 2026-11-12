@@ -36,6 +36,13 @@ export function ImportResultView({ outcome }: { outcome: ImportOutcome }) {
       {errors.length === 0 ? (
         <Alert variant="ok">All rows imported.</Alert>
       ) : null}
+      {data.phones_consented ? (
+        <Alert variant="info">
+          {data.phones_consented}{" "}
+          {data.phones_consented === 1 ? "number was" : "numbers were"} recorded
+          as consented by this import. Nothing was sent.
+        </Alert>
+      ) : null}
       {data.phones_ignored ? (
         <Alert variant="warn">
           Phone numbers were ignored because texting is not set up (

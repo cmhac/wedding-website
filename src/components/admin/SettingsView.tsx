@@ -1,7 +1,12 @@
 "use client";
 
 import type { StaffRow } from "@/lib/admin/data/settings";
-import { saveSettings, saveSmsSwitch } from "@/lib/admin/actions/settings";
+import {
+  saveSaveTheDate,
+  saveSettings,
+  saveSmsSwitch,
+} from "@/lib/admin/actions/settings";
+import { eventTitle, formatLongDate } from "@/lib/calendar/details";
 import { savedSettingsMessage } from "@/lib/admin/settings-message";
 import { pacificLocalToIso } from "@/lib/admin/time";
 import type { StaffRole } from "@/lib/auth/session";
@@ -30,6 +35,17 @@ export type SettingsViewProps = {
   /** Events to choose the wedding from. */
   events: { id: string; name: string }[];
   staff: Pick<StaffRow, "user_id" | "display_name" | "role">[];
+  /** The card's facts as saved, for the save the date section; the section is left out without it. */
+  saveTheDate?: {
+    /** The wedding event's date (`YYYY-MM-DD`), or null while not set. */
+    date: string | null;
+    place: string;
+    note: string;
+    coupleNames: string | null;
+    /** The save the date text as guests will get it, with a sample link; null when there is none. */
+    textPreview: string | null;
+    textSegments: number | null;
+  };
 };
 
 export function SettingsView({
@@ -39,6 +55,7 @@ export function SettingsView({
   events,
   staff,
   smsConfigured = false,
+  saveTheDate,
 }: SettingsViewProps) {
   const isCouple = role === "couple";
   const stored = pacificLocalToIso(settings.default_rsvp_deadline);
@@ -124,6 +141,99 @@ export function SettingsView({
               </label>
             )}
           </ActionForm>
+        </Card>
+      ) : null}
+      {saveTheDate ? (
+        <Card heading="Save the date">
+          <p className="muted">
+            What the printed card says, kept in one place. The page, the email,
+            the text and the calendar entry all use it.
+          </p>
+          <p>
+            <strong>Wedding date:</strong>{" "}
+            {saveTheDate.date ? (
+              <>
+                {formatLongDate(saveTheDate.date)}{" "}
+                <span className="muted">
+                  (from the wedding event. Set the wedding event above to change
+                  it.)
+                </span>
+              </>
+            ) : (
+              <span className="muted">
+                The wedding date is not set. Choose the wedding event below and
+                give it a date.
+              </span>
+            )}
+          </p>
+          <ActionForm
+            action={saveSaveTheDate as ActionFormProps["action"]}
+            submitLabel="Save details"
+            successMessage="Save the date details saved."
+          >
+            {({ fieldErrors, values }) => {
+              const refilled = Object.keys(values).length > 0;
+              return (
+                <>
+                  <Field
+                    id="save-the-date-place"
+                    label="Place"
+                    hint="Shown under the date, for example a city. Optional."
+                    error={fieldErrors.save_the_date_place}
+                  >
+                    <input
+                      id="save-the-date-place"
+                      name="save_the_date_place"
+                      type="text"
+                      maxLength={200}
+                      defaultValue={
+                        refilled
+                          ? String(values.save_the_date_place ?? "")
+                          : saveTheDate.place
+                      }
+                    />
+                  </Field>
+                  <Field
+                    id="save-the-date-note"
+                    label="Note"
+                    hint='A short line, for example "Invitation to follow". Optional.'
+                    error={fieldErrors.save_the_date_note}
+                  >
+                    <input
+                      id="save-the-date-note"
+                      name="save_the_date_note"
+                      type="text"
+                      maxLength={300}
+                      defaultValue={
+                        refilled
+                          ? String(values.save_the_date_note ?? "")
+                          : saveTheDate.note
+                      }
+                    />
+                  </Field>
+                </>
+              );
+            }}
+          </ActionForm>
+          <div className="stack-sm">
+            <p className="strong">How it will read</p>
+            <p>
+              <span className="muted">Calendar entry: </span>
+              {eventTitle(saveTheDate.coupleNames)}
+            </p>
+            {saveTheDate.textPreview ? (
+              <p>
+                <span className="muted">
+                  Text message
+                  {saveTheDate.textSegments
+                    ? ` (${saveTheDate.textSegments} ${saveTheDate.textSegments === 1 ? "segment" : "segments"})`
+                    : ""}
+                  :{" "}
+                </span>
+                {saveTheDate.textPreview}
+              </p>
+            ) : null}
+          </div>
         </Card>
       ) : null}
       <Card heading="RSVP settings">

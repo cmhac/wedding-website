@@ -96,6 +96,7 @@ describe("audienceFromForm", () => {
       [["filter_delivery_problem", "on"]],
       { delivery_problem: true },
     ],
+    ["not_opened", [["filter_not_opened", "on"]], { not_opened: true }],
   ] as Array<[string, Array<[string, string]>, Record<string, unknown>]>)(
     "builds a filter audience for %s",
     (_name, entries, filters) => {
@@ -208,5 +209,19 @@ describe("audienceToForm", () => {
     expect(audienceOf([...fd.entries()] as Array<[string, string]>)).toEqual(
       audience,
     );
+  });
+});
+
+describe("the not opened filter in words and back to the form", () => {
+  it("is described and refills the form", () => {
+    const audience = {
+      scope: "filter" as const,
+      filters: { not_opened: true as const },
+    };
+    expect(describeAudience(audience, [])).toBe("Has not opened the site");
+    expect(audienceToForm(audience)).toEqual({
+      audience_scope: "filter",
+      filter_not_opened: "on",
+    });
   });
 });

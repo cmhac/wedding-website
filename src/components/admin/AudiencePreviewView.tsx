@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { PreviewData } from "@/lib/admin/actions/campaigns";
 import { DataTable, type Column } from "./DataTable";
-import { Badge, Card, EmptyState } from "./primitives";
+import { Alert, Badge, Card, EmptyState } from "./primitives";
 
 type PreviewRow = {
   householdId: string;
@@ -104,6 +104,21 @@ export function AudiencePreviewView({ preview }: { preview: PreviewData }) {
           <p>{`${emails} emails in all, one per address`}</p>
         ) : null}
         {skipped.length ? <p>{skippedLine(skipped)}</p> : null}
+        {preview.unreachable ? (
+          <p>
+            {preview.unreachable}{" "}
+            {plural(
+              preview.unreachable,
+              "household cannot",
+              "households cannot",
+            )}{" "}
+            be reached by this campaign (no email and no opted-in number): they
+            depend on the post.
+          </p>
+        ) : null}
+        {preview.sendWarning ? (
+          <Alert variant="warn">{preview.sendWarning}</Alert>
+        ) : null}
         {preview.texts ? <TextSummary texts={preview.texts} /> : null}
         <DataTable
           columns={COLUMNS}
@@ -125,6 +140,25 @@ function TextSummary({ texts }: { texts: NonNullable<PreviewData["texts"]> }) {
     <>
       <p className="strong">{lines.lead}</p>
       {lines.skipped ? <p>{lines.skipped}</p> : null}
+      {texts.preConsented ? (
+        <p>
+          {texts.preConsented}{" "}
+          {plural(texts.preConsented, "number was", "numbers were")} consented
+          by staff or the import, so they get the first message without signing
+          in.
+        </p>
+      ) : null}
+      {texts.segmentsPerText && texts.totalSegments ? (
+        <p>
+          {texts.segmentsPerText}{" "}
+          {plural(texts.segmentsPerText, "segment", "segments")} each,{" "}
+          {texts.totalSegments} in all
+          {texts.minutes
+            ? `; sending them all takes about ${texts.minutes} ${plural(texts.minutes, "minute", "minutes")}`
+            : ""}
+          .
+        </p>
+      ) : null}
     </>
   );
 }

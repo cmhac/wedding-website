@@ -113,6 +113,22 @@ describe("loadCampaignProps", () => {
     ).not.toBe(props?.personal_link);
   });
 
+  it("lands a save the date link on the save the date page, and leaves every other link alone", async () => {
+    const plain = inviteLinkUrl(HOUSEHOLD, 2, "https://example.test");
+    const std = await loadCampaignProps(seed(), HOUSEHOLD, {
+      ...options,
+      messageTypeKey: "save_the_date",
+    });
+    expect(std?.personal_link).toBe(`${plain}?next=/save-the-date`);
+    for (const key of ["invitation", "rsvp_reminder", "update", undefined]) {
+      const other = await loadCampaignProps(seed(), HOUSEHOLD, {
+        ...options,
+        messageTypeKey: key,
+      });
+      expect(other?.personal_link).toBe(plain);
+    }
+  });
+
   it("lists only events the household's guests are invited to, in date order", async () => {
     const props = await loadCampaignProps(seed(), HOUSEHOLD, options);
     expect(props?.events.map((e) => e.slug)).toEqual([

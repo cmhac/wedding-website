@@ -45,6 +45,23 @@ describe("home page", () => {
     },
   );
 
+  it("records that a guest opened the site, never for staff, and never breaks the page", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: null, error: null });
+    mockGetSession.mockResolvedValue({ kind: "guest", supabase: { rpc } });
+    await show();
+    expect(rpc).toHaveBeenCalledWith("record_household_opened");
+
+    rpc.mockClear();
+    mockGetSession.mockResolvedValue({ kind: "staff", supabase: { rpc } });
+    await show();
+    expect(rpc).not.toHaveBeenCalled();
+
+    rpc.mockRejectedValue(new Error("boom"));
+    mockGetSession.mockResolvedValue({ kind: "guest", supabase: { rpc } });
+    await show();
+    expect(screen.getAllByText("Coming soon 👀").length).toBeGreaterThan(0);
+  });
+
   it("does not show the placeholder with no session", async () => {
     mockGetSession.mockResolvedValue(null);
     await show();

@@ -189,10 +189,10 @@ describe("CampaignEditor", () => {
     );
   });
 
-  it("has a filters fieldset with six labelled checkboxes", () => {
+  it("has a filters fieldset with seven labelled checkboxes", () => {
     renderEditor();
     const filters = screen.getByRole("group", { name: /Filters/ });
-    expect(within(filters).getAllByRole("checkbox")).toHaveLength(6);
+    expect(within(filters).getAllByRole("checkbox")).toHaveLength(7);
     for (const label of [
       "Has unanswered required events",
       "Has an unanswered optional event",
@@ -200,6 +200,7 @@ describe("CampaignEditor", () => {
       "Attending guests with meals not chosen",
       "Has not already received this message type",
       "Delivery problem only",
+      "Has not opened the site",
     ]) {
       expect(within(filters).getByLabelText(label)).toBeInTheDocument();
     }
@@ -397,6 +398,20 @@ describe("SendCampaignForm", () => {
     expect(sendCampaign).not.toHaveBeenCalled();
   });
 
+  it("shows the texting hours warning at the confirm step, without stopping the send", async () => {
+    render(
+      <SendCampaignForm
+        {...props}
+        startConfirmed
+        textWarning="Some guests would get this too early."
+      />,
+    );
+    expect(
+      screen.getByText("Some guests would get this too early."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send now" })).toBeEnabled();
+  });
+
   it("starts at the confirm step when asked to", () => {
     render(<SendCampaignForm {...props} startConfirmed />);
     expect(screen.getByRole("alertdialog")).toBeInTheDocument();
@@ -589,6 +604,48 @@ describe("AudiencePreviewView texts", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the figures the first outreach needs: pre-consented numbers, segments, time, and who only the post will reach", () => {
+    render(
+      <AudiencePreviewView
+        preview={{
+          ...base,
+          unreachable: 4,
+          texts: {
+            switchedOff: false,
+            preConsented: 12,
+            segmentsPerText: 2,
+            totalSegments: 80,
+            minutes: 2,
+            willText: [{ householdId: "h1", name: "One", texts: 40 }],
+            notTexted: [],
+          },
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(/4 households cannot be reached by this campaign/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/12 numbers were consented by staff or the import/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/2 segments each, 80 in all/)).toBeInTheDocument();
+    expect(screen.getByText(/about 2 minutes/)).toBeInTheDocument();
+  });
+
+  it("shows the texting hours warning, which does not stop anything", () => {
+    render(
+      <AudiencePreviewView
+        preview={{
+          ...base,
+          sendWarning: "Some guests would get this too early.",
+        }}
+      />,
+    );
+    expect(
+      screen.getByText("Some guests would get this too early."),
+    ).toBeInTheDocument();
+  });
+
   it("shows nothing about texts without a text section", () => {
     const { container } = render(<AudiencePreviewView preview={base} />);
     expect(container.textContent).not.toMatch(/texted|texts|phone/i);
@@ -606,5 +663,51 @@ describe("CampaignEditor when texting is configured but switched off", () => {
   it("says nothing of the kind when texting is on", () => {
     renderEditor(undefined, undefined, true, true);
     expect(screen.queryByText(/switched off/)).toBeNull();
+  });
+});
+
+describe("DeliveryView for a test campaign", () => {
+  const row = {
+    id: "m1",
+    householdId: "h1",
+    householdName: "The Examples",
+    address: "ada@example.test",
+    status: "delivered",
+    detail: "",
+    at: "Aug 2, 9:02 AM PT",
+  };
+
+  it("labels a test, saying it does not count as the real send", () => {
+    render(
+      <DeliveryView
+        delivery={{
+          campaign: {
+            id: ID,
+            name: "Test: save_the_date",
+            status: "done",
+            isTest: true,
+          },
+          counts: { delivered: 1 },
+          rows: [row],
+        }}
+      />,
+    );
+    expect(screen.getByText("Test")).toBeInTheDocument();
+    expect(
+      screen.getByText(/does not count as the real send/),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no test label for a real campaign", () => {
+    render(
+      <DeliveryView
+        delivery={{
+          campaign: { id: ID, name: "Save the date", status: "done" },
+          counts: { delivered: 1 },
+          rows: [row],
+        }}
+      />,
+    );
+    expect(screen.queryByText("Test")).toBeNull();
   });
 });

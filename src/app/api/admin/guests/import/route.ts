@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       session.supabase,
       csv,
       createAdminSupabase(),
-      { smsConfigured: isSmsConfigured() },
+      { smsConfigured: isSmsConfigured(), importedBy: session.user.id },
     );
     if (result.kind === "invalid") {
       return errorResponse(
@@ -115,6 +115,9 @@ export async function POST(request: Request) {
       source,
       // Present only when there was something to say about phone numbers.
       ...(result.phonesSaved ? { phones_saved: result.phonesSaved } : {}),
+      ...(result.phonesConsented
+        ? { phones_consented: result.phonesConsented }
+        : {}),
       ...(result.phonesIgnored ? { phones_ignored: result.phonesIgnored } : {}),
     });
   } catch {

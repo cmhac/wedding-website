@@ -132,6 +132,8 @@ describe("previewAudience", () => {
           { householdId: "h2", name: "Exampleton family", reason: "no_email" },
           { householdId: "h3", name: "Test, Pat and Lee", reason: "opted_out" },
         ],
+        unreachable: 1,
+        sendWarning: null,
       },
     });
   });
@@ -543,6 +545,10 @@ describe("previewAudience for texts", () => {
     if (!result.ok) throw new Error("expected ok");
     expect(result.data!.texts).toEqual({
       switchedOff: false,
+      preConsented: 0,
+      segmentsPerText: 1,
+      totalSegments: 1,
+      minutes: 1,
       willText: [{ householdId: "h1", name: "One", texts: 1 }],
       notTexted: expect.arrayContaining([
         { householdId: "h1", name: "One", reason: "not_opted_in" },
@@ -580,5 +586,125 @@ describe("previewAudience for texts", () => {
       ((await preview(client, "both")) as { data: { texts?: unknown } }).data
         .texts,
     ).toBeUndefined();
+  });
+});
+
+describe("previewAudience figures for the first outreach", () => {
+  const rows = [
+    {
+      household_id: "h1",
+      display_name: "One",
+      deliverable: true,
+      skip_reason: null,
+    },
+    {
+      household_id: "h2",
+      display_name: "Two",
+      deliverable: false,
+      skip_reason: "no_email",
+    },
+    {
+      household_id: "h3",
+      display_name: "Three",
+      deliverable: false,
+      skip_reason: "no_email",
+    },
+  ];
+  const phone = (
+    id: string,
+    hid: string,
+    consent: string,
+    source: string | null,
+  ) => ({
+    id,
+    household_id: hid,
+    kind: "phone",
+    value: `+1202555${id}`,
+    sms_consent: consent,
+    sms_consent_source: source,
+  });
+  const preview = (client: unknown, extra: Array<[string, string]> = []) =>
+    previewAudience(
+      null,
+      form([
+        ["name", "x"],
+        ["message_type_key", "save_the_date"],
+        ...everyone,
+        ...extra,
+      ]),
+      { supabase: client as never, now: new Date("2027-01-15T20:00:00Z") },
+    );
+
+  beforeEach(() => {
+    mockConfigured.mockReturnValue(true);
+    mockSmsEnabled.mockReturnValue(true);
+  });
+
+  it("counts pre-consented numbers, the segments of the save the date text and how long it takes", async () => {
+    const { db, client } = setup([], rows);
+    db.tables.household_contacts.push(
+      phone("0101", "h1", "opted_in", "staff"),
+      phone("0102", "h2", "opted_in", "import"),
+      phone("0103", "h2", "opted_in", "first_sign_in"),
+    );
+    const result = await preview(client, [["channel", "both"]]);
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.data!.texts).toMatchObject({
+      preConsented: 2,
+      segmentsPerText: 2,
+      totalSegments: 6,
+      minutes: 1,
+    });
+  });
+
+  it("counts the households this campaign cannot reach: no email and no opted-in number", async () => {
+    const { db, client } = setup([], rows);
+    db.tables.household_contacts.push(
+      phone("0102", "h2", "opted_in", "staff"),
+      phone("0103", "h3", "not_asked", null),
+    );
+    const both = await preview(client, [["channel", "both"]]);
+    if (!both.ok) throw new Error("expected ok");
+    expect(both.data!.unreachable).toBe(1);
+    const emailOnly = await preview(client, [["channel", "email"]]);
+    if (!emailOnly.ok) throw new Error("expected ok");
+    expect(emailOnly.data!.unreachable).toBe(2);
+  });
+
+  it("warns about texting hours for a text send now outside 11 a.m. to 9 p.m. Eastern, and not inside", async () => {
+    const { client } = setup([], rows);
+    const night = previewAudience(
+      null,
+      form([
+        ["name", "x"],
+        ["message_type_key", "save_the_date"],
+        ...everyone,
+        ["channel", "text"],
+      ]),
+      { supabase: client as never, now: new Date("2027-01-15T08:00:00Z") },
+    );
+    const ok = await night;
+    if (!ok.ok) throw new Error("expected ok");
+    expect(ok.data!.sendWarning).toMatch(/8 a\.m\./);
+    const day = await preview(client, [["channel", "text"]]);
+    if (!day.ok) throw new Error("expected ok");
+    expect(day.data!.sendWarning).toBeNull();
+  });
+
+  it("uses the scheduled time, in Pacific time, when there is one, and never warns for an email campaign", async () => {
+    const { client } = setup([], rows);
+    // 7:00 a.m. Pacific is 10:00 Eastern: outside the window.
+    const early = await preview(client, [
+      ["channel", "text"],
+      ["scheduled_for", "2027-03-01T07:00"],
+    ]);
+    if (!early.ok) throw new Error("expected ok");
+    expect(early.data!.sendWarning).toMatch(/8 a\.m\./);
+    const emailOnly = await preview(client, [
+      ["channel", "email"],
+      ["scheduled_for", "2027-03-01T07:00"],
+    ]);
+    if (!emailOnly.ok) throw new Error("expected ok");
+    expect(emailOnly.data!.sendWarning).toBeNull();
   });
 });

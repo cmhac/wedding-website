@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LegalLinks } from "./LegalLinks";
 import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "./ThemeToggle";
@@ -13,6 +14,9 @@ export function Placeholder() {
         <ThemeToggle />
         <SignOutButton />
       </div>
+      <p className="legal-links">
+        <Link href="/save-the-date">Save the date</Link>
+      </p>
       <LegalLinks />
     </>
   );

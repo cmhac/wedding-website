@@ -23,7 +23,8 @@ describe("ImportHelp phone columns", () => {
     render(<ImportHelp smsConfigured />);
     expect(screen.getByText("contact_phone")).toBeInTheDocument();
     expect(screen.getByText(/United States numbers only/)).toBeInTheDocument();
-    expect(screen.getByText(/opts in themselves/)).toBeInTheDocument();
+    expect(screen.getByText("contact_phone_consent")).toBeInTheDocument();
+    expect(screen.getByText(/consented by import/)).toBeInTheDocument();
   });
 
   it("says nothing about phones while texting is not configured", () => {

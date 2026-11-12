@@ -6,7 +6,9 @@ jest.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 const mockAdd = jest.fn();
 const mockUpdate = jest.fn();
 const mockRemove = jest.fn();
+const mockConsent = jest.fn();
 jest.mock("@/lib/admin-api/client", () => ({
+  setPhoneConsent: (...a: unknown[]) => mockConsent(...a),
   addPhone: (...a: unknown[]) => mockAdd(...a),
   updatePhone: (...a: unknown[]) => mockUpdate(...a),
   removePhone: (...a: unknown[]) => mockRemove(...a),
@@ -19,6 +21,10 @@ const phones = [
     deliveryProblem: false,
     consent: "opted_in",
     consentAt: "2027-02-01T18:00:00Z",
+    consentSource: "guest" as const,
+    consentBy: null,
+    consentNote: null,
+    overrodeDecline: false,
   },
   {
     id: "p2",
@@ -26,6 +32,10 @@ const phones = [
     deliveryProblem: true,
     consent: "declined",
     consentAt: "2027-02-02T18:00:00Z",
+    consentSource: "guest" as const,
+    consentBy: null,
+    consentNote: null,
+    overrodeDecline: false,
   },
   {
     id: "p3",
@@ -33,8 +43,24 @@ const phones = [
     deliveryProblem: false,
     consent: "not_asked",
     consentAt: null,
+    consentSource: null,
+    consentBy: null,
+    consentNote: null,
+    overrodeDecline: false,
   },
 ];
+
+const marked = {
+  id: "p4",
+  value: "+12025550126",
+  deliveryProblem: false,
+  consent: "opted_in",
+  consentAt: "2027-02-03T18:00:00Z",
+  consentSource: "staff" as const,
+  consentBy: "Hannah",
+  consentNote: "address form, October",
+  overrodeDecline: true,
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -79,12 +105,17 @@ describe("PhonesList", () => {
     expect(screen.queryByText("(202) 555-0124")).toBeNull();
   });
 
-  it("offers no way to opt a number in: there is no consent control", () => {
+  it("has no checkbox, and offers a mark as consented button only for numbers that have not opted in", () => {
     render(<PhonesList householdId="h1" phones={phones} />);
     expect(screen.queryByRole("checkbox")).toBeNull();
     expect(
-      screen.queryByRole("button", { name: /opt in|consent/i }),
+      screen.queryByRole("button", {
+        name: "Mark (202) 555-0123 as consented",
+      }),
     ).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Mark (202) 555-0125 as consented" }),
+    ).toBeInTheDocument();
   });
 
   it("says a household with no numbers has none, without calling it paper only", () => {
@@ -148,5 +179,91 @@ describe("PhonesList", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Remove number" }));
     await waitFor(() => expect(mockRemove).toHaveBeenCalledWith("h1", "p1"));
+  });
+});
+
+describe("PhonesList consent marks", () => {
+  beforeEach(() => {
+    mockConsent.mockResolvedValue({
+      ok: true,
+      data: { counts: { marked: 1 } },
+    });
+  });
+
+  it("shows how each answer was recorded, and who made a staff mark", () => {
+    render(<PhonesList householdId="h1" phones={[...phones, marked]} />);
+    expect(screen.getByText(/ticked by the guest/)).toBeInTheDocument();
+    expect(screen.getByText(/marked by Hannah/)).toBeInTheDocument();
+    expect(screen.getByText(/address form, October/)).toBeInTheDocument();
+    expect(screen.getByText(/replaced a decline/i)).toBeInTheDocument();
+  });
+
+  it("marks a number not yet asked as consented, with a note, and sends no text", async () => {
+    render(<PhonesList householdId="h1" phones={phones} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mark (202) 555-0125 as consented" }),
+    );
+    fireEvent.change(screen.getByLabelText("Where the consent came from"), {
+      target: { value: "address form" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Mark as consented" }));
+    await waitFor(() =>
+      expect(mockConsent).toHaveBeenCalledWith("h1", "p3", {
+        mode: "mark",
+        override_declined: false,
+        note: "address form",
+      }),
+    );
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+  });
+
+  it("asks first before marking a number that declined, then overrides", async () => {
+    render(<PhonesList householdId="h1" phones={phones} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mark (202) 555-0124 as consented" }),
+    );
+    expect(screen.getByText(/This number declined/)).toBeInTheDocument();
+    expect(mockConsent).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Mark it anyway" }));
+    await waitFor(() =>
+      expect(mockConsent).toHaveBeenCalledWith("h1", "p2", {
+        mode: "mark",
+        override_declined: true,
+        note: "",
+      }),
+    );
+  });
+
+  it("clears a staff mark, and offers no clear for a guest's own tick", async () => {
+    render(<PhonesList householdId="h1" phones={[phones[0], marked]} />);
+    expect(
+      screen.queryByRole("button", {
+        name: "Clear consent mark for (202) 555-0123",
+      }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Clear consent mark for (202) 555-0126",
+      }),
+    );
+    await waitFor(() =>
+      expect(mockConsent).toHaveBeenCalledWith("h1", "p4", { mode: "clear" }),
+    );
+  });
+
+  it("shows a plain message when the change is refused", async () => {
+    mockConsent.mockResolvedValue({
+      ok: false,
+      status: 403,
+      error: { code: "forbidden", message: "x" },
+    });
+    render(<PhonesList householdId="h1" phones={phones} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mark (202) 555-0125 as consented" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Mark as consented" }));
+    expect(
+      await screen.findByText("You do not have access to this."),
+    ).toBeInTheDocument();
   });
 });
