@@ -53,13 +53,23 @@ select is(
   (select count(*)::int from public.setup_guide_state), 0,
   'another staff member cannot read it'
 );
-select is(
-  (with u as (update public.setup_guide_state set left_guide = true returning 1) select count(*)::int from u), 0,
-  'or change it'
+-- Their attempts touch no rows (row-level security hides the other person's
+-- row), so neither raises an error. The next block proves nothing changed.
+select lives_ok(
+  $$update public.setup_guide_state set left_guide = true$$,
+  'another staff member''s update finds no rows to change'
 );
-select is(
-  (with d as (delete from public.setup_guide_state returning 1) select count(*)::int from d), 0,
-  'or delete it'
+select lives_ok(
+  $$delete from public.setup_guide_state$$,
+  'and their delete finds no rows to remove'
+);
+select tests.clear_auth();
+
+select tests.authenticate_as(:'couple_user');
+select results_eq(
+  $$select left_guide from public.setup_guide_state$$,
+  $$values (false)$$,
+  'the owner''s row is still there and unchanged'
 );
 select tests.clear_auth();
 
@@ -119,10 +129,11 @@ select throws_ok(
   '42501', null, 'but nobody can rewrite a mark (no update access)'
 );
 select is((select count(*)::int from public.setup_confirmations), 1, 'another staff member sees the confirmation');
-select is(
-  (with d as (delete from public.setup_confirmations returning 1) select count(*)::int from d), 1,
+select lives_ok(
+  $$delete from public.setup_confirmations where step_key = 'sending_domain'$$,
   'and can remove it'
 );
+select is((select count(*)::int from public.setup_confirmations), 0, 'after which it is gone');
 select tests.clear_auth();
 
 select * from finish();
