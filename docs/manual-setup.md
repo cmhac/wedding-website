@@ -94,11 +94,37 @@ URL Configuration, add (replace the team slug with yours):
 - `https://wedding-website-*-<team slug>.vercel.app/auth/callback`
 - `https://wedding-website-*-<team slug>.vercel.app/auth/callback?audience=staff`
 
-Keep the Site URL set to production. Previews share the production database and
-the staff sign-in email is sent by the production site's Send Email hook, so a
-preview needs no email variables of its own. Do not use a bare `*.vercel.app`
-pattern: it would allow every Vercel app. Previews behind Vercel's Deployment
-Protection ask for a Vercel sign-in first.
+Previews do **not** share the production database. There is a separate Supabase
+project, `dev-wedding-website`, and the Vercel Supabase variables for the Preview
+and Development environments are a different set from Production's. Supabase Auth
+settings are per project, so the redirect addresses above, the Site URL and the
+Send Email hook must be set in the dev project too; the production project's
+settings do not apply to previews.
+
+Keep the production project's Site URL set to production. Do not use a bare
+`*.vercel.app` pattern: it would allow every Vercel app. Previews behind Vercel's
+Deployment Protection ask for a Vercel sign-in first.
+
+### Email from previews
+
+Previews send real email through the same Resend account and verified domain as
+production, so the preview setup guide stops saying email is not configured. Set
+these for the **Preview** environment only, in Vercel, Environment Variables:
+
+- `EMAIL_FROM`: the same address as production
+  (`Chris & Hannah <hello@updates.hannahandchris.wedding>`).
+- `RESEND_API_KEY`: a separate sending-only key made for the verified domain
+  (Resend, API Keys), **sensitive**. Use a different key from production's so it
+  can be revoked on its own.
+
+`RESEND_WEBHOOK_SECRET` is deliberately not set for previews. The Resend webhook
+points at the production address, so delivery events for preview sends reach the
+production database, which has no record of them. Previews therefore do not track
+delivery or bounces. To change that, add a second Resend webhook for a stable
+preview address and its signing secret.
+
+Preview sends go to whatever addresses are in the dev database, so keep real guest
+addresses out of it.
 
 ## Personal invite links
 
