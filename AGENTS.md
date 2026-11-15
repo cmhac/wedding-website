@@ -5,16 +5,24 @@ covers working with the hosted services from an agent session.
 
 ## Hosted services and access tokens
 
-Two hosted projects, both named `wedding-website`, are reachable from agent
-sessions through environment variables:
+One Vercel project and two Supabase projects are involved. The first two are
+reachable from agent sessions through environment variables:
 
 | Variable                | Service  | Project                                                                                      |
 | ----------------------- | -------- | -------------------------------------------------------------------------------------------- |
 | `VERCEL_ACCESS_TOKEN`   | Vercel   | `wedding-website` (`prj_rPeRgtRW1YCfQPWX7pZLsatJqOcL`, team `team_JWoc2UeuwDeznYpkbi808p9P`) |
-| `SUPABASE_ACCESS_TOKEN` | Supabase | `wedding-website` (project ref `vwhgwmvbzyzeawrzduqs`, `us-east-1`)                          |
+| `SUPABASE_ACCESS_TOKEN` | Supabase | `wedding-website`, **production** (project ref `vwhgwmvbzyzeawrzduqs`, `us-east-1`)          |
 
-The Supabase project was created through the Vercel integration, so Vercel
-already holds the `SUPABASE_*` and `POSTGRES_*` variables for it.
+The third is the **dev** Supabase project, `dev-wedding-website` (project ref
+`gjanquvyvlqpxmdgfzdz`, `us-east-1`, created 2026-11-12). Vercel's Preview and
+Development environments use it, and Production uses the production project, so
+previews never touch the real guest list. The variables above are not always set
+in a session (`SUPABASE_ACCESS_TOKEN` was missing on 2026-11-15), and it is not
+confirmed that the Supabase token covers the dev project. Without a token, use
+the connectors described below.
+
+The production Supabase project was created through the Vercel integration, so
+Vercel already holds the `SUPABASE_*` and `POSTGRES_*` variables for it.
 
 ### Rules
 
@@ -137,6 +145,115 @@ declared there first.
 
 The remaining manual settings are listed in
 [docs/manual-setup.md](docs/manual-setup.md).
+
+## Connectors (MCP tools)
+
+Sessions may also have connectors for Vercel, Supabase, Resend and GitHub. They
+work where the environment variables above are missing, and they were used to
+find and fix a real problem on 2026-11-15, so what follows is from experience.
+Some connector tools are listed by name only until you load them with
+`ToolSearch` (for example `select:mcp__Vercel__create_deployment`); calling one
+before its schema is loaded fails with a validation error.
+
+The same rules apply as above: never repeat a secret, treat guest data as
+personal data, and confirm before changing anything outward-facing. A person
+saying "any non-destructive action is fine" while away covers that session only
+and does not make changing auth settings or production variables routine.
+
+### Vercel connector
+
+- Ids: project `prj_rPeRgtRW1YCfQPWX7pZLsatJqOcL`, team
+  `team_JWoc2UeuwDeznYpkbi808p9P`. Pass `teamId` on every call. The tools name the
+  project differently: `idOrName` on the environment variable and deployment
+  tools, `projectId` on `list_deployments` and `get_runtime_logs`.
+- **List variables safely.** `filter_project_envs` returns every variable with its
+  value, is far too large to read, and is saved to a file. Do not read that file
+  whole. Extract names and scopes only, for example
+  `jq -r '.result.envs[] | select(.key|test("RESEND|EMAIL_FROM")) | [.key, (.target|tostring), .type] | @tsv' <file>`.
+  Sensitive variables come back blank, which is how they are meant to behave.
+- **Add a variable.** `create_project_env` takes a `requestBody` object:
+  `{"key","value","type","target":["preview"]}`. Use `type: "sensitive"` for
+  secrets (not available for the Development target) and `plain` for values that
+  are not secret, such as the from address. Read a plain one back with
+  `get_project_env`. Scope matters: Preview and Development share one set of
+  Supabase variables, and Production has its own.
+- **Variables apply only to new builds.** A deployment made before a variable was
+  added does not have it. Compare the variable's `createdAt` with the
+  deployment's creation time.
+- **Redeploy a preview.** `create_deployment` with `forceNew: "1"` and a
+  `requestBody` of `{"name", "project", "deploymentId": "<a preview deployment>"}`
+  rebuilds it and leaves the target as preview. Never pass a `gitSource` with
+  `ref: "main"`, which makes a production deployment. It was not confirmed
+  whether a redeploy reads the current variables or the original build's, so
+  after adding a variable, a new commit on the branch is the sure way to pick it
+  up. Check progress with `get_deployment`; do not poll in a tight loop.
+- **Runtime logs.** `get_runtime_logs` with the deployment id shows one entry per
+  request. The app logs through `src/lib/log.ts` as JSON with an `event` and a
+  `code`, so search for those rather than for addresses.
+
+### Supabase connector
+
+- `list_projects` shows both projects (production and dev) with their refs; pass
+  the right `project_id` and double-check it before any write.
+- **Logs.** `query_logs` takes a required `sql` argument (not a service name),
+  written against a `logs` table with a `source` column: `postgres_logs`,
+  `auth_logs`, `edge_logs`, `pgbouncer_logs` and `auth_audit_logs` exist. Read
+  fields with `log_attributes['msg']`, `['error']`, `['status']`, `['path']`. The
+  window is at most 24 hours (`iso_timestamp_start`). Select message, error and
+  status only, never the email address columns.
+- **No tool changes auth settings** (sender, SMTP, hooks, redirect addresses,
+  rate limits). Reading them or changing them needs the Management API with a
+  token that covers that project, or the dashboard. Say so and give the person
+  exact steps rather than reaching for production settings.
+- `execute_sql` and `apply_migration` exist but follow the migration rules above:
+  schema changes go through files in `supabase/migrations/`, and queries are
+  read-only unless a person asked otherwise.
+
+### Resend connector
+
+- Every call needs `context` (one neutral sentence with no personal data) and
+  `llm_model`. The first response returns a `conversation_id`; pass that same one
+  on every later call, and do not run calls in parallel before you have it
+  (parallel first calls each get a different one).
+- `list-domains` shows the verified sending domain (`updates.hannahandchris.wedding`
+  at the time of writing). `list-api-keys` shows names and creation dates only.
+- **Create a key.** `create-api-key` with `permission: "sending_access"` and the
+  sending domain's `domainId` makes a key that can only send from that domain. The
+  token is shown once, in the result. Put it straight where it is needed (a
+  sensitive Vercel variable, or tell the person to paste it into the Supabase
+  SMTP settings) and do not repeat it in replies, commits or docs. Use a separate
+  key for each place it is used (production, preview site, dev Supabase SMTP) so
+  one can be revoked alone. Names in use: "wedding-website production (sending
+  only)" and "wedding-website preview (sending only)".
+- `remove-api-key` and other deletes need the person's explicit confirmation by
+  key name; deleting a key breaks whatever uses it.
+- **Sent-mail lists contain real recipients.** `list-emails` returns addresses, so
+  report counts, statuses and times only. An empty or stale list (nothing new
+  since an earlier date) is useful evidence that mail never reached Resend.
+- Do not send mail to guests with `send-email`; the site's own send paths record
+  delivery in the database. A test send goes to the requesting person only, and
+  only when they ask.
+
+### GitHub connector
+
+There is no `gh` CLI in cloud sessions. Use the GitHub tools for branches, pull
+requests and file contents, as described in the session instructions, and write
+pull request descriptions in plain English per CLAUDE.md.
+
+### Diagnosing "sign-in email did not arrive"
+
+Work from the outside in, and do not trigger sign-ins yourself (they email a real
+person and use up the hourly limit):
+
+1. Preview or production runtime logs: look for `admin_sign_in_failed` and its
+   `code`. `over_email_send_rate_limit` means Supabase Auth refused to send.
+2. The Supabase project's `auth_logs`: a `429: email rate limit exceeded`, and
+   `mail.send` entries from `noreply@mail.app.supabase.io`, mean the project is
+   on Supabase's built-in sender because it has no Send Email hook or custom
+   SMTP. Fix: custom SMTP in that project (see "Staff sign-in email in the dev
+   project" in [docs/manual-setup.md](docs/manual-setup.md)).
+3. Resend's sent list: nothing new since an earlier date means the mail never
+   reached Resend, which points at Supabase or the app rather than Resend.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

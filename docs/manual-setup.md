@@ -98,8 +98,8 @@ Previews do **not** share the production database. There is a separate Supabase
 project, `dev-wedding-website`, and the Vercel Supabase variables for the Preview
 and Development environments are a different set from Production's. Supabase Auth
 settings are per project, so the redirect addresses above, the Site URL and the
-Send Email hook must be set in the dev project too; the production project's
-settings do not apply to previews.
+email sending described below must be set in the dev project too; the production
+project's settings do not apply to previews.
 
 Keep the production project's Site URL set to production. Do not use a bare
 `*.vercel.app` pattern: it would allow every Vercel app. Previews behind Vercel's
@@ -125,6 +125,49 @@ preview address and its signing secret.
 
 Preview sends go to whatever addresses are in the dev database, so keep real guest
 addresses out of it.
+
+### Staff sign-in email in the dev project
+
+The dev Supabase project cannot use the Send Email hook. The hook needs one fixed
+address, but a preview's address changes with every deployment, and production's
+hook belongs to the production project (it checks production's secret and builds
+links to the production project). So the dev project sends its sign-in email
+through Resend over custom SMTP, as production did before its hook was switched
+on. In Supabase (dev project), Authentication, Emails, SMTP Settings, turn on
+custom SMTP and set:
+
+| Setting  | Value                                                                      |
+| -------- | -------------------------------------------------------------------------- |
+| Host     | `smtp.resend.com`                                                          |
+| Port     | `465`                                                                      |
+| Username | `resend`                                                                   |
+| Password | a Resend sending-only key restricted to the verified sending domain        |
+| Sender   | an address on the verified domain, for example the production `EMAIL_FROM` |
+
+Make this key its own key, separate from the preview site's `RESEND_API_KEY` and
+from production's, so each can be revoked without breaking the others. A key's
+value is shown only once when it is created and Vercel hides sensitive values, so
+create a fresh key rather than hoping to find an old one. Staff sign-in email from
+a preview then uses the wording in the dev project's auth settings, not the
+repository's template.
+
+Without this, the dev project falls back to Supabase's built-in sender
+(`noreply@mail.app.supabase.io`), which allows only about 2 emails an hour
+(production's cap was 2 on the built-in sender); third-party guides also say it
+delivers only to team members' addresses, which was not checked against
+Supabase's own documentation. After two sign-in requests the next ones are
+refused. The signs, seen on 2026-11-15:
+
+- The preview's runtime logs show `admin_sign_in_failed` with the code
+  `over_email_send_rate_limit`.
+- The dev project's Auth logs show `429: email rate limit exceeded`, and the only
+  `mail.send` entries come from `noreply@mail.app.supabase.io`.
+- Nothing new appears in Resend's sent list.
+
+This was set up in the dev project on 2026-11-15 and staff sign-in on a preview
+then worked. After turning it on, check the dev project's Authentication, Rate
+Limits page: the per-hour email limit applies to custom SMTP too and its default
+differs between guides (25 and 30 are quoted).
 
 ## Personal invite links
 
