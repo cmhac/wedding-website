@@ -36,9 +36,15 @@ sees.
    then `unset` it. Print only HTTP status codes and a length.
 2. Do not paste the old secret either. You cannot read the Vercel one (it is
    sensitive) and you do not need the Vault one.
-3. Needs `VERCEL_ACCESS_TOKEN` and `SUPABASE_ACCESS_TOKEN`. Neither token should
-   be printed. The Supabase token needs permission to run SQL on the dev project;
-   the Vercel token needs to edit environment variables on the project above.
+3. Access comes from **network secrets** saved on the cloud environment: one for
+   `api.vercel.com` and one for `api.supabase.com`. The network proxy adds the
+   real token to requests to those hosts, so the session never holds it. If the
+   environment variables `VERCEL_ACCESS_TOKEN` and `SUPABASE_ACCESS_TOKEN` are
+   not set, the script below sends the placeholder `placeholder` instead, which
+   the proxy replaces. If a call returns 401 or 403, wait about a minute and retry
+   once, then stop and report. The Supabase token needs permission to run SQL on
+   the dev project; the Vercel token needs to edit environment variables on the
+   project above. Never print any token.
 4. Stop and report instead of improvising if any call fails or an identifier
    does not match what is in the table above.
 
@@ -69,14 +75,14 @@ sees.
    # 1. Vercel: replace the Preview variable's value.
    code=$(curl -sS -o /dev/null -w '%{http_code}' -X PATCH \
      "https://api.vercel.com/v9/projects/prj_rPeRgtRW1YCfQPWX7pZLsatJqOcL/env/SekVKxybH1AqSML3?teamId=team_JWoc2UeuwDeznYpkbi808p9P" \
-     -H "Authorization: Bearer $VERCEL_ACCESS_TOKEN" -H 'Content-Type: application/json' \
+     -H "Authorization: Bearer ${VERCEL_ACCESS_TOKEN:-placeholder}" -H 'Content-Type: application/json' \
      --data "$(jq -nc --arg v "$S" '{value:$v}')")
    echo "vercel: $code"
 
    # 2. Supabase dev Vault: update the matching secret, value passed as a parameter.
    code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
      "https://api.supabase.com/v1/projects/gjanquvyvlqpxmdgfzdz/database/query" \
-     -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' \
+     -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN:-placeholder}" -H 'Content-Type: application/json' \
      --data "$(jq -nc --arg v "$S" '{query:"select vault.update_secret((select id from vault.secrets where name = $$cron_secret$$), $1::text)", parameters:[$v]}')")
    echo "supabase: $code"
 
@@ -117,5 +123,6 @@ git push origin --delete claude/temp-rotate-preview-cron-secret
 git branch -D claude/temp-rotate-preview-cron-secret
 ```
 
-Then report: what was rotated, the status codes, the verification results, and
+Tell the user to delete the two network secrets from the environment and revoke
+the tokens behind them. Then report: what was rotated, the status codes, the verification results, and
 that this file and branch are gone.
